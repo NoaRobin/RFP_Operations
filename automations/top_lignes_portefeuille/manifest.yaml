@@ -1,0 +1,55 @@
+id: top_lignes_portefeuille
+name: Top lignes du portefeuille
+description: >
+  Les N plus grosses positions d'un fonds au dernier inventaire disponible
+  à la date choisie (hors liquidités), avec classe d'actifs et poids.
+icon: crown
+category: Portefeuilles
+type: fabric
+version: "1.0"
+tags: [holdings, top 10, inventaire]
+estimated_minutes_saved: 20
+params:
+  - name: fonds
+    label: Fonds
+    type: select
+    required: true
+    options_query: >
+      SELECT DISTINCT h.ID_JUMP_FONDS AS value, h.NOM_FONDS AS label
+      FROM dbo.JUMP_portfolio_holdings h
+      WHERE h.NOM_FONDS IS NOT NULL
+      ORDER BY label
+  - name: as_of
+    label: Date d'arrêté
+    type: date
+    required: true
+    default: today
+    help: Merlin prend le dernier inventaire disponible à cette date.
+  - name: top_n
+    label: Nombre de lignes
+    type: integer
+    default: 10
+    min: 1
+    max: 200
+outputs:
+  - type: excel
+    label: Top lignes
+fabric:
+  query_file: query.sql
+  output: both
+  filename: "Top_{top_n}_lignes_{fonds}_{as_of}.xlsx"
+  sheet_name: Top lignes
+  empty_is_error: true
+  column_labels:
+    NOM_FONDS: Fonds
+    DATE_INVENTAIRE: Date d'inventaire
+    CODE_ISIN_INSTRUMENT: ISIN
+    NOM_INSTRUMENT: Instrument
+    CLASSE_ACTIF: Classe d'actifs
+    DEVISE_INSTRUMENT: Devise
+    MONTANT_DEVISE_FONDS: Montant (devise du fonds)
+    POIDS_LIGNE_EXPO: Poids (exposition)
+  number_formats:
+    Montant (devise du fonds): "#,##0"
+    Poids (exposition): "0.00%"
+    Date d'inventaire: "dd/mm/yyyy"
