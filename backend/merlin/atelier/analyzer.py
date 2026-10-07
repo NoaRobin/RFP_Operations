@@ -191,5 +191,5 @@ def analyze_workbook(path: Path, extractions: ExtractionCatalog, known_keys: dic
         if ws.sheet_state != "visible":
             continue
         sheets.append(analyze_sheet(ws, wb_formulas[ws.title], extractions, known_keys, overrides.get(ws.title)))
-    best = max(sheets, key=lambda s: (s["key"]["score"] if s["key"] else 0, s["target_count"]), default=None)
+    best = max(sheets, key=lambda s: (bool(s["key"]), sum(1 for c in s["columns"] if c["proposed"]), s["target_count"]), default=None)
     return {"sheets": sheets, "suggested_sheet": best["name"] if best else None}

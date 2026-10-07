@@ -1,0 +1,80 @@
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { texts, pick } from '../../content/texts'
+import { useRotatingMessage } from '../../lib/hooks'
+import { gsap } from '../../motion/gsap'
+import { d, dist, ease, stagger } from '../../motion/tokens'
+import { Button } from './Button'
+import type { ApiError } from '../../lib/api'
+
+/** Rune de chargement + messages tournants. */
+export function Loading({ label, compact = false }: { label?: string; compact?: boolean }) {
+  const message = useRotatingMessage(texts.loading)
+  return (
+    <div role="status" aria-live="polite" className={`flex items-center gap-4 ${compact ? '' : 'justify-center py-16'}`}>
+      <span className="relative inline-block size-9" aria-hidden="true">
+        <span className="absolute inset-0 rounded-full border border-violet-400/30" />
+        <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-gold-400 border-r-arcane-400 animate-spin" />
+        <span className="absolute inset-[35%] rounded-full bg-gold-300 shadow-[0_0_14px_var(--color-gold-300)] animate-pulse" />
+      </span>
+      <span className="font-mono text-sm text-mist">{label ?? message}</span>
+    </div>
+  )
+}
+
+export function Skeleton({ className = '' }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`rounded-[var(--radius-card)] bg-[linear-gradient(90deg,rgb(29_25_64/0.5),rgb(167_139_250/0.12),rgb(29_25_64/0.5))] bg-[length:200%_100%] animate-shimmer ${className}`}
+    />
+  )
+}
+
+/** État vide mis en scène : une petite constellation, un titre, une action. */
+export function EmptyState({ title, body, action, icon }: { title: string; body?: string; action?: ReactNode; icon?: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from('[data-anim]', { opacity: 0, y: dist('lift'), stagger: stagger.base, duration: d('slow'), ease: ease.out })
+      gsap.to('[data-star]', { opacity: 0.2, duration: 1.6, stagger: { each: 0.3, repeat: -1, yoyo: true }, ease: ease.breathe })
+    }, ref)
+    return () => ctx.revert()
+  }, [])
+  return (
+    <div ref={ref} className="flex flex-col items-center text-center gap-3 py-14 px-6">
+      <div data-anim className="relative mb-2 size-20" aria-hidden="true">
+        {icon ?? (
+          <svg viewBox="0 0 80 80" className="size-20">
+            <circle data-star cx="16" cy="22" r="2" fill="var(--color-gold-300)" />
+            <circle data-star cx="58" cy="14" r="1.5" fill="var(--color-violet-300)" />
+            <circle data-star cx="66" cy="52" r="2.2" fill="var(--color-arcane-400)" />
+            <circle data-star cx="28" cy="62" r="1.4" fill="var(--color-gold-300)" />
+            <path d="M16 22 L58 14 L66 52 L28 62 Z" fill="none" stroke="var(--color-line-strong)" strokeDasharray="3 4" />
+            <path d="M40 30 l2.2 6 6 2.2 -6 2.2 -2.2 6 -2.2 -6 -6 -2.2 6 -2.2z" fill="var(--color-gold-400)" />
+          </svg>
+        )}
+      </div>
+      <h3 data-anim className="text-2xl text-parchment">{title}</h3>
+      {body && <p data-anim className="max-w-md text-mist">{body}</p>}
+      {action && <div data-anim className="mt-3">{action}</div>}
+    </div>
+  )
+}
+
+/** Erreur : message utile, piste d'action, puis (seulement ensuite) la blague. */
+export function ErrorState({ error, onRetry, joke }: { error: ApiError | Error; onRetry?: () => void; joke?: string }) {
+  const hint = 'hint' in error ? (error as ApiError).hint : ''
+  const isNetwork = error.message === texts.errors.network
+  return (
+    <div role="alert" className="glass mx-auto my-10 max-w-xl rounded-[var(--radius-card)] p-6 border-danger/30">
+      <p className="eyebrow !text-danger">{texts.errors.generic}</p>
+      <h3 className="mt-2 text-2xl">{error.message}</h3>
+      {hint && <p className="mt-2 text-mist">{hint}</p>}
+      <p className="mt-3 text-sm italic text-haze">{joke ?? (isNetwork ? texts.errors.networkJoke : pick(texts.run.errorJokes))}</p>
+      {onRetry && (
+        <Button className="mt-5" onClick={onRetry} icon={<RefreshCw size={16} />}>{texts.errors.retry}</Button>
+      )}
+    </div>
+  )
+}

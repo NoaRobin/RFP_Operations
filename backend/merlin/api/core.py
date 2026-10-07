@@ -298,7 +298,8 @@ def create_schedule(body: ScheduleRequest, s: AppState = Depends(state), user: s
         if not plugin:
             raise not_found("Ce sort n'existe pas.")
         try:
-            data["params"] = coerce_params(plugin.manifest.params, body.params)
+            coerce_params(plugin.manifest.params, body.params)  # validation seulement :
+            # on stocke les valeurs brutes pour que « today » soit recalculé à chaque exécution.
         except ParamError as error:
             raise bad_request(str(error)) from error
         data["label"] = data["label"] or plugin.manifest.name

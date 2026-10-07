@@ -1,0 +1,118 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-night);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background:
+      radial-gradient(1200px 800px at 85% -10%, rgb(91 33 182 / 0.22), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, rgb(34 211 238 / 0.08), transparent 60%),
+      var(--color-night);
+    color: var(--color-parchment);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    overflow-x: hidden;
+  }
+  ::selection { background: rgb(232 199 122 / 0.35); color: var(--color-parchment); }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.02em;
+    font-variation-settings: "SOFT" 50, "WONK" 0;
+  }
+
+  /* Focus toujours visible : un anneau arcane, impossible à rater. */
+  :focus-visible {
+    outline: 2px solid var(--color-arcane-400);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
+
+  /* Lenis */
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  .lenis.lenis-stopped { overflow: hidden; }
+
+  /* Barres de défilement discrètes */
+  * { scrollbar-width: thin; scrollbar-color: rgb(167 139 250 / 0.35) transparent; }
+
+  dialog::backdrop { background: rgb(4 3 10 / 0.72); backdrop-filter: blur(6px); }
+
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(0.4) hue-rotate(220deg); cursor: pointer; }
+}
+
+@layer components {
+  .glass {
+    background: linear-gradient(180deg, rgb(29 25 64 / 0.72), rgb(13 11 28 / 0.78));
+    border: 1px solid var(--color-line);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+  /* SplitText enveloppe les lettres dans des <div>/<span> : chacune doit porter le dégradé */
+  .text-gradient-gold :is(div, span) {
+    background-image: inherit;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-gold-400);
+  }
+  .text-gradient-gold {
+    background: linear-gradient(100deg, var(--color-gold-200), var(--color-gold-400) 45%, var(--color-violet-300));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hairline { border-color: var(--color-line); }
+  /* Halo qui suit le curseur (les variables --mx/--my sont posées en JS) */
+  .halo { position: relative; isolation: isolate; }
+  .halo::before {
+    content: "";
+    position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(167 139 250 / 0.18), transparent 45%);
+    opacity: var(--halo-o, 0);
+    transition: opacity var(--duration-base) var(--ease-out-magic);
+  }
+  .halo::after {
+    content: "";
+    position: absolute; inset: -1px; border-radius: inherit; z-index: -1; pointer-events: none; padding: 1px;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(232 199 122 / 0.7), transparent 50%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    opacity: var(--halo-o, 0);
+    transition: opacity var(--duration-base) var(--ease-out-magic);
+  }
+  .sr-only-focusable:not(:focus) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+
+/* Mode archimage (easter egg Konami) */
+html.archimage { --color-violet-400: #f5dfa5; --color-arcane-400: #f0abfc; }
+html.archimage body { animation: hue 6s linear infinite; }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+
+/* Mouvement réduit : on garde le contenu, on retire le spectacle. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html.archimage body { animation: none; }
+}
