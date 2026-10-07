@@ -33,7 +33,7 @@ function useOptions(automationId: string, spec: ParamSpec) {
 export function ParamField({ automationId, spec, value, error, onChange }: Props) {
   const needsOptions = spec.type === 'select' || spec.type === 'multiselect'
   const { options, failed } = useOptions(automationId, needsOptions ? spec : { ...spec, options_query: null })
-  const badge = <Badge tone="muted" className="!py-0 !text-[0.65rem]">{spec.required ? texts.spell.required : texts.spell.optional}</Badge>
+  const badge = <Badge tone="muted" className="!py-0 !text-[0.65rem]">{spec.required ? texts.automation.required : texts.automation.optional}</Badge>
 
   if (spec.type === 'boolean') {
     return <Switch checked={!!value} onChange={onChange} label={spec.label} hint={spec.help ?? undefined} />
@@ -65,7 +65,7 @@ export function ParamField({ automationId, spec, value, error, onChange }: Props
             return (
               <Select {...common} value={value === null || value === undefined ? '' : String(value)} disabled={!options && !failed}
                 onChange={(e) => onChange(e.target.value || null)}>
-                <option value="">{!options && !failed ? texts.spell.loadingOptions : spec.placeholder ?? texts.spell.selectPlaceholder}</option>
+                <option value="">{!options && !failed ? texts.automation.loadingOptions : spec.placeholder ?? texts.automation.selectPlaceholder}</option>
                 {options?.map((o) => <option key={String(o.value)} value={String(o.value)}>{o.label}</option>)}
               </Select>
             )
@@ -75,7 +75,7 @@ export function ParamField({ automationId, spec, value, error, onChange }: Props
               <div id={id} role="group" aria-describedby={describedBy} className="flex max-h-56 flex-col gap-1 overflow-y-auto rounded-xl border border-line-strong bg-abyss/50 p-2">
                 {options?.map((o) => (
                   <label key={String(o.value)} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-white/5">
-                    <input type="checkbox" className="accent-[var(--color-gold-400)]" checked={selected.has(String(o.value))}
+                    <input type="checkbox" className="accent-[var(--color-champagne-400)]" checked={selected.has(String(o.value))}
                       onChange={(e) => {
                         const next = new Set(selected)
                         if (e.target.checked) next.add(String(o.value))
@@ -84,7 +84,7 @@ export function ParamField({ automationId, spec, value, error, onChange }: Props
                       }} />
                     {o.label}
                   </label>
-                )) ?? <span className="p-2 text-sm text-haze">{texts.spell.loadingOptions}</span>}
+                )) ?? <span className="p-2 text-sm text-haze">{texts.automation.loadingOptions}</span>}
               </div>
             )
           }

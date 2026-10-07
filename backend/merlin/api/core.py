@@ -63,7 +63,7 @@ def list_automations(s: AppState = Depends(state)) -> dict[str, Any]:
 def get_automation(automation_id: str, s: AppState = Depends(state)) -> dict[str, Any]:
     plugin = s.registry.get(automation_id)
     if not plugin:
-        raise not_found("Ce sort n'existe pas (ou plus).")
+        raise not_found("Cette automatisation n'existe pas (ou plus).")
     data = plugin.to_dict()
     data["recent_runs"] = s.db.list_runs(limit=8, target_id=automation_id)
     return data
@@ -94,9 +94,9 @@ class RunRequest(BaseModel):
 def run_automation(automation_id: str, body: RunRequest, s: AppState = Depends(state), user: str = Depends(current_user)):
     plugin = s.registry.get(automation_id)
     if not plugin:
-        raise not_found("Ce sort n'existe pas (ou plus).")
+        raise not_found("Cette automatisation n'existe pas (ou plus).")
     if not plugin.healthy:
-        raise bad_request("Ce sort est abîmé et ne peut pas être lancé.", " ; ".join(plugin.problems))
+        raise bad_request("Cette automatisation est indisponible.", " ; ".join(plugin.problems))
     try:
         params = coerce_params(plugin.manifest.params, body.params)
     except ParamError as error:
@@ -122,7 +122,7 @@ def get_run(run_id: str, s: AppState = Depends(state)) -> dict[str, Any]:
 @router.post("/runs/{run_id}/cancel")
 def cancel_run(run_id: str, s: AppState = Depends(state)) -> dict[str, Any]:
     if not s.jobs.cancel(run_id):
-        raise bad_request("Ce sort n'est plus en cours.", "Il s'est peut-être déjà terminé.")
+        raise bad_request("Cette exécution n'est plus en cours.", "Il s'est peut-être déjà terminé.")
     return {"ok": True}
 
 
@@ -232,13 +232,13 @@ def dashboard(s: AppState = Depends(state)) -> dict[str, Any]:
                        "detail": "Fabric n'est pas configuré ou injoignable : les données affichées sont fictives."})
     recent_errors = [r for r in runs if r["status"] == "error" and r["created_at"] >= (datetime.now() - timedelta(days=2)).isoformat()]
     if recent_errors:
-        alerts.append({"level": "error", "code": "recent_errors", "title": f"{len(recent_errors)} sort(s) en échec ces 48 h",
+        alerts.append({"level": "error", "code": "recent_errors", "title": f"{len(recent_errors)} exécution(s) en échec ces 48 h",
                        "detail": recent_errors[0]["error"] or "", "run_id": recent_errors[0]["id"]})
     for broken in s.registry.broken:
         alerts.append({"level": "warning", "code": "broken_plugin", "title": f"Manifest illisible : {broken.folder}", "detail": " ; ".join(broken.problems)})
     for plugin in s.registry.all():
         if not plugin.healthy:
-            alerts.append({"level": "warning", "code": "unhealthy_plugin", "title": f"Sort abîmé : {plugin.manifest.name}", "detail": " ; ".join(plugin.problems)})
+            alerts.append({"level": "warning", "code": "unhealthy_plugin", "title": f"Automatisation indisponible : {plugin.manifest.name}", "detail": " ; ".join(plugin.problems)})
 
     schedules = [x for x in s.scheduler.list() if x["enabled"] and x["next_run"]]
     schedules.sort(key=lambda x: x["next_run"])
@@ -296,7 +296,7 @@ def create_schedule(body: ScheduleRequest, s: AppState = Depends(state), user: s
     if body.target_type == "automation":
         plugin = s.registry.get(body.target_id)
         if not plugin:
-            raise not_found("Ce sort n'existe pas.")
+            raise not_found("Cette automatisation n'existe pas.")
         try:
             coerce_params(plugin.manifest.params, body.params)  # validation seulement :
             # on stocke les valeurs brutes pour que « today » soit recalculé à chaque exécution.

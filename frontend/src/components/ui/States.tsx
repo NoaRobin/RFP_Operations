@@ -13,9 +13,9 @@ export function Loading({ label, compact = false }: { label?: string; compact?: 
   return (
     <div role="status" aria-live="polite" className={`flex items-center gap-4 ${compact ? '' : 'justify-center py-16'}`}>
       <span className="relative inline-block size-9" aria-hidden="true">
-        <span className="absolute inset-0 rounded-full border border-violet-400/30" />
-        <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-gold-400 border-r-arcane-400 animate-spin" />
-        <span className="absolute inset-[35%] rounded-full bg-gold-300 shadow-[0_0_14px_var(--color-gold-300)] animate-pulse" />
+        <span className="absolute inset-0 rounded-full border border-steel-400/30" />
+        <span className="absolute inset-0 rounded-full border-2 border-transparent border-t-champagne-400 border-r-sage-400 animate-spin" />
+        <span className="absolute inset-[35%] rounded-full bg-champagne-300 shadow-[0_0_14px_var(--color-champagne-300)] animate-pulse" />
       </span>
       <span className="font-mono text-sm text-mist">{label ?? message}</span>
     </div>
@@ -26,7 +26,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`rounded-[var(--radius-card)] bg-[linear-gradient(90deg,rgb(29_25_64/0.5),rgb(167_139_250/0.12),rgb(29_25_64/0.5))] bg-[length:200%_100%] animate-shimmer ${className}`}
+      className={`rounded-[var(--radius-card)] bg-[linear-gradient(90deg,rgb(28_36_49/0.5),rgb(143_166_195/0.12),rgb(28_36_49/0.5))] bg-[length:200%_100%] animate-shimmer ${className}`}
     />
   )
 }
@@ -46,16 +46,16 @@ export function EmptyState({ title, body, action, icon }: { title: string; body?
       <div data-anim className="relative mb-2 size-20" aria-hidden="true">
         {icon ?? (
           <svg viewBox="0 0 80 80" className="size-20">
-            <circle data-star cx="16" cy="22" r="2" fill="var(--color-gold-300)" />
-            <circle data-star cx="58" cy="14" r="1.5" fill="var(--color-violet-300)" />
-            <circle data-star cx="66" cy="52" r="2.2" fill="var(--color-arcane-400)" />
-            <circle data-star cx="28" cy="62" r="1.4" fill="var(--color-gold-300)" />
+            <circle data-star cx="16" cy="22" r="2" fill="var(--color-champagne-300)" />
+            <circle data-star cx="58" cy="14" r="1.5" fill="var(--color-steel-300)" />
+            <circle data-star cx="66" cy="52" r="2.2" fill="var(--color-sage-400)" />
+            <circle data-star cx="28" cy="62" r="1.4" fill="var(--color-champagne-300)" />
             <path d="M16 22 L58 14 L66 52 L28 62 Z" fill="none" stroke="var(--color-line-strong)" strokeDasharray="3 4" />
-            <path d="M40 30 l2.2 6 6 2.2 -6 2.2 -2.2 6 -2.2 -6 -6 -2.2 6 -2.2z" fill="var(--color-gold-400)" />
+            <path d="M40 30 l2.2 6 6 2.2 -6 2.2 -2.2 6 -2.2 -6 -6 -2.2 6 -2.2z" fill="var(--color-champagne-400)" />
           </svg>
         )}
       </div>
-      <h3 data-anim className="text-2xl text-parchment">{title}</h3>
+      <h3 data-anim className="text-2xl text-ivory">{title}</h3>
       {body && <p data-anim className="max-w-md text-mist">{body}</p>}
       {action && <div data-anim className="mt-3">{action}</div>}
     </div>

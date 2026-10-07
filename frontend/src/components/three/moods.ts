@@ -1,20 +1,20 @@
 export type Mood = 'calm' | 'awaken' | 'focus' | 'success' | 'failure'
 
-/** Paramètres de chaque humeur du cristal (partagés entre la 3D et le repli 2D). */
+/** Humeurs de la constellation (partagées entre la 3D et le repli 2D). */
 export const MOODS: Record<Mood, {
   speed: number
-  spread: number
-  rise: number
-  glow: number
-  droop: number
-  colorA: string
-  colorB: string
-  emissive: string
+  packets: number
+  scale: number
+  fall: number
+  linkOpacity: number
+  ringOpacity: number
+  node: string
+  core: string
   label: string
 }> = {
-  calm: { speed: 0.18, spread: 1, rise: 0, glow: 0.55, droop: 0, colorA: '#a78bfa', colorB: '#5eead4', emissive: '#3b1d8f', label: 'au repos' },
-  awaken: { speed: 0.35, spread: 1.15, rise: 0, glow: 1, droop: 0, colorA: '#f5dfa5', colorB: '#a78bfa', emissive: '#6d28d9', label: 'qui s\'éveille' },
-  focus: { speed: 1.1, spread: 0.72, rise: 0, glow: 1.25, droop: 0, colorA: '#5eead4', colorB: '#a78bfa', emissive: '#0e7490', label: 'concentré' },
-  success: { speed: 0.5, spread: 1.3, rise: 0, glow: 1.6, droop: 0, colorA: '#f5dfa5', colorB: '#5eead4', emissive: '#b8913f', label: 'triomphant' },
-  failure: { speed: 0.06, spread: 1.05, rise: 1, glow: 0.18, droop: 0.35, colorA: '#6b6585', colorB: '#3f3a55', emissive: '#1a1726', label: 'vexé' },
+  calm: { speed: 0.08, packets: 0.25, scale: 1, fall: 0, linkOpacity: 0.22, ringOpacity: 0.28, node: '#b7c6da', core: '#8fa6c3', label: 'au repos' },
+  awaken: { speed: 0.16, packets: 0.5, scale: 1.04, fall: 0, linkOpacity: 0.32, ringOpacity: 0.45, node: '#efe2c4', core: '#e3cfa1', label: 'en éveil' },
+  focus: { speed: 0.42, packets: 1.6, scale: 0.9, fall: 0, linkOpacity: 0.42, ringOpacity: 0.55, node: '#b5d6cb', core: '#86bfae', label: 'en calcul' },
+  success: { speed: 0.12, packets: 0.6, scale: 1.06, fall: 0, linkOpacity: 0.34, ringOpacity: 0.6, node: '#e3cfa1', core: '#efe2c4', label: 'terminé' },
+  failure: { speed: 0.02, packets: 0, scale: 0.98, fall: 1, linkOpacity: 0.07, ringOpacity: 0.1, node: '#5d6472', core: '#3a404b', label: 'en échec' },
 }

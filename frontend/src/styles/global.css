@@ -13,26 +13,27 @@
     margin: 0;
     min-height: 100dvh;
     background:
-      radial-gradient(1200px 800px at 85% -10%, rgb(91 33 182 / 0.22), transparent 60%),
-      radial-gradient(900px 700px at -10% 110%, rgb(34 211 238 / 0.08), transparent 60%),
+      radial-gradient(1200px 800px at 85% -10%, rgb(52 80 111 / 0.22), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, rgb(91 165 147 / 0.08), transparent 60%),
       var(--color-night);
-    color: var(--color-parchment);
+    color: var(--color-ivory);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "ss01", "cv11", "tnum" 0;
+    letter-spacing: -0.005em;
     overflow-x: hidden;
   }
-  ::selection { background: rgb(232 199 122 / 0.35); color: var(--color-parchment); }
+  ::selection { background: rgb(205 176 122 / 0.35); color: var(--color-ivory); }
 
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    letter-spacing: -0.02em;
-    font-variation-settings: "SOFT" 50, "WONK" 0;
+    font-weight: 400;
+    letter-spacing: -0.015em;
   }
 
-  /* Focus toujours visible : un anneau arcane, impossible à rater. */
+  /* Focus toujours visible : un anneau sage, impossible à rater. */
   :focus-visible {
-    outline: 2px solid var(--color-arcane-400);
+    outline: 2px solid var(--color-sage-400);
     outline-offset: 3px;
     border-radius: 6px;
   }
@@ -44,21 +45,21 @@
   .lenis.lenis-stopped { overflow: hidden; }
 
   /* Barres de défilement discrètes */
-  * { scrollbar-width: thin; scrollbar-color: rgb(167 139 250 / 0.35) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: rgb(143 166 195 / 0.35) transparent; }
 
-  dialog::backdrop { background: rgb(4 3 10 / 0.72); backdrop-filter: blur(6px); }
+  dialog::backdrop { background: rgb(5 7 11 / 0.72); backdrop-filter: blur(6px); }
 
-  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(0.4) hue-rotate(220deg); cursor: pointer; }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(0.4) hue-rotate(180deg); cursor: pointer; }
 }
 
 @layer components {
   .glass {
-    background: linear-gradient(180deg, rgb(29 25 64 / 0.72), rgb(13 11 28 / 0.78));
+    background: linear-gradient(180deg, rgb(28 36 49 / 0.72), rgb(15 20 28 / 0.78));
     border: 1px solid var(--color-line);
     backdrop-filter: blur(14px) saturate(1.2);
   }
   /* SplitText enveloppe les lettres dans des <div>/<span> : chacune doit porter le dégradé */
-  .text-gradient-gold :is(div, span) {
+  .text-gradient :is(div, span) {
     background-image: inherit;
     -webkit-background-clip: text;
     background-clip: text;
@@ -69,10 +70,10 @@
     font-size: 0.72rem;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--color-gold-400);
+    color: var(--color-champagne-400);
   }
-  .text-gradient-gold {
-    background: linear-gradient(100deg, var(--color-gold-200), var(--color-gold-400) 45%, var(--color-violet-300));
+  .text-gradient {
+    background: linear-gradient(100deg, var(--color-champagne-200), var(--color-champagne-400) 45%, var(--color-steel-300));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -83,27 +84,27 @@
   .halo::before {
     content: "";
     position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
-    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(167 139 250 / 0.18), transparent 45%);
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(143 166 195 / 0.18), transparent 45%);
     opacity: var(--halo-o, 0);
-    transition: opacity var(--duration-base) var(--ease-out-magic);
+    transition: opacity var(--duration-base) var(--ease-out-premium);
   }
   .halo::after {
     content: "";
     position: absolute; inset: -1px; border-radius: inherit; z-index: -1; pointer-events: none; padding: 1px;
-    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(232 199 122 / 0.7), transparent 50%);
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(205 176 122 / 0.7), transparent 50%);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor; mask-composite: exclude;
     opacity: var(--halo-o, 0);
-    transition: opacity var(--duration-base) var(--ease-out-magic);
+    transition: opacity var(--duration-base) var(--ease-out-premium);
   }
   .sr-only-focusable:not(:focus) {
     position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
   }
 }
 
-/* Mode archimage (easter egg Konami) */
-html.archimage { --color-violet-400: #f5dfa5; --color-arcane-400: #f0abfc; }
-html.archimage body { animation: hue 6s linear infinite; }
+/* Mode aurore (easter egg Konami) */
+html.aurora { --color-steel-400: #b5d6cb; --color-sage-400: #c4b5fd; --color-champagne-300: #f6d7b0; }
+html.aurora body { animation: hue 6s linear infinite; }
 @keyframes hue { to { filter: hue-rotate(360deg); } }
 
 /* Mouvement réduit : on garde le contenu, on retire le spectacle. */
@@ -114,5 +115,5 @@ html.archimage body { animation: hue 6s linear infinite; }
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  html.archimage body { animation: none; }
+  html.aurora body { animation: none; }
 }

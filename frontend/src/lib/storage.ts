@@ -2,10 +2,10 @@
 import { useSyncExternalStore } from 'react'
 
 const KEYS = {
-  user: 'merlin.user',
-  favorites: 'merlin.favorites',
-  skipIntro: 'merlin.intro.skip',
-  lowPower: 'merlin.lowPower',
+  user: 'meridian.user',
+  favorites: 'meridian.favorites',
+  skipIntro: 'meridian.intro.skip',
+  lowPower: 'meridian.lowPower',
 } as const
 
 function read(key: string): string | null {

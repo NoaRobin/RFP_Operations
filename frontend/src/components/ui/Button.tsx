@@ -8,17 +8,17 @@ type Size = 'sm' | 'md' | 'lg'
 
 const base =
   'relative inline-flex items-center justify-center gap-2 font-semibold select-none whitespace-nowrap rounded-[var(--radius-pill)] ' +
-  'transition-[background,box-shadow,color,border-color] duration-[var(--duration-fast)] ease-[var(--ease-out-magic)] ' +
+  'transition-[background,box-shadow,color,border-color] duration-[var(--duration-fast)] ease-[var(--ease-out-premium)] ' +
   'disabled:opacity-45 disabled:cursor-not-allowed overflow-hidden'
 
 const variants: Record<Variant, string> = {
   primary:
-    'text-abyss bg-[linear-gradient(110deg,var(--color-gold-300),var(--color-gold-400)_45%,var(--color-gold-200)_55%,var(--color-gold-400))] ' +
-    'bg-[length:220%_100%] hover:bg-[position:100%_0] shadow-[var(--shadow-glow-gold)] hover:shadow-[0_0_0_1px_rgb(232_199_122/0.6),0_16px_50px_-12px_rgb(232_199_122/0.7)]',
+    'text-abyss bg-[linear-gradient(110deg,var(--color-champagne-300),var(--color-champagne-400)_45%,var(--color-champagne-200)_55%,var(--color-champagne-400))] ' +
+    'bg-[length:220%_100%] hover:bg-[position:100%_0] shadow-[var(--shadow-glow-champagne)] hover:shadow-[0_0_0_1px_rgb(205_176_122/0.6),0_16px_50px_-12px_rgb(205_176_122/0.7)]',
   secondary:
-    'text-parchment bg-ink-3/70 border border-line-strong hover:border-violet-400/60 hover:bg-ink-3 hover:shadow-[var(--shadow-glow-violet)]',
-  ghost: 'text-mist hover:text-parchment hover:bg-white/5',
-  danger: 'text-parchment bg-danger/15 border border-danger/40 hover:bg-danger/25',
+    'text-ivory bg-ink-3/70 border border-line-strong hover:border-steel-400/60 hover:bg-ink-3 hover:shadow-[var(--shadow-glow-steel)]',
+  ghost: 'text-mist hover:text-ivory hover:bg-white/5',
+  danger: 'text-ivory bg-danger/15 border border-danger/40 hover:bg-danger/25',
 }
 
 const sizes: Record<Size, string> = {
@@ -105,7 +105,7 @@ export function IconButton({ label, children, className = '', ...rest }: ButtonH
       ref={(n) => { ref.current = n }}
       aria-label={label}
       title={label}
-      className={`inline-grid place-items-center size-10 rounded-full text-mist hover:text-parchment hover:bg-white/8 transition-colors duration-[var(--duration-fast)] ${className}`}
+      className={`inline-grid place-items-center size-10 rounded-full text-mist hover:text-ivory hover:bg-white/8 transition-colors duration-[var(--duration-fast)] ${className}`}
       {...handlers}
       {...rest}
     >

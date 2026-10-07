@@ -70,7 +70,7 @@ function AtelierHome({ onOpen, onRecipe }: { onOpen: (a: WorkbookAnalysis) => vo
               <li key={r.id} className="rounded-xl border border-line p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-medium text-parchment">{r.name}</p>
+                    <p className="font-medium text-ivory">{r.name}</p>
                     <p className="truncate text-xs text-haze">{r.workbook ?? '—'} · {r.mappings.length} correspondance(s) · {formatRelative(r.updated_at)}</p>
                   </div>
                 </div>
@@ -95,9 +95,9 @@ function AtelierHome({ onOpen, onRecipe }: { onOpen: (a: WorkbookAnalysis) => vo
           <ul className="mt-4 divide-y divide-[var(--color-line)]">
             {workbooks.data?.slice(0, 8).map((w) => (
               <li key={w.id} className="flex items-center gap-3 py-3">
-                <FileSpreadsheet size={18} className="shrink-0 text-gold-300" aria-hidden="true" />
+                <FileSpreadsheet size={18} className="shrink-0 text-champagne-300" aria-hidden="true" />
                 <button onClick={() => load(api.atelier.workbook(w.id))} className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-sm text-parchment hover:text-gold-200">{w.filename}</span>
+                  <span className="block truncate text-sm text-ivory hover:text-champagne-200">{w.filename}</span>
                   <span className="text-xs text-haze">{w.uploaded_by} · {formatRelative(w.uploaded_at)} · {w.version_count} version(s)</span>
                 </button>
               </li>
@@ -240,7 +240,7 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
     <div className="flex flex-col gap-6">
       {/* Barre du classeur */}
       <div className="glass flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] p-4" data-enter>
-        <FileSpreadsheet className="text-gold-300" size={22} aria-hidden="true" />
+        <FileSpreadsheet className="text-champagne-300" size={22} aria-hidden="true" />
         <div className="min-w-0">
           <p className="truncate font-medium">{analysis.filename}</p>
           <p className="text-xs text-haze">{formatBytes(analysis.size)} · {texts.atelier.targets(sheet.target_count)}</p>
@@ -248,7 +248,7 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
         <div role="tablist" aria-label={texts.atelier.sheet} className="ml-auto flex flex-wrap gap-1">
           {analysis.sheets.map((s) => (
             <button key={s.name} role="tab" aria-selected={s.name === sheet.name} onClick={() => setSheetName(s.name)}
-              className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${s.name === sheet.name ? 'bg-white/10 text-parchment shadow-[inset_0_0_0_1px_var(--color-line-strong)]' : 'text-mist hover:text-parchment'}`}>
+              className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${s.name === sheet.name ? 'bg-white/10 text-ivory shadow-[inset_0_0_0_1px_var(--color-line-strong)]' : 'text-mist hover:text-ivory'}`}>
               {s.name}
             </button>
           ))}
@@ -263,11 +263,11 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
           {({ id }) => <TextInput id={id} type="number" min={1} max={sheet.max_row} value={headerRow} onChange={(e) => reanalyze(Math.max(1, Number(e.target.value) || 1))} />}
         </Field>
         <Field label={texts.atelier.keyColumn}
-          badge={sheet.key && sheet.key.column === keyColumn ? <Badge tone="arcane" className="!py-0 !text-[0.65rem]">{texts.atelier.detected}</Badge> : undefined}
+          badge={sheet.key && sheet.key.column === keyColumn ? <Badge tone="sage" className="!py-0 !text-[0.65rem]">{texts.atelier.detected}</Badge> : undefined}
           hint={sheet.key && sheet.key.column === keyColumn ? texts.atelier.recognized(sheet.key.recognized, sheet.key.total) : undefined}>
           {({ id, describedBy }) => (
             <Select id={id} aria-describedby={describedBy} value={keyColumn} onChange={(e) => setKeyColumn(e.target.value)}>
-              <option value="">{texts.spell.selectPlaceholder}</option>
+              <option value="">{texts.automation.selectPlaceholder}</option>
               {sheet.columns.map((c) => <option key={c.letter} value={c.letter}>{c.letter} — {c.header || '(sans en-tête)'}</option>)}
             </Select>
           )}
@@ -291,11 +291,11 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
 
       {/* Propositions */}
       {proposals.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-violet-400/30 bg-violet-500/[0.07] p-4" data-enter>
-          <Sparkles className="text-violet-300" size={18} aria-hidden="true" />
+        <div className="flex flex-wrap items-center gap-3 rounded-[var(--radius-card)] border border-steel-400/30 bg-steel-500/[0.07] p-4" data-enter>
+          <Sparkles className="text-steel-300" size={18} aria-hidden="true" />
           <span className="font-medium">{texts.atelier.suggestions} :</span>
           {proposals.map((c) => (
-            <button key={c.letter} onClick={() => assign(c.letter, c.proposed!)} className="rounded-full border border-violet-400/40 px-3 py-1 text-sm text-violet-300 hover:bg-violet-500/15">
+            <button key={c.letter} onClick={() => assign(c.letter, c.proposed!)} className="rounded-full border border-steel-400/40 px-3 py-1 text-sm text-steel-300 hover:bg-steel-500/15">
               {c.letter} « {c.header} » → {byId[c.proposed!]?.label}
             </button>
           ))}
@@ -325,14 +325,14 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
         {preview ? (
           <div ref={statsRef} className="flex flex-wrap items-center gap-2" aria-live="polite">
             {Object.entries(preview.stats).filter(([, n]) => n > 0).map(([k, n]) => (
-              <Badge key={k} tone={k === 'fill' ? 'gold' : k === 'not_found' ? 'danger' : k === 'unchanged' ? 'arcane' : 'muted'}>
+              <Badge key={k} tone={k === 'fill' ? 'champagne' : k === 'not_found' ? 'danger' : k === 'unchanged' ? 'sage' : 'muted'}>
                 <strong className="tabular-nums">{n}</strong> {texts.atelier.stats[k]}
               </Badge>
             ))}
             <div role="group" aria-label="Avant / après" className="ml-2 inline-flex rounded-full border border-line-strong p-0.5 text-xs">
               {[false, true].map((after) => (
                 <button key={String(after)} onClick={() => setShowAfter(after)} aria-pressed={showAfter === after}
-                  className={`rounded-full px-3 py-1 ${showAfter === after ? 'bg-white/10 text-parchment' : 'text-mist'}`}>
+                  className={`rounded-full px-3 py-1 ${showAfter === after ? 'bg-white/10 text-ivory' : 'text-mist'}`}>
                   {after ? texts.atelier.after : texts.atelier.before}
                 </button>
               ))}
@@ -365,7 +365,7 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
           <ul className="mt-4 divide-y divide-[var(--color-line)]">
             {analysis.versions.map((v) => (
               <li key={v.name} className="flex flex-wrap items-center gap-3 py-3 text-sm">
-                <Badge tone="gold">v{v.version ?? '?'}</Badge>
+                <Badge tone="champagne">v{v.version ?? '?'}</Badge>
                 <span className="min-w-0 flex-1 truncate text-mist">{v.name}</span>
                 <span className="text-haze">{v.by ?? ''} · {formatRelative(v.created_at)} · {v.written ?? 0} cellule(s)</span>
                 <a href={api.atelier.versionUrl(analysis.id, v.name)} download className={buttonClass('secondary', 'sm')}><Download size={14} aria-hidden="true" />{texts.run.download}</a>

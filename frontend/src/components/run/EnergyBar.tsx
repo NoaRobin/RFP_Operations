@@ -15,7 +15,7 @@ export function EnergyBar({ value, status, label }: { value: number | null; stat
   }, [pct, indeterminate])
 
   const color =
-    status === 'error' ? 'from-danger/80 to-danger' : status === 'cancelled' ? 'from-haze to-mist' : 'from-violet-500 via-arcane-400 to-gold-300'
+    status === 'error' ? 'from-danger/80 to-danger' : status === 'cancelled' ? 'from-haze to-mist' : 'from-steel-500 via-sage-400 to-champagne-300'
 
   return (
     <div>
@@ -36,7 +36,7 @@ export function EnergyBar({ value, status, label }: { value: number | null; stat
             <span aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(100deg,transparent_20%,rgba(255,255,255,0.55)_50%,transparent_80%)] bg-[length:200%_100%] animate-shimmer" />
           )}
           {status === 'running' && !indeterminate && (
-            <span aria-hidden="true" className="absolute right-0 top-1/2 size-4 -translate-y-1/2 translate-x-1/2 rounded-full bg-white shadow-[0_0_18px_6px_rgba(94,234,212,0.8)]" />
+            <span aria-hidden="true" className="absolute right-0 top-1/2 size-4 -translate-y-1/2 translate-x-1/2 rounded-full bg-white shadow-[0_0_18px_6px_rgba(134,191,174,0.8)]" />
           )}
         </div>
       </div>

@@ -1,66 +1,66 @@
 /*
- * Tokens de design MERLIN — « Le laboratoire de l'enchanteur ».
- * Couleurs, typographies, rayons, ombres, courbes et durées (miroir CSS de src/motion/tokens.ts).
- * Toute couleur de l'interface vient d'ici.
+ * Tokens de design MERIDIAN — « corporate premium ».
+ * Encre profonde, ivoire, champagne ; acier et sauge pour l'information. Toute couleur de l'interface vient d'ici.
  */
 @theme {
-  /* --- Nuit */
-  --color-abyss: #04030a;
-  --color-night: #07060f;
-  --color-ink: #0d0b1c;
-  --color-ink-2: #141130;
-  --color-ink-3: #1d1940;
-  --color-line: rgb(196 181 253 / 0.12);
-  --color-line-strong: rgb(196 181 253 / 0.24);
+  /* --- Encre */
+  --color-abyss: #05070b;
+  --color-night: #090c12;
+  --color-ink: #0f141c;
+  --color-ink-2: #151b25;
+  --color-ink-3: #1c2431;
+  --color-line: rgb(200 210 225 / 0.10);
+  --color-line-strong: rgb(200 210 225 / 0.20);
 
-  /* --- Texte (contrastes vérifiés sur --color-night : 16.8 / 9.1 / 5.9) */
-  --color-parchment: #f4efff;
-  --color-mist: #c4bce0;
-  --color-haze: #938bb5;
+  /* --- Texte (contrastes sur --color-night : 17.1 / 10.2 / 6.3) */
+  --color-ivory: #f3efe7;
+  --color-mist: #bfc3cc;
+  --color-haze: #8e94a0;
 
-  /* --- Magie */
-  --color-violet-300: #c4b5fd;
-  --color-violet-400: #a78bfa;
-  --color-violet-500: #8b5cf6;
-  --color-violet-700: #5b21b6;
-  --color-gold-200: #f8e8bd;
-  --color-gold-300: #f5dfa5;
-  --color-gold-400: #e8c77a;
-  --color-gold-600: #b8913f;
-  --color-arcane-300: #99f6e4;
-  --color-arcane-400: #5eead4;
-  --color-arcane-500: #22d3ee;
+  /* --- Acier (information, navigation) */
+  --color-steel-300: #b7c6da;
+  --color-steel-400: #8fa6c3;
+  --color-steel-500: #6684a8;
+  --color-steel-700: #34506f;
+  /* --- Champagne (accent, actions principales) */
+  --color-champagne-200: #efe2c4;
+  --color-champagne-300: #e3cfa1;
+  --color-champagne-400: #cdb07a;
+  --color-champagne-600: #9c7e48;
+  /* --- Sauge (en cours, focus, données vivantes) */
+  --color-sage-300: #b5d6cb;
+  --color-sage-400: #86bfae;
+  --color-sage-500: #5ba593;
 
   /* --- États */
-  --color-success: #6ee7b7;
-  --color-danger: #fb7185;
-  --color-warning: #fbbf24;
-  --color-info: #7dd3fc;
+  --color-success: #7bd3a8;
+  --color-danger: #f08a8a;
+  --color-warning: #e9c46a;
+  --color-info: #8db8e0;
 
   /* --- Typographies */
-  --font-display: "Fraunces Variable", "Fraunces", Georgia, "Times New Roman", serif;
-  --font-sans: "Manrope Variable", "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter Tight Variable", "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 
   /* --- Rayons & ombres */
-  --radius-card: 1.25rem;
+  --radius-card: 1.1rem;
   --radius-pill: 999px;
-  --shadow-glow-violet: 0 0 0 1px rgb(167 139 250 / 0.25), 0 10px 40px -10px rgb(139 92 246 / 0.45);
-  --shadow-glow-gold: 0 0 0 1px rgb(232 199 122 / 0.35), 0 12px 40px -12px rgb(232 199 122 / 0.5);
-  --shadow-deep: 0 30px 60px -30px rgb(0 0 0 / 0.8);
+  --shadow-glow-steel: 0 0 0 1px rgb(143 166 195 / 0.22), 0 14px 40px -14px rgb(102 132 168 / 0.45);
+  --shadow-glow-champagne: 0 0 0 1px rgb(205 176 122 / 0.35), 0 14px 40px -14px rgb(205 176 122 / 0.45);
+  --shadow-deep: 0 30px 60px -30px rgb(0 0 0 / 0.85);
 
   /* --- Mouvement (miroir de src/motion/tokens.ts) */
-  --ease-out-magic: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out-magic: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-out-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-premium: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-instant: 120ms;
   --duration-fast: 250ms;
   --duration-base: 450ms;
   --duration-slow: 800ms;
 
-  /* --- Animations Tailwind */
   --animate-shimmer: shimmer 2.4s linear infinite;
-  --animate-pulse-glow: pulse-glow 2.2s var(--ease-in-out-magic) infinite;
+  --animate-pulse-glow: pulse-glow 2.2s var(--ease-in-out-premium) infinite;
   --animate-spin-slow: spin 18s linear infinite;
 }
 
@@ -70,6 +70,6 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(94 234 212 / 0.0), inset 0 0 0 1px rgb(94 234 212 / 0.35); }
-  50% { box-shadow: 0 0 18px 0 rgb(94 234 212 / 0.25), inset 0 0 0 1px rgb(94 234 212 / 0.7); }
+  0%, 100% { box-shadow: 0 0 0 0 rgb(134 191 174 / 0), inset 0 0 0 1px rgb(134 191 174 / 0.35); }
+  50% { box-shadow: 0 0 18px 0 rgb(134 191 174 / 0.22), inset 0 0 0 1px rgb(134 191 174 / 0.7); }
 }

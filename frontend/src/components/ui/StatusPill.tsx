@@ -3,7 +3,7 @@ import { texts } from '../../content/texts'
 
 const STYLES: Record<RunStatus, string> = {
   queued: 'text-mist border-line-strong bg-white/5',
-  running: 'text-arcane-300 border-arcane-400/50 bg-arcane-400/10',
+  running: 'text-sage-300 border-sage-400/50 bg-sage-400/10',
   success: 'text-success border-success/40 bg-success/10',
   error: 'text-danger border-danger/40 bg-danger/10',
   cancelled: 'text-haze border-line-strong bg-white/5',
@@ -21,11 +21,11 @@ export function StatusPill({ status, className = '' }: { status: RunStatus; clas
   )
 }
 
-export function Badge({ children, tone = 'violet', className = '' }: { children: React.ReactNode; tone?: 'violet' | 'gold' | 'arcane' | 'muted' | 'danger'; className?: string }) {
+export function Badge({ children, tone = 'steel', className = '' }: { children: React.ReactNode; tone?: 'steel' | 'champagne' | 'sage' | 'muted' | 'danger'; className?: string }) {
   const tones = {
-    violet: 'text-violet-300 border-violet-400/30 bg-violet-500/10',
-    gold: 'text-gold-300 border-gold-400/35 bg-gold-400/10',
-    arcane: 'text-arcane-300 border-arcane-400/35 bg-arcane-400/10',
+    steel: 'text-steel-300 border-steel-400/30 bg-steel-500/10',
+    champagne: 'text-champagne-300 border-champagne-400/35 bg-champagne-400/10',
+    sage: 'text-sage-300 border-sage-400/35 bg-sage-400/10',
     muted: 'text-mist border-line-strong bg-white/5',
     danger: 'text-danger border-danger/40 bg-danger/10',
   }

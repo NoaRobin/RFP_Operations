@@ -3,10 +3,10 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode 
 import { canUse3D } from '../../lib/perf'
 import { useLowPowerPref } from '../../lib/storage'
 import { useReducedMotion } from '../../motion/useReducedMotion'
-import OrbFallback from './OrbFallback'
+import ConstellationFallback from './ConstellationFallback'
 import type { Mood } from './moods'
 
-const OrbScene = lazy(() => import('./OrbScene'))
+const ConstellationScene = lazy(() => import('./ConstellationScene'))
 
 class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode; onError: () => void }, { failed: boolean }> {
   state = { failed: false }
@@ -21,7 +21,7 @@ class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   }
 }
 
-export function MagicStage({ mood, onPoke, className = '' }: { mood: Mood; onPoke?: () => void; className?: string }) {
+export function Stage({ mood, onPoke, className = '' }: { mood: Mood; onPoke?: () => void; className?: string }) {
   const reduced = useReducedMotion()
   const lowPower = useLowPowerPref()
   const [degraded, setDegraded] = useState(false)
@@ -29,7 +29,7 @@ export function MagicStage({ mood, onPoke, className = '' }: { mood: Mood; onPok
   const previous = useRef<Mood>(mood)
   const use3D = !degraded && !lowPower && canUse3D()
 
-  // Explosion d'étincelles à l'entrée en succès (et petit feu d'artifice au clic).
+  // Onde de succès (et petite onde au clic).
   useEffect(() => {
     if (mood === 'success' && previous.current !== 'success') setBurstKey((k) => k + 1)
     previous.current = mood
@@ -42,13 +42,13 @@ export function MagicStage({ mood, onPoke, className = '' }: { mood: Mood; onPok
       }
     : undefined
 
-  const fallback = <OrbFallback mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} />
+  const fallback = <ConstellationFallback mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} />
   return (
     <div className={className || 'relative'}>
       {use3D ? (
         <SceneBoundary fallback={fallback} onError={() => setDegraded(true)}>
           <Suspense fallback={fallback}>
-            <OrbScene mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} onDegrade={() => setDegraded(true)} />
+            <ConstellationScene mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} onDegrade={() => setDegraded(true)} />
           </Suspense>
         </SceneBoundary>
       ) : (

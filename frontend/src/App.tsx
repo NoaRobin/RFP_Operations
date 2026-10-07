@@ -11,10 +11,10 @@ import { Starfield } from './components/fx/Starfield'
 import { Loading } from './components/ui/States'
 import { ToastProvider } from './components/ui/Toast'
 import { shouldSkipIntro } from './lib/storage'
-import Grimoire from './pages/Grimoire'
+import Library from './pages/Library'
 
 const Intro = lazy(() => import('./pages/Intro'))
-const Spell = lazy(() => import('./pages/Spell'))
+const AutomationPage = lazy(() => import('./pages/AutomationPage'))
 const RunPage = lazy(() => import('./pages/Run'))
 const Atelier = lazy(() => import('./pages/Atelier'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -24,7 +24,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 
 function introSeenThisSession(): boolean {
   try {
-    return sessionStorage.getItem('merlin.intro.seen') === '1'
+    return sessionStorage.getItem('meridian.intro.seen') === '1'
   } catch {
     return true
   }
@@ -41,8 +41,8 @@ function Shell() {
         {(display) => (
           <Suspense fallback={<Loading />}>
             <Routes location={display}>
-              <Route path="/" element={<Grimoire />} />
-              <Route path="/sorts/:id" element={<Spell />} />
+              <Route path="/" element={<Library />} />
+              <Route path="/automatisations/:id" element={<AutomationPage />} />
               <Route path="/executions/:runId" element={<RunPage />} />
               <Route path="/atelier" element={<Atelier />} />
               <Route path="/tableau-de-bord" element={<Dashboard />} />

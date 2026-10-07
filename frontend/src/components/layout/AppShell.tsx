@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { BookOpen, FileSpreadsheet, History, LayoutDashboard, Lightbulb, Menu, Sparkles, UserRound, X } from 'lucide-react'
+import { BookOpen, FileSpreadsheet, History, LayoutDashboard, Lightbulb, Menu, Search, Sparkles, UserRound, X } from 'lucide-react'
 import { texts } from '../../content/texts'
 import { useUserName } from '../../lib/storage'
 import { gsap } from '../../motion/gsap'
 import { d, ease, stagger } from '../../motion/tokens'
 import { IconButton } from '../ui/Button'
-import { useApp } from './AppContext'
+import { MeridianMark } from '../ui/MeridianMark'
+import { isMac, useApp } from './AppContext'
 
 const NAV = [
-  { to: '/', label: texts.nav.grimoire, icon: BookOpen, end: true },
+  { to: '/', label: texts.nav.library, icon: BookOpen, end: true },
   { to: '/atelier', label: texts.nav.atelier, icon: FileSpreadsheet },
   { to: '/tableau-de-bord', label: texts.nav.dashboard, icon: LayoutDashboard },
   { to: '/historique', label: texts.nav.history, icon: History },
@@ -17,18 +18,28 @@ const NAV = [
 
 function Logo() {
   return (
-    <NavLink to="/" className="group flex items-center gap-3" aria-label="MERLIN — retour au grimoire">
-      <svg viewBox="0 0 32 32" className="size-8 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:rotate-[20deg]" aria-hidden="true">
-        <defs>
-          <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#f5dfa5" /><stop offset=".55" stopColor="#a78bfa" /><stop offset="1" stopColor="#5eead4" />
-          </linearGradient>
-        </defs>
-        <path d="M16 2 26 15 16 30 6 15Z" fill="none" stroke="url(#logo-g)" strokeWidth="2" strokeLinejoin="round" />
-        <path d="M6 15h20M16 2v28" stroke="url(#logo-g)" strokeWidth="1" opacity=".6" />
-      </svg>
-      <span className="font-display text-xl tracking-[0.18em] text-parchment">MERLIN</span>
+    <NavLink to="/" className="group flex items-center gap-3" aria-label={`${texts.app.name} — ${texts.nav.library}`}>
+      <MeridianMark className="size-8 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:rotate-[24deg]" />
+      <span className="flex flex-col leading-none">
+        <span className="font-display text-[1.35rem] tracking-[0.16em] text-ivory">{texts.app.name}</span>
+        <span className="mt-0.5 hidden font-mono text-[0.55rem] uppercase tracking-[0.32em] text-haze xl:block">{texts.app.suite}</span>
+      </span>
     </NavLink>
+  )
+}
+
+function PaletteButton() {
+  const { openPalette } = useApp()
+  return (
+    <button
+      onClick={openPalette}
+      className="group inline-flex items-center gap-2 rounded-full border border-line-strong bg-abyss/40 py-1.5 pl-3 pr-1.5 text-sm text-mist transition-colors hover:border-champagne-400/50 hover:text-ivory"
+      aria-keyshortcuts="Meta+K Control+K"
+    >
+      <Search size={15} aria-hidden="true" />
+      <span className="hidden sm:inline">{texts.nav.search}</span>
+      <kbd className="rounded-md border border-line px-1.5 py-0.5 font-mono text-[0.65rem] text-haze group-hover:text-champagne-300">{isMac() ? '⌘K' : 'Ctrl K'}</kbd>
+    </button>
   )
 }
 
@@ -40,9 +51,9 @@ function DataModeBadge() {
     <span
       title={mock ? texts.app.demoBadgeHint : undefined}
       className={`hidden md:inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${
-        mock ? 'border-gold-400/40 text-gold-300 bg-gold-400/10' : 'border-success/40 text-success bg-success/10'}`}
+        mock ? 'border-champagne-400/40 text-champagne-300 bg-champagne-400/10' : 'border-success/40 text-success bg-success/10'}`}
     >
-      <span className={`size-1.5 rounded-full ${mock ? 'bg-gold-300' : 'bg-success'} animate-pulse`} aria-hidden="true" />
+      <span className={`size-1.5 rounded-full ${mock ? 'bg-champagne-300' : 'bg-success'} animate-pulse`} aria-hidden="true" />
       {mock ? texts.app.demoBadge : texts.app.fabricBadge}
     </span>
   )
@@ -50,7 +61,7 @@ function DataModeBadge() {
 
 function navClass({ isActive }: { isActive: boolean }) {
   return `relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-[var(--duration-fast)] ${
-    isActive ? 'text-parchment bg-white/8 shadow-[inset_0_0_0_1px_var(--color-line-strong)]' : 'text-mist hover:text-parchment hover:bg-white/5'}`
+    isActive ? 'text-ivory bg-white/8 shadow-[inset_0_0_0_1px_var(--color-line-strong)]' : 'text-mist hover:text-ivory hover:bg-white/5'}`
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -68,7 +79,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative min-h-dvh flex flex-col">
-      <a href="#contenu" className="sr-only-focusable fixed left-4 top-4 z-[100] rounded-full bg-gold-300 px-4 py-2 font-semibold text-abyss">
+      <a href="#contenu" className="sr-only-focusable fixed left-4 top-4 z-[100] rounded-full bg-champagne-300 px-4 py-2 font-semibold text-abyss">
         {texts.app.skipToContent}
       </a>
       <header className="sticky top-0 z-50">
@@ -84,13 +95,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <DataModeBadge />
-            <button onClick={openSuggest} className="hidden sm:inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium text-gold-300 hover:bg-gold-400/10 transition-colors">
-              <Lightbulb size={16} aria-hidden="true" />
-              {texts.nav.suggest}
-            </button>
+            <PaletteButton />
+            <IconButton label={texts.nav.suggest} onClick={openSuggest} className="hidden sm:inline-grid !text-champagne-300">
+              <Lightbulb size={18} />
+            </IconButton>
             <button
               onClick={openUser}
-              className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3 py-1.5 text-sm text-mist hover:text-parchment hover:border-violet-400/50 transition-colors"
+              className="inline-flex items-center gap-2 rounded-full border border-line-strong px-3 py-1.5 text-sm text-mist hover:text-ivory hover:border-steel-400/50 transition-colors"
               title={name ? texts.user.rename : texts.user.introduce}
             >
               <UserRound size={16} aria-hidden="true" />
@@ -110,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   {label}
                 </NavLink>
               ))}
-              <button onClick={openSuggest} className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-gold-300 hover:bg-gold-400/10">
+              <button onClick={openSuggest} className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-champagne-300 hover:bg-champagne-400/10">
                 <Lightbulb size={16} aria-hidden="true" />
                 {texts.nav.suggest}
               </button>
@@ -123,11 +134,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
       <footer className="mx-auto w-[min(100%-2rem,82rem)] border-t hairline py-8 mt-16 flex flex-wrap items-center justify-between gap-4 text-sm text-haze">
         <p>
-          <span className="font-display text-mist">MERLIN</span> · {texts.app.tagline}
+          <span className="font-display text-mist">{texts.app.name}</span> · {texts.app.tagline}
         </p>
         <nav aria-label="Liens secondaires" className="flex gap-5">
-          <NavLink to="/a-propos" className="hover:text-parchment">{texts.nav.about}</NavLink>
-          <button onClick={openSuggest} className="hover:text-parchment">{texts.nav.suggest}</button>
+          <NavLink to="/a-propos" className="hover:text-ivory">{texts.nav.about}</NavLink>
+          <button onClick={openSuggest} className="hover:text-ivory">{texts.nav.suggest}</button>
         </nav>
       </footer>
     </div>

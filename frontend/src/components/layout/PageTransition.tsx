@@ -62,7 +62,7 @@ export function PageTransition({ children }: { children: (location: Location) =>
         ref={veil}
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-[70] origin-bottom scale-y-0"
-        style={{ background: 'linear-gradient(180deg, rgba(91,33,182,0.18), rgba(7,6,15,0.92) 40%, rgba(7,6,15,0.98))' }}
+        style={{ background: 'linear-gradient(180deg, rgba(52,80,111,0.18), rgba(9,12,18,0.92) 40%, rgba(9,12,18,0.98))' }}
       />
     </>
   )

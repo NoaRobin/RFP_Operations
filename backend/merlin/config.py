@@ -94,7 +94,7 @@ def get_settings() -> Settings:
         catalog_csv=_path("MERLIN_CATALOG_CSV", REPO_ROOT / "catalog" / "fabric_schema.csv"),
         frontend_dist=_path("MERLIN_FRONTEND_DIST", REPO_ROOT / "frontend" / "dist"),
         timezone=_env("MERLIN_TIMEZONE", "Europe/Paris"),
-        default_user=_env("MERLIN_DEFAULT_USER", "Apprenti anonyme"),
+        default_user=_env("MERLIN_DEFAULT_USER", "Utilisateur anonyme"),
         job_timeout=int(_env("MERLIN_JOB_TIMEOUT", "1800")),
         max_parallel_jobs=int(_env("MERLIN_MAX_PARALLEL_JOBS", "4")),
         seed_demo_history=_bool("MERLIN_SEED_DEMO_HISTORY", True),

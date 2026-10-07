@@ -18,7 +18,7 @@ def current_user(x_merlin_user: str | None = Header(default=None)) -> str:
 
 
 def not_found(message: str) -> HTTPException:
-    return HTTPException(status_code=404, detail={"message": message, "hint": "Vérifiez le lien ou revenez au grimoire."})
+    return HTTPException(status_code=404, detail={"message": message, "hint": "Vérifiez le lien ou revenez à la bibliothèque."})
 
 
 def bad_request(message: str, hint: str = "") -> HTTPException:

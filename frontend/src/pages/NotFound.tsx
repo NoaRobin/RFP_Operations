@@ -1,4 +1,4 @@
-/** 404 : un apprenti sorcier perdu, son chapeau et quelques étoiles. Le bouton de retour reste évident. */
+/** 404 : un nœud de données s'est détaché de sa constellation. Le bouton de retour reste évident. */
 import { useRef } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { ButtonLink } from '../components/ui/Button'
@@ -6,39 +6,38 @@ import { texts } from '../content/texts'
 import { gsap, useGSAP } from '../motion/gsap'
 import { d, ease, prefersReducedMotion } from '../motion/tokens'
 
+const NODES = [[60, 70], [95, 52], [130, 66], [118, 104], [80, 110], [100, 82]]
+const LINKS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0], [5, 0], [5, 2], [5, 4]]
+
 export default function NotFound() {
   const root = useRef<HTMLDivElement>(null)
   useGSAP(
     () => {
       gsap.from('[data-enter]', { opacity: 0, y: 24, stagger: 0.1, duration: d('slow'), ease: ease.out })
       if (prefersReducedMotion()) return
-      gsap.to('[data-apprentice]', { rotate: 6, y: -6, duration: 1.6, yoyo: true, repeat: -1, ease: ease.breathe, transformOrigin: '50% 100%' })
-      gsap.to('[data-question]', { y: -10, opacity: 0.4, duration: 1.2, yoyo: true, repeat: -1, stagger: 0.3, ease: ease.breathe })
-      gsap.to('[data-wand-spark]', { scale: 1.8, opacity: 0, duration: 0.9, repeat: -1, ease: 'power2.out', transformOrigin: 'center' })
+      gsap.to('[data-lost]', { x: 26, y: -18, duration: 2.4, yoyo: true, repeat: -1, ease: ease.breathe })
+      gsap.to('[data-tether]', { strokeDashoffset: -20, duration: 1.2, repeat: -1, ease: 'none' })
+      gsap.to('[data-ring]', { rotate: 360, transformOrigin: '100px 85px', duration: 40, repeat: -1, ease: 'none' })
     },
     { scope: root },
   )
 
   return (
     <div ref={root} className="mx-auto flex min-h-[70vh] w-[min(100%-2rem,48rem)] flex-col items-center justify-center pt-12 text-center">
-      <svg data-enter viewBox="0 0 200 200" className="w-56" role="img" aria-label="Un apprenti sorcier perdu, l'air perplexe">
-        <ellipse cx="100" cy="182" rx="50" ry="6" fill="rgba(139,92,246,0.25)" />
-        <g data-apprentice>
-          <path d="M100 18 L132 112 L68 112 Z" fill="#2a1b5e" stroke="#a78bfa" strokeWidth="2" />
-          <path d="M104 30 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#f5dfa5" />
-          <circle cx="86" cy="70" r="2" fill="#f5dfa5" /><circle cx="112" cy="88" r="2.5" fill="#5eead4" />
-          <ellipse cx="100" cy="112" rx="46" ry="9" fill="#3b2a7a" stroke="#a78bfa" strokeWidth="2" />
-          <path d="M70 120 Q100 190 130 120 Z" fill="#1d1940" stroke="#a78bfa" strokeWidth="2" />
-          <circle cx="90" cy="132" r="3" fill="#f4efff" /><circle cx="110" cy="132" r="3" fill="#f4efff" />
-          <path d="M92 146 q8 -5 16 0" stroke="#f4efff" strokeWidth="2" fill="none" strokeLinecap="round" />
-          <line x1="132" y1="140" x2="160" y2="118" stroke="#e8c77a" strokeWidth="3" strokeLinecap="round" />
-          <circle data-wand-spark cx="160" cy="118" r="4" fill="#f5dfa5" />
+      <svg data-enter viewBox="0 0 220 170" className="w-64" role="img" aria-label="Une constellation dont un point s'est égaré">
+        <ellipse data-ring cx="100" cy="85" rx="70" ry="22" fill="none" stroke="#cdb07a" strokeOpacity="0.35" strokeWidth="0.8" />
+        {LINKS.map(([a, b]) => (
+          <line key={`${a}-${b}`} x1={NODES[a][0]} y1={NODES[a][1]} x2={NODES[b][0]} y2={NODES[b][1]} stroke="#8fa6c3" strokeOpacity="0.45" strokeWidth="0.8" />
+        ))}
+        {NODES.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i === 5 ? 4 : 3} fill={i === 5 ? '#e3cfa1' : '#b7c6da'} />)}
+        <g data-lost>
+          <line data-tether x1="130" y1="66" x2="176" y2="40" stroke="#e3cfa1" strokeOpacity="0.5" strokeDasharray="3 4" strokeWidth="0.8" />
+          <circle cx="176" cy="40" r="5" fill="none" stroke="#e3cfa1" strokeWidth="1.2" />
+          <text x="186" y="34" fill="#e3cfa1" fontSize="14" fontFamily="Instrument Serif, Georgia, serif">?</text>
         </g>
-        <text data-question x="40" y="60" fill="#c4b5fd" fontSize="26" fontFamily="Georgia, serif">?</text>
-        <text data-question x="150" y="50" fill="#5eead4" fontSize="20" fontFamily="Georgia, serif">?</text>
       </svg>
-      <p data-enter className="mt-8 font-mono text-xs uppercase tracking-[0.25em] text-gold-300">{texts.errors.notFoundCode}</p>
-      <h1 data-enter className="mt-4 text-[clamp(2.25rem,6vw,4rem)] font-light">{texts.errors.notFoundTitle}</h1>
+      <p data-enter className="mt-8 font-mono text-xs uppercase tracking-[0.25em] text-champagne-300">{texts.errors.notFoundCode}</p>
+      <h1 data-enter className="mt-4 text-[clamp(2.5rem,6vw,4.25rem)] leading-none">{texts.errors.notFoundTitle}</h1>
       <p data-enter className="mt-4 max-w-lg text-lg text-mist">{texts.errors.notFoundBody}</p>
       <div data-enter className="mt-8">
         <ButtonLink to="/" variant="primary" size="lg" icon={<ArrowLeft size={18} />}>{texts.errors.notFoundCta}</ButtonLink>

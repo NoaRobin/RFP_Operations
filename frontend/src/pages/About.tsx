@@ -47,19 +47,19 @@ export default function About() {
     <div ref={root} className="mx-auto w-[min(100%-2rem,64rem)] pt-20">
       <header className="min-h-[50vh]">
         <p className="eyebrow">{texts.about.eyebrow}</p>
-        <h1 data-about-title className="mt-6 text-[clamp(3rem,9vw,7rem)] font-light italic leading-[0.9] text-gradient-gold">{texts.about.title}</h1>
+        <h1 data-about-title className="mt-6 text-[clamp(3rem,9vw,7rem)] font-light italic leading-[0.9] text-gradient">{texts.about.title}</h1>
       </header>
 
       <div data-chapters className="relative">
         <span aria-hidden="true" className="absolute left-[1.45rem] top-0 h-full w-px bg-line-strong" />
-        <span aria-hidden="true" data-thread className="absolute left-[1.45rem] top-0 h-full w-px origin-top scale-y-0 bg-gradient-to-b from-gold-300 via-violet-400 to-arcane-400 shadow-[0_0_12px_var(--color-gold-400)]" />
+        <span aria-hidden="true" data-thread className="absolute left-[1.45rem] top-0 h-full w-px origin-top scale-y-0 bg-gradient-to-b from-champagne-300 via-steel-400 to-sage-400 shadow-[0_0_12px_var(--color-champagne-400)]" />
         {texts.about.chapters.map((chapter, i) => (
           <section key={chapter.title} data-chapter className="relative grid min-h-[70vh] grid-cols-[3rem_1fr] gap-8 py-16">
-            <span data-number className="relative z-10 grid size-12 place-items-center rounded-full border border-gold-400/50 bg-night font-display text-xl text-gold-300 shadow-[var(--shadow-glow-gold)]">
+            <span data-number className="relative z-10 grid size-12 place-items-center rounded-full border border-champagne-400/50 bg-night font-display text-xl text-champagne-300 shadow-[var(--shadow-glow-champagne)]">
               {i + 1}
             </span>
             <div className="relative">
-              <span data-glyph aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 font-display text-[8rem] leading-none text-violet-500/15 sm:text-[12rem]">{glyphs[i % glyphs.length]}</span>
+              <span data-glyph aria-hidden="true" className="pointer-events-none absolute -right-2 -top-6 font-display text-[8rem] leading-none text-steel-500/15 sm:text-[12rem]">{glyphs[i % glyphs.length]}</span>
               <h2 data-line className="text-[clamp(2rem,5vw,3.5rem)] font-light leading-tight">{chapter.title}</h2>
               <p data-line className="mt-6 max-w-2xl text-xl leading-relaxed text-mist">{chapter.body}</p>
             </div>

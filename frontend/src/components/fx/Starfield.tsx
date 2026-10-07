@@ -42,7 +42,7 @@ export function Starfield() {
     }
 
     const color = (hue: number, alpha: number) =>
-      hue < 0.6 ? `rgba(244,239,255,${alpha})` : hue < 0.82 ? `rgba(196,181,253,${alpha})` : hue < 0.94 ? `rgba(245,223,165,${alpha})` : `rgba(94,234,212,${alpha})`
+      hue < 0.6 ? `rgba(243,239,231,${alpha})` : hue < 0.82 ? `rgba(183,198,218,${alpha})` : hue < 0.94 ? `rgba(227,207,161,${alpha})` : `rgba(134,191,174,${alpha})`
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, width, height)
@@ -67,8 +67,8 @@ export function Starfield() {
         for (let i = shooting.length - 1; i >= 0; i--) {
           const s = shooting[i]
           const grad = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 12, s.y - s.vy * 12)
-          grad.addColorStop(0, `rgba(245,223,165,${s.life})`)
-          grad.addColorStop(1, 'rgba(245,223,165,0)')
+          grad.addColorStop(0, `rgba(227,207,161,${s.life})`)
+          grad.addColorStop(1, 'rgba(227,207,161,0)')
           ctx.strokeStyle = grad
           ctx.lineWidth = 1.4
           ctx.beginPath()
@@ -103,14 +103,14 @@ export function Starfield() {
     window.addEventListener('resize', resize)
     window.addEventListener('pointermove', onMove, { passive: true })
     document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('merlin:shower', onShower)
+    window.addEventListener('meridian:shower', onShower)
     if (!reduced) raf = requestAnimationFrame(loop)
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onMove)
       document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('merlin:shower', onShower)
+      window.removeEventListener('meridian:shower', onShower)
     }
   }, [reduced])
 

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, SkipForward } from 'lucide-react'
-import { MagicStage } from '../components/three/MagicStage'
+import { Stage } from '../components/three/Stage'
 import type { Mood } from '../components/three/moods'
 import { Button } from '../components/ui/Button'
 import { useToast } from '../components/ui/Toast'
@@ -12,7 +12,7 @@ import { d, ease, prefersReducedMotion, stagger } from '../motion/tokens'
 
 function markSeen() {
   try {
-    sessionStorage.setItem('merlin.intro.seen', '1')
+    sessionStorage.setItem('meridian.intro.seen', '1')
   } catch {
     /* rien */
   }
@@ -85,23 +85,23 @@ export default function Intro() {
     <div ref={root} className="relative grid min-h-dvh place-items-center overflow-hidden px-6">
       <button
         onClick={skip}
-        className="absolute right-5 top-5 z-20 inline-flex items-center gap-2 rounded-full border border-line-strong bg-ink/60 px-4 py-2 text-sm text-mist hover:text-parchment transition-colors"
+        className="absolute right-5 top-5 z-20 inline-flex items-center gap-2 rounded-full border border-line-strong bg-ink/60 px-4 py-2 text-sm text-mist hover:text-ivory transition-colors"
       >
         <SkipForward size={16} aria-hidden="true" />
         {texts.intro.skip}
       </button>
 
       <div data-stage className="absolute inset-0">
-        <MagicStage mood={mood} onPoke={poke} className="relative size-full" />
+        <Stage mood={mood} onPoke={poke} className="relative size-full" />
       </div>
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(7,6,15,0.85)_75%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(9,12,18,0.6)_0%,rgba(9,12,18,0.15)_40%,rgba(9,12,18,0.85)_80%)]"
       />
 
       <div data-copy className="relative z-10 flex flex-col items-center text-center pointer-events-none">
         <p data-eyebrow className="eyebrow">{texts.intro.eyebrow}</p>
-        <h1 data-title className="mt-6 font-display text-[clamp(4.5rem,16vw,12rem)] font-light leading-[0.85] tracking-[0.08em] text-gradient-gold [perspective:600px]">
+        <h1 data-title className="mt-6 font-display text-[clamp(3.25rem,13vw,10.5rem)] leading-[0.9] tracking-[0.06em] text-gradient [perspective:600px]">
           {texts.app.name}
         </h1>
         <p data-subtitle className="mt-6 max-w-xl font-display text-[clamp(1.25rem,2.6vw,1.75rem)] italic text-mist">
@@ -116,7 +116,7 @@ export default function Intro() {
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="size-4 accent-[var(--color-gold-400)]"
+              className="size-4 accent-[var(--color-champagne-400)]"
             />
             {texts.intro.remember}
           </label>

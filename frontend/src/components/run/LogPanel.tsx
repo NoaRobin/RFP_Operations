@@ -41,17 +41,17 @@ export function LogPanel({ logs, live }: { logs: LogLine[]; live: boolean }) {
   return (
     <section aria-labelledby="logs-title" className="glass flex flex-col rounded-[var(--radius-card)]">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b hairline px-5 py-3">
-        <h2 id="logs-title" className="flex items-center gap-2 font-mono text-sm uppercase tracking-[0.2em] text-gold-300">
-          {live && <span className="size-2 animate-pulse rounded-full bg-arcane-400" aria-hidden="true" />}
+        <h2 id="logs-title" className="flex items-center gap-2 font-mono text-sm uppercase tracking-[0.2em] text-champagne-300">
+          {live && <span className="size-2 animate-pulse rounded-full bg-sage-400" aria-hidden="true" />}
           {texts.run.logs}
         </h2>
         <div className="flex items-center gap-2 text-xs">
           {!follow && (
-            <button onClick={() => setFollow(true)} className="rounded-full border border-line-strong px-3 py-1 text-mist hover:text-parchment">
+            <button onClick={() => setFollow(true)} className="rounded-full border border-line-strong px-3 py-1 text-mist hover:text-ivory">
               {texts.run.followLogs}
             </button>
           )}
-          <button onClick={() => setDebug((v) => !v)} aria-pressed={debug} className="rounded-full border border-line-strong px-3 py-1 text-mist hover:text-parchment">
+          <button onClick={() => setDebug((v) => !v)} aria-pressed={debug} className="rounded-full border border-line-strong px-3 py-1 text-mist hover:text-ivory">
             {debug ? texts.run.hideDebug : texts.run.showDebug}
           </button>
         </div>

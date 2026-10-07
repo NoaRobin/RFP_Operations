@@ -76,8 +76,8 @@ class JobManager:
         self._lock = threading.Lock()
         # Un redémarrage interrompt les jobs en cours : on le dit honnêtement.
         for run in db.list_runs(limit=500, status="running") + db.list_runs(limit=500, status="queued"):
-            db.update_run(run["id"], status="error", error="Merlin a redémarré pendant l'exécution.",
-                          error_hint="Relancez le sort.", finished_at=now_iso())
+            db.update_run(run["id"], status="error", error="Le serveur a redémarré pendant l'exécution.",
+                          error_hint="Relancez l'automatisation.", finished_at=now_iso())
 
     # ------------------------------------------------------------- soumission
     def submit_automation(self, plugin: Plugin, params: dict[str, Any], user: str, trigger: str = "manual") -> dict[str, Any]:
@@ -181,14 +181,14 @@ class JobManager:
                         self._handle(job, {
                             "type": "result", "status": "error",
                             "error": f"Délai dépassé ({self.settings.job_timeout // 60} min).",
-                            "hint": "Le sort a été interrompu. Réduisez le périmètre ou augmentez MERLIN_JOB_TIMEOUT.",
+                            "hint": "L'exécution a été interrompue. Réduisez le périmètre ou augmentez MERLIN_JOB_TIMEOUT.",
                             "ts": now_iso(),
                         })
                         finished = True
                         break
             if not finished and not job.cancelled:
                 self._handle(job, {
-                    "type": "result", "status": "error", "error": "Le processus du sort s'est arrêté brutalement.",
+                    "type": "result", "status": "error", "error": "Le processus d'exécution s'est arrêté brutalement.",
                     "hint": "Relancez ; si cela se reproduit, consultez le journal du serveur.", "ts": now_iso(),
                 })
         except Exception:  # pragma: no cover — filet de sécurité
@@ -216,7 +216,7 @@ class JobManager:
         return True
 
     def _finish_cancel(self, run_id: str) -> None:
-        event = {"type": "result", "status": "cancelled", "error": "Sort annulé à la demande.", "ts": now_iso()}
+        event = {"type": "result", "status": "cancelled", "error": "Exécution annulée à la demande.", "ts": now_iso()}
         self.db.add_event(run_id, event)
         self.db.update_run(run_id, status="cancelled", finished_at=now_iso(), error=event["error"])
         self.bus.publish(run_id, event)

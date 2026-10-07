@@ -1,6 +1,6 @@
 """Historique de démonstration (mode mock uniquement) pour que le tableau de bord ne soit pas vide.
 
-Toutes les lignes sont marquées `demo = 1` et les sorciers sont fictifs.
+Toutes les lignes sont marquées `demo = 1` et les utilisateurs sont fictifs.
 """
 from __future__ import annotations
 

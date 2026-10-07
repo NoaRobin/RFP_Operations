@@ -67,8 +67,8 @@ export function ScheduleDialog({
           <legend className="mb-2 text-sm font-medium text-mist">{texts.schedule.frequency}</legend>
           <div className="grid grid-cols-2 gap-2">
             {options.map(([value, text]) => (
-              <label key={value} className={`cursor-pointer rounded-xl border px-4 py-3 text-sm transition-all duration-[var(--duration-fast)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-arcane-400 ${
-                frequency === value ? 'border-gold-400 bg-gold-400/12 text-gold-200 shadow-[var(--shadow-glow-gold)]' : 'border-line-strong text-mist hover:border-violet-400/50'}`}>
+              <label key={value} className={`cursor-pointer rounded-xl border px-4 py-3 text-sm transition-all duration-[var(--duration-fast)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-sage-400 ${
+                frequency === value ? 'border-champagne-400 bg-champagne-400/12 text-champagne-200 shadow-[var(--shadow-glow-champagne)]' : 'border-line-strong text-mist hover:border-steel-400/50'}`}>
                 <input type="radio" name="frequency" value={value} checked={frequency === value} onChange={() => setFrequency(value)} className="sr-only" />
                 {text}
               </label>

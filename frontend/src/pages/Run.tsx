@@ -6,7 +6,7 @@ import { EnergyBar } from '../components/run/EnergyBar'
 import { LogPanel } from '../components/run/LogPanel'
 import { Timeline } from '../components/run/Timeline'
 import { useRunStream } from '../components/run/useRunStream'
-import { MagicStage } from '../components/three/MagicStage'
+import { Stage } from '../components/three/Stage'
 import type { Mood } from '../components/three/moods'
 import { Button, buttonClass } from '../components/ui/Button'
 import { StatusPill } from '../components/ui/StatusPill'
@@ -90,7 +90,7 @@ export default function RunPage() {
 
   const copyReport = async () => {
     const report = [
-      `Sort : ${run?.target_name} (${run?.target_id})`, `Exécution : ${runId}`, `Statut : ${status}`,
+      `Automatisation : ${run?.target_name} (${run?.target_id})`, `Exécution : ${runId}`, `Statut : ${status}`,
       `Erreur : ${error ?? ''}`, `Piste : ${hint ?? ''}`, `Paramètres : ${JSON.stringify(run?.params ?? {})}`, '',
       ...logs.map((l) => `${l.ts} [${l.level}] ${l.message}`),
     ].join('\n')
@@ -107,19 +107,19 @@ export default function RunPage() {
     if (pokes.current % 4 === 0) toast('magic', pick(texts.easterEggs.orb, pokes.current / 4 - 1))
   }
 
-  const back = run?.target_type === 'recipe' ? '/atelier' : run ? `/sorts/${run.target_id}` : '/'
+  const back = run?.target_type === 'recipe' ? '/atelier' : run ? `/automatisations/${run.target_id}` : '/'
 
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-12">
-      <Link to={back} className="inline-flex items-center gap-2 text-sm text-mist hover:text-parchment">
+      <Link to={back} className="inline-flex items-center gap-2 text-sm text-mist hover:text-ivory">
         <ArrowLeft size={16} aria-hidden="true" />
-        {run?.target_type === 'recipe' ? texts.nav.atelier : texts.spell.back}
+        {run?.target_type === 'recipe' ? texts.nav.atelier : texts.automation.back}
       </Link>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
         {/* Scène */}
-        <section data-enter className="relative overflow-hidden rounded-[calc(var(--radius-card)*1.4)] glass min-h-[22rem] lg:min-h-[30rem]" aria-label={`Cristal ${status}`}>
-          <MagicStage mood={mood} onPoke={poke} className="absolute inset-0" />
+        <section data-enter className="relative overflow-hidden rounded-[calc(var(--radius-card)*1.4)] glass min-h-[22rem] lg:min-h-[30rem]" aria-label={`${texts.run.eyebrow} : ${texts.run.status[status]}`}>
+          <Stage mood={mood} onPoke={poke} className="absolute inset-0" />
           <div className="relative z-10 flex h-full min-h-[22rem] lg:min-h-[30rem] flex-col justify-between p-6 pointer-events-none">
             <div>
               <p className="eyebrow">{texts.run.eyebrow}</p>
@@ -137,16 +137,16 @@ export default function RunPage() {
         {/* Pilotage */}
         <div className="flex flex-col gap-6">
           <section data-enter className="glass rounded-[var(--radius-card)] p-6">
-            <EnergyBar value={progress ?? stepProgress} status={status} label={`Progression de ${run?.target_name ?? 'ce sort'}`} />
+            <EnergyBar value={progress ?? stepProgress} status={status} label={`Progression de ${run?.target_name ?? 'cette exécution'}`} />
             {state.progressMessage && <p className="mt-2 text-sm text-mist">{state.progressMessage}</p>}
             <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
               <div>
-                <h2 className="mb-4 font-mono text-sm uppercase tracking-[0.2em] text-gold-300">{texts.run.steps}</h2>
+                <h2 className="mb-4 font-mono text-sm uppercase tracking-[0.2em] text-champagne-300">{texts.run.steps}</h2>
                 <Timeline steps={steps} />
               </div>
               <dl className="grid content-start gap-3 text-sm sm:min-w-48">
-                <div><dt className="text-haze">{texts.run.by}</dt><dd className="text-parchment">{run?.user ?? '…'}</dd></div>
-                <div><dt className="text-haze">Lancé</dt><dd className="text-parchment">{formatDateTime(run?.created_at)}</dd></div>
+                <div><dt className="text-haze">{texts.run.by}</dt><dd className="text-ivory">{run?.user ?? '…'}</dd></div>
+                <div><dt className="text-haze">Lancé</dt><dd className="text-ivory">{formatDateTime(run?.created_at)}</dd></div>
                 {run && Object.keys(run.params ?? {}).length > 0 && (
                   <div>
                     <dt className="text-haze">{texts.run.params}</dt>
@@ -164,19 +164,19 @@ export default function RunPage() {
 
           {!live && (
             <section ref={result} role={status === 'error' ? 'alert' : 'status'}
-              className={`rounded-[var(--radius-card)] border p-6 ${status === 'success' ? 'border-gold-400/40 bg-gold-400/[0.06]' : status === 'error' ? 'border-danger/40 bg-danger/[0.07]' : 'border-line-strong bg-white/[0.03]'}`}>
+              className={`rounded-[var(--radius-card)] border p-6 ${status === 'success' ? 'border-champagne-400/40 bg-champagne-400/[0.06]' : status === 'error' ? 'border-danger/40 bg-danger/[0.07]' : 'border-line-strong bg-white/[0.03]'}`}>
               <h2 className="text-3xl">{title}</h2>
               {status === 'success' && (
                 <>
                   {summary && <p className="mt-2 text-lg text-mist">{summary}</p>}
-                  {run && <p className="mt-1 text-sm text-gold-300">{texts.run.minutesSaved(run.minutes_saved)}</p>}
+                  {run && <p className="mt-1 text-sm text-champagne-300">{texts.run.minutesSaved(run.minutes_saved)}</p>}
                 </>
               )}
               {status === 'error' && (
                 <>
-                  <p className="mt-3 text-lg text-parchment">{error}</p>
+                  <p className="mt-3 text-lg text-ivory">{error}</p>
                   {hint && (
-                    <p className="mt-2 text-mist"><span className="font-semibold text-parchment">{texts.run.whatToDo} </span>{hint}</p>
+                    <p className="mt-2 text-mist"><span className="font-semibold text-ivory">{texts.run.whatToDo} </span>{hint}</p>
                   )}
                   <p className="mt-3 text-sm italic text-haze">{joke}</p>
                 </>
@@ -197,7 +197,7 @@ export default function RunPage() {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button variant="secondary" onClick={retry} loading={busy} icon={<RotateCcw size={16} />}>{texts.run.retry}</Button>
                 {run?.target_type === 'automation' && (
-                  <Button variant="ghost" icon={<Pencil size={16} />} onClick={() => navigate(`/sorts/${run.target_id}`, { state: { params: run.params } })}>{texts.run.edit}</Button>
+                  <Button variant="ghost" icon={<Pencil size={16} />} onClick={() => navigate(`/automatisations/${run.target_id}`, { state: { params: run.params } })}>{texts.run.edit}</Button>
                 )}
                 {status === 'error' && <Button variant="ghost" icon={<Copy size={16} />} onClick={copyReport}>{texts.run.copyReport}</Button>}
               </div>

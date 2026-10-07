@@ -101,7 +101,7 @@ class BrowserSlot:
     def page(self):
         raise BrowserNotAvailable(
             "Le navigateur automatisé n'est pas encore installé dans Merlin. "
-            "Cette automatisation devra attendre la prochaine lune (ou la version Playwright)."
+            "Elle sera disponible avec l'intégration Playwright."
         )
 
     def __bool__(self) -> bool:

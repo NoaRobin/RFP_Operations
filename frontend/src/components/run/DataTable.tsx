@@ -21,13 +21,13 @@ export function DataTable({ title, columns, rows, total }: { title: string; colu
           <thead className="sticky top-0 z-10 bg-ink-2">
             <tr>
               {columns.map((c) => (
-                <th key={c} scope="col" className="whitespace-nowrap border-b hairline px-4 py-2.5 text-left font-semibold text-gold-300">{c}</th>
+                <th key={c} scope="col" className="whitespace-nowrap border-b hairline px-4 py-2.5 text-left font-semibold text-champagne-300">{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {shown.map((row, i) => (
-              <tr key={i} className="odd:bg-white/[0.02] hover:bg-violet-500/10">
+              <tr key={i} className="odd:bg-white/[0.02] hover:bg-steel-500/10">
                 {row.map((v, j) => (
                   <td key={j} className={`whitespace-nowrap border-b hairline px-4 py-2 ${typeof v === 'number' ? 'text-right tabular-nums' : 'text-mist'}`}>{cell(v)}</td>
                 ))}

@@ -1,4 +1,4 @@
-# CLAUDE.md — règles du projet MERLIN
+# CLAUDE.md — règles du projet MERIDIAN (package backend : `merlin`)
 
 ## Source de vérité des données
 - `catalog/fabric_catalog.md` (lisible) et `catalog/fabric_schema.csv` (machine) décrivent **toutes** les tables Fabric connues.

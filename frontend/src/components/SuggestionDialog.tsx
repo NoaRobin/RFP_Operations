@@ -63,8 +63,8 @@ export function SuggestionDialog({ open, onClose }: { open: boolean; onClose: ()
           <legend className="mb-2 text-sm font-medium text-mist">{texts.suggest.urgency}</legend>
           <div className="flex flex-wrap gap-2">
             {Object.entries(texts.suggest.urgencies).map(([value, label]) => (
-              <label key={value} className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-arcane-400 ${
-                urgency === value ? 'border-gold-400 bg-gold-400/15 text-gold-200' : 'border-line-strong text-mist hover:text-parchment'}`}>
+              <label key={value} className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-sage-400 ${
+                urgency === value ? 'border-champagne-400 bg-champagne-400/15 text-champagne-200' : 'border-line-strong text-mist hover:text-ivory'}`}>
                 <input type="radio" name="urgency" value={value} checked={urgency === value} onChange={() => setUrgency(value)} className="sr-only" />
                 {label}
               </label>

@@ -23,7 +23,7 @@ export default function HistoryPage() {
       <div role="group" aria-label="Filtrer par statut" className="mt-8 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button key={f || 'all'} onClick={() => setStatus(f)} aria-pressed={status === f}
-            className={`rounded-full border px-4 py-2 text-sm transition-colors ${status === f ? 'border-gold-400/70 bg-gold-400/15 text-gold-200' : 'border-line-strong text-mist hover:text-parchment'}`}>
+            className={`rounded-full border px-4 py-2 text-sm transition-colors ${status === f ? 'border-champagne-400/70 bg-champagne-400/15 text-champagne-200' : 'border-line-strong text-mist hover:text-ivory'}`}>
             {f ? texts.run.status[f] : texts.history.filterAll}
           </button>
         ))}
@@ -36,7 +36,7 @@ export default function HistoryPage() {
         <div className="mt-6 glass overflow-x-auto rounded-[var(--radius-card)]">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gold-300">
+              <tr className="text-left text-champagne-300">
                 {Object.values(texts.history.columns).map((c) => <th key={c} scope="col" className="border-b hairline px-5 py-3 font-semibold">{c}</th>)}
               </tr>
             </thead>
@@ -45,7 +45,7 @@ export default function HistoryPage() {
                 <tr key={r.id} className="hover:bg-white/[0.03]">
                   <td className="whitespace-nowrap border-b hairline px-5 py-3 text-mist">{formatDateTime(r.created_at)}</td>
                   <td className="border-b hairline px-5 py-3">
-                    <Link to={`/executions/${r.id}`} className="font-medium text-parchment hover:text-gold-200">{r.target_name}</Link>
+                    <Link to={`/executions/${r.id}`} className="font-medium text-ivory hover:text-champagne-200">{r.target_name}</Link>
                     {r.trigger === 'schedule' && <span className="ml-2 inline-flex items-center gap-1 text-xs text-haze"><CalendarClock size={12} aria-hidden="true" />{texts.history.scheduled}</span>}
                   </td>
                   <td className="border-b hairline px-5 py-3 text-mist">{r.user}</td>

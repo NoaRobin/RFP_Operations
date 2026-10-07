@@ -24,26 +24,26 @@ function FeaturedAtelier() {
   const ref = useTilt<HTMLDivElement>(3)
   return (
     <div ref={ref} className="halo relative overflow-hidden rounded-[calc(var(--radius-card)*1.4)] glass p-8 sm:p-10" data-reveal>
-      <div aria-hidden="true" className="absolute -right-16 -top-24 size-80 rounded-full bg-[radial-gradient(circle,rgb(232_199_122/0.22),transparent_65%)] blur-2xl" />
+      <div aria-hidden="true" className="absolute -right-16 -top-24 size-80 rounded-full bg-[radial-gradient(circle,rgb(205_176_122/0.22),transparent_65%)] blur-2xl" />
       <div aria-hidden="true" className="absolute right-6 top-6 hidden sm:grid grid-cols-6 gap-1.5 opacity-60" style={{ transform: 'translateZ(40px)' }}>
         {Array.from({ length: 24 }, (_, i) => (
-          <span key={i} className={`h-5 w-9 rounded-sm border ${[3, 8, 9, 14, 20].includes(i) ? 'border-arcane-400/70 bg-arcane-400/15 animate-pulse-glow' : 'border-line-strong bg-white/[0.02]'}`} />
+          <span key={i} className={`h-5 w-9 rounded-sm border ${[3, 8, 9, 14, 20].includes(i) ? 'border-sage-400/70 bg-sage-400/15 animate-pulse-glow' : 'border-line-strong bg-white/[0.02]'}`} />
         ))}
       </div>
-      <p className="eyebrow">{texts.grimoire.featuredEyebrow}</p>
+      <p className="eyebrow">{texts.library.featuredEyebrow}</p>
       <h2 className="mt-3 flex items-center gap-3 text-4xl sm:text-5xl">
-        <FileSpreadsheet className="text-gold-300" size={36} aria-hidden="true" />
-        {texts.grimoire.featuredTitle}
+        <FileSpreadsheet className="text-champagne-300" size={36} aria-hidden="true" />
+        {texts.library.featuredTitle}
       </h2>
-      <p className="mt-4 max-w-2xl text-lg text-mist">{texts.grimoire.featuredBody}</p>
+      <p className="mt-4 max-w-2xl text-lg text-mist">{texts.library.featuredBody}</p>
       <ButtonLink to="/atelier" variant="primary" size="lg" className="mt-8" icon={<ArrowRight size={18} />}>
-        {texts.grimoire.featuredCta}
+        {texts.library.featuredCta}
       </ButtonLink>
     </div>
   )
 }
 
-export default function Grimoire() {
+export default function Library() {
   const { data, error, loading, reload } = useAsync(() => api.automations(), [])
   const { health, openSuggest } = useApp()
   const name = useUserName()
@@ -133,8 +133,8 @@ export default function Grimoire() {
       aria-pressed={category === value}
       className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-[var(--duration-fast)] ${
         category === value
-          ? 'border-gold-400/70 bg-gold-400/15 text-gold-200 shadow-[var(--shadow-glow-gold)]'
-          : 'border-line-strong text-mist hover:text-parchment hover:border-violet-400/50'}`}
+          ? 'border-champagne-400/70 bg-champagne-400/15 text-champagne-200 shadow-[var(--shadow-glow-champagne)]'
+          : 'border-line-strong text-mist hover:text-ivory hover:border-steel-400/50'}`}
     >
       {label}
     </button>
@@ -143,11 +143,11 @@ export default function Grimoire() {
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-16 sm:pt-24">
       <section aria-labelledby="hero-title" className="max-w-4xl">
-        <p className="eyebrow">{texts.grimoire.eyebrow}</p>
+        <p className="eyebrow">{texts.library.eyebrow}</p>
         <h1 id="hero-title" data-hero-title className="mt-4 text-[clamp(2.75rem,7vw,5.5rem)] font-light leading-[0.95]">
           {greeting()}{name ? `, ${name}` : ''}.
           <br />
-          <em className="text-gradient-gold">Quel sort aujourd'hui ?</em>
+          <em className="text-gradient">{texts.greeting.question}</em>
         </h1>
         <p data-hero-sub className="mt-6 max-w-2xl text-lg text-mist">{subtitle}</p>
       </section>
@@ -159,14 +159,14 @@ export default function Grimoire() {
       <section aria-labelledby="spells-title" className="mt-20">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
           <div>
-            <h2 id="spells-title" className="text-4xl">Les sorts</h2>
+            <h2 id="spells-title" className="text-4xl">{texts.library.title}</h2>
             <p className="mt-2 text-mist">
-              {texts.grimoire.available(automations.length)}
-              {health?.data_mode === 'mock' && <span className="text-gold-300"> · {texts.app.demoBadge.toLowerCase()}</span>}
+              {texts.library.available(automations.length)}
+              {health?.data_mode === 'mock' && <span className="text-champagne-300"> · {texts.app.demoBadge.toLowerCase()}</span>}
             </p>
           </div>
           <div className="relative w-full lg:w-96">
-            <label htmlFor="spell-search" className="sr-only">{texts.grimoire.searchLabel}</label>
+            <label htmlFor="spell-search" className="sr-only">{texts.library.searchLabel}</label>
             <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-haze" size={18} aria-hidden="true" />
             <input
               id="spell-search"
@@ -174,15 +174,15 @@ export default function Grimoire() {
               type="search"
               value={query}
               onChange={(e) => changeFilter(() => setQuery(e.target.value))}
-              placeholder={texts.grimoire.searchPlaceholder}
-              className="h-12 w-full rounded-full border border-line-strong bg-abyss/60 pl-11 pr-4 text-parchment placeholder:text-haze transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:border-arcane-400 focus:outline-none focus:shadow-[0_0_0_3px_rgb(94_234_212/0.18)]"
+              placeholder={texts.library.searchPlaceholder}
+              className="h-12 w-full rounded-full border border-line-strong bg-abyss/60 pl-11 pr-4 text-ivory placeholder:text-haze transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:border-sage-400 focus:outline-none focus:shadow-[0_0_0_3px_rgb(134_191_174/0.18)]"
             />
           </div>
         </div>
 
         <div role="group" aria-label="Filtrer par catégorie" className="mt-6 flex flex-wrap gap-2" data-reveal>
-          {chip(ALL, texts.grimoire.all)}
-          {chip(FAVORITES, <><Star size={14} aria-hidden="true" />{texts.grimoire.favorites} ({favorites.size})</>)}
+          {chip(ALL, texts.library.all)}
+          {chip(FAVORITES, <><Star size={14} aria-hidden="true" />{texts.library.favorites} ({favorites.size})</>)}
           {categories.map((c) => chip(c, c))}
         </div>
 
@@ -204,23 +204,23 @@ export default function Grimoire() {
               <div data-item className={category === ALL && !query ? '' : 'hidden'}>
                 <button
                   onClick={openSuggest}
-                  className="group flex h-full min-h-72 w-full flex-col items-start justify-end rounded-[var(--radius-card)] border border-dashed border-gold-400/40 p-6 text-left transition-all duration-[var(--duration-base)] hover:border-gold-400 hover:bg-gold-400/5"
+                  className="group flex h-full min-h-72 w-full flex-col items-start justify-end rounded-[var(--radius-card)] border border-dashed border-champagne-400/40 p-6 text-left transition-all duration-[var(--duration-base)] hover:border-champagne-400 hover:bg-champagne-400/5"
                 >
-                  <Lightbulb className="text-gold-300 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:-rotate-12 group-hover:scale-110" size={32} aria-hidden="true" />
-                  <span className="mt-4 font-display text-2xl text-parchment">{texts.grimoire.suggestCardTitle}</span>
-                  <span className="mt-2 text-mist">{texts.grimoire.suggestCardBody}</span>
+                  <Lightbulb className="text-champagne-300 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:-rotate-12 group-hover:scale-110" size={32} aria-hidden="true" />
+                  <span className="mt-4 font-display text-2xl text-ivory">{texts.library.suggestCardTitle}</span>
+                  <span className="mt-2 text-mist">{texts.library.suggestCardBody}</span>
                 </button>
               </div>
             </div>
             {visible.size === 0 && (category === FAVORITES && !query ? (
-              <EmptyState title={texts.grimoire.emptyFavorites.title} body={texts.grimoire.emptyFavorites.body} />
+              <EmptyState title={texts.library.emptyFavorites.title} body={texts.library.emptyFavorites.body} />
             ) : (
               <EmptyState
-                title={texts.grimoire.emptySearch.title}
-                body={texts.grimoire.emptySearch.body}
+                title={texts.library.emptySearch.title}
+                body={texts.library.emptySearch.body}
                 action={
                   <div className="flex flex-wrap justify-center gap-3">
-                    <Button onClick={() => changeFilter(() => { setQuery(''); setCategory(ALL) })}>{texts.grimoire.emptySearch.reset}</Button>
+                    <Button onClick={() => changeFilter(() => { setQuery(''); setCategory(ALL) })}>{texts.library.emptySearch.reset}</Button>
                     <Button variant="ghost" onClick={openSuggest}>{texts.nav.suggest}</Button>
                   </div>
                 }
@@ -228,10 +228,10 @@ export default function Grimoire() {
             ))}
             {data.broken.length > 0 && (
               <div className="mt-12 rounded-[var(--radius-card)] border border-warning/30 bg-warning/5 p-6" role="note">
-                <h3 className="flex items-center gap-2 text-xl"><TriangleAlert className="text-warning" size={20} aria-hidden="true" />{texts.grimoire.brokenTitle}</h3>
-                <p className="mt-2 text-mist">{texts.grimoire.brokenBody}</p>
+                <h3 className="flex items-center gap-2 text-xl"><TriangleAlert className="text-warning" size={20} aria-hidden="true" />{texts.library.brokenTitle}</h3>
+                <p className="mt-2 text-mist">{texts.library.brokenBody}</p>
                 <ul className="mt-3 space-y-1 font-mono text-sm text-haze">
-                  {data.broken.map((b) => <li key={b.folder}><span className="text-parchment">{b.folder}</span> — {b.problems.join(' ; ')}</li>)}
+                  {data.broken.map((b) => <li key={b.folder}><span className="text-ivory">{b.folder}</span> — {b.problems.join(' ; ')}</li>)}
                 </ul>
               </div>
             )}

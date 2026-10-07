@@ -37,7 +37,7 @@ def explain(error: BaseException) -> tuple[str, str]:
     if isinstance(error, DataError):
         return str(error), error.hint or "Réessayez dans quelques minutes ; si cela persiste, vérifiez la connexion Fabric."
     if isinstance(error, BrowserNotAvailable):
-        return str(error), "Ce sort nécessite le navigateur automatisé, qui n'est pas encore activé."
+        return str(error), "Cette automatisation nécessite le navigateur automatisé, qui n'est pas encore activé."
     if isinstance(error, EmptyResult):
         return str(error), "Vérifiez la date et les filtres choisis : il n'existe peut-être pas encore de données pour cette période."
     if isinstance(error, FileNotFoundError):

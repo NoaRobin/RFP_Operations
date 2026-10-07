@@ -75,7 +75,7 @@ class PluginRegistry:
                 self.broken.append(BrokenPlugin(folder.name, [f"Identifiant en double : {manifest.id}"]))
                 continue
             self.plugins[manifest.id] = plugin
-            log.info("Sort découvert : %s (%s)%s", manifest.id, manifest.type, "" if plugin.healthy else " — ABÎMÉ")
+            log.info("Automatisation découverte : %s (%s)%s", manifest.id, manifest.type, "" if plugin.healthy else " — INDISPONIBLE")
         return self
 
     def _inspect(self, plugin: Plugin) -> None:
