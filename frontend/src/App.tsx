@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppProvider } from './components/layout/AppContext'
 import { AppShell } from './components/layout/AppShell'
 import { ErrorBoundary } from './components/layout/ErrorBoundary'
@@ -10,10 +10,13 @@ import { SmoothScroll } from './components/fx/SmoothScroll'
 import { Starfield } from './components/fx/Starfield'
 import { Loading } from './components/ui/States'
 import { ToastProvider } from './components/ui/Toast'
-import { shouldSkipIntro } from './lib/storage'
-import Library from './pages/Library'
+import Home from './pages/Home'
 
 const Intro = lazy(() => import('./pages/Intro'))
+const Library = lazy(() => import('./pages/Library'))
+const Rfi = lazy(() => import('./pages/Rfi'))
+const MergeCodes = lazy(() => import('./pages/MergeCodes'))
+const Suivi = lazy(() => import('./pages/Suivi'))
 const AutomationPage = lazy(() => import('./pages/AutomationPage'))
 const RunPage = lazy(() => import('./pages/Run'))
 const Atelier = lazy(() => import('./pages/Atelier'))
@@ -22,26 +25,19 @@ const HistoryPage = lazy(() => import('./pages/History'))
 const About = lazy(() => import('./pages/About'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
-function introSeenThisSession(): boolean {
-  try {
-    return sessionStorage.getItem('meridian.intro.seen') === '1'
-  } catch {
-    return true
-  }
-}
-
 function Shell() {
-  const location = useLocation()
-  if (location.pathname === '/' && !shouldSkipIntro() && !introSeenThisSession()) {
-    return <Navigate to="/intro" replace />
-  }
   return (
     <AppShell>
       <PageTransition>
         {(display) => (
           <Suspense fallback={<Loading />}>
             <Routes location={display}>
-              <Route path="/" element={<Library />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/rfi" element={<Rfi />} />
+              <Route path="/merge-codes" element={<MergeCodes />} />
+              <Route path="/suivi-activite" element={<Suivi />} />
+              <Route path="/sorts" element={<Library />} />
+              <Route path="/bibliotheque" element={<Navigate to="/sorts" replace />} />
               <Route path="/automatisations/:id" element={<AutomationPage />} />
               <Route path="/executions/:runId" element={<RunPage />} />
               <Route path="/atelier" element={<Atelier />} />

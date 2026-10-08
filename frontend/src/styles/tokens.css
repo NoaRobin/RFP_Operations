@@ -1,67 +1,76 @@
 /*
- * Tokens de design MERIDIAN — « corporate premium ».
- * Encre profonde, ivoire, champagne ; acier et sauge pour l'information. Toute couleur de l'interface vient d'ici.
+ * Tokens de design GRIMOIRE — « cartoon néo-brutal » (skill UI UX Pro Max : Neubrutalism + Fredoka/Nunito).
+ * Papier crème, encre violette, contours épais, ombres décalées pleines, couleurs pop.
+ * Règle des nuances : 200/300 = texte (foncé, lisible sur crème) ; 400/500 = aplats, bordures, fonds.
  */
 @theme {
-  /* --- Encre */
-  --color-abyss: #05070b;
-  --color-night: #090c12;
-  --color-ink: #0f141c;
-  --color-ink-2: #151b25;
-  --color-ink-3: #1c2431;
-  --color-line: rgb(200 210 225 / 0.10);
-  --color-line-strong: rgb(200 210 225 / 0.20);
+  /* --- Papier & surfaces */
+  --color-canvas: #fff6e5;
+  --color-field: #ffffff;
+  --color-card: #ffffff;
+  --color-card-2: #fff0d6;
+  --color-card-3: #ffe7bf;
+  --color-line: rgb(27 21 48 / 0.14);
+  --color-line-strong: #1b1530;
 
-  /* --- Texte (contrastes sur --color-night : 17.1 / 10.2 / 6.3) */
-  --color-ivory: #f3efe7;
-  --color-mist: #bfc3cc;
-  --color-haze: #8e94a0;
+  /* --- Encre (contrastes sur --color-canvas : 15.9 / 8.7 / 5.4) */
+  --color-fg: #1b1530;
+  --color-fg-2: #463f5e;
+  --color-fg-3: #655d7c;
+  --color-on-accent: #1b1530;
 
-  /* --- Acier (information, navigation) */
-  --color-steel-300: #b7c6da;
-  --color-steel-400: #8fa6c3;
-  --color-steel-500: #6684a8;
-  --color-steel-700: #34506f;
-  /* --- Champagne (accent, actions principales) */
-  --color-champagne-200: #efe2c4;
-  --color-champagne-300: #e3cfa1;
-  --color-champagne-400: #cdb07a;
-  --color-champagne-600: #9c7e48;
-  /* --- Sauge (en cours, focus, données vivantes) */
-  --color-sage-300: #b5d6cb;
-  --color-sage-400: #86bfae;
-  --color-sage-500: #5ba593;
+  /* --- Soleil (actions principales) */
+  --color-sun-200: #6e4300;
+  --color-sun-300: #845400;
+  --color-sun-400: #ffd23f;
+  --color-sun-600: #f2b705;
+  /* --- Magie (navigation, sélection) */
+  --color-magic-300: #4f33c4;
+  --color-magic-400: #9b82ff;
+  --color-magic-500: #7c5cff;
+  --color-magic-700: #4b2fb5;
+  /* --- Menthe (en cours, données vivantes) */
+  --color-mint-300: #0b6e60;
+  --color-mint-400: #2ec4b6;
+  --color-mint-500: #1fa396;
+  /* --- Bulle (fun) */
+  --color-bubble-300: #b3204f;
+  --color-bubble-400: #ff6b9a;
 
   /* --- États */
-  --color-success: #7bd3a8;
-  --color-danger: #f08a8a;
-  --color-warning: #e9c46a;
-  --color-info: #8db8e0;
+  --color-success: #11795a;
+  --color-danger: #c8102e;
+  --color-warning: #9a5b00;
+  --color-info: #1d4ed8;
 
   /* --- Typographies */
-  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  --font-sans: "Inter Tight Variable", "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Fredoka Variable", "Fredoka", "Nunito Variable", system-ui, sans-serif;
+  --font-sans: "Nunito Variable", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 
-  /* --- Rayons & ombres */
-  --radius-card: 1.1rem;
+  /* --- Rayons & ombres (pleines, décalées : la signature cartoon) */
+  --radius-card: 1.5rem;
   --radius-pill: 999px;
-  --shadow-glow-steel: 0 0 0 1px rgb(143 166 195 / 0.22), 0 14px 40px -14px rgb(102 132 168 / 0.45);
-  --shadow-glow-champagne: 0 0 0 1px rgb(205 176 122 / 0.35), 0 14px 40px -14px rgb(205 176 122 / 0.45);
-  --shadow-deep: 0 30px 60px -30px rgb(0 0 0 / 0.85);
+  --shadow-pop: 4px 4px 0 0 var(--color-fg);
+  --shadow-pop-lg: 7px 7px 0 0 var(--color-fg);
+  --shadow-glow-magic: 4px 4px 0 0 var(--color-magic-500);
+  --shadow-glow-sun: 4px 4px 0 0 var(--color-fg);
+  --shadow-deep: 8px 8px 0 0 var(--color-fg);
 
   /* --- Mouvement (miroir de src/motion/tokens.ts) */
   --ease-out-premium: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-premium: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-instant: 120ms;
-  --duration-fast: 250ms;
-  --duration-base: 450ms;
-  --duration-slow: 800ms;
+  --duration-fast: 200ms;
+  --duration-base: 380ms;
+  --duration-slow: 700ms;
 
   --animate-shimmer: shimmer 2.4s linear infinite;
-  --animate-pulse-glow: pulse-glow 2.2s var(--ease-in-out-premium) infinite;
+  --animate-pulse-glow: pulse-glow 1.6s var(--ease-in-out-premium) infinite;
   --animate-spin-slow: spin 18s linear infinite;
+  --animate-wiggle: wiggle 2.8s var(--ease-in-out-premium) infinite;
+  --animate-float: float 4s var(--ease-in-out-premium) infinite;
 }
 
 @keyframes shimmer {
@@ -70,6 +79,18 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(134 191 174 / 0), inset 0 0 0 1px rgb(134 191 174 / 0.35); }
-  50% { box-shadow: 0 0 18px 0 rgb(134 191 174 / 0.22), inset 0 0 0 1px rgb(134 191 174 / 0.7); }
+  0%, 100% { box-shadow: inset 0 0 0 2px rgb(46 196 182 / 0.55); background-color: rgb(46 196 182 / 0.06); }
+  50% { box-shadow: inset 0 0 0 2px rgb(46 196 182 / 1); background-color: rgb(46 196 182 / 0.18); }
+}
+
+@keyframes wiggle {
+  0%, 86%, 100% { transform: rotate(0deg); }
+  89% { transform: rotate(-6deg); }
+  93% { transform: rotate(5deg); }
+  96% { transform: rotate(-3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }

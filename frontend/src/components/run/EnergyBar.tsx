@@ -15,7 +15,7 @@ export function EnergyBar({ value, status, label }: { value: number | null; stat
   }, [pct, indeterminate])
 
   const color =
-    status === 'error' ? 'from-danger/80 to-danger' : status === 'cancelled' ? 'from-haze to-mist' : 'from-steel-500 via-sage-400 to-champagne-300'
+    status === 'error' ? 'from-danger/80 to-danger' : status === 'cancelled' ? 'from-fg-3 to-fg-2' : 'from-magic-500 via-mint-400 to-sun-400'
 
   return (
     <div>
@@ -26,7 +26,7 @@ export function EnergyBar({ value, status, label }: { value: number | null; stat
         aria-valuemax={100}
         aria-valuenow={indeterminate ? undefined : pct}
         aria-valuetext={indeterminate ? 'En cours' : `${pct} %`}
-        className="relative h-3 overflow-hidden rounded-full bg-abyss/70 shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+        className="relative h-3 overflow-hidden rounded-full bg-field/70 shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
       >
         <div
           ref={fill}

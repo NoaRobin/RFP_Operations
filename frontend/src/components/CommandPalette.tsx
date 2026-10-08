@@ -1,5 +1,5 @@
 /**
- * Palette de commandes (⌘K / Ctrl+K) : tout MERIDIAN au clavier.
+ * Palette de commandes (⌘K / Ctrl+K) : tout GRIMOIRE au clavier.
  * - ↵ ouvre / exécute ; ⇧↵ lance une automatisation directement avec ses valeurs par défaut.
  * - Index unifié : automatisations, recettes, exécutions récentes, pages, actions. Mémorise les choix récents.
  * Accessibilité : combobox + listbox ARIA, focus piégé par <dialog>, Échap pour fermer.
@@ -8,7 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { useNavigate } from 'react-router-dom'
 import {
   BookOpen, CalendarClock, Clock, CornerDownLeft, FileSpreadsheet, History, Info, LayoutDashboard, Lightbulb,
-  MonitorSmartphone, Play, PlayCircle, RotateCcw, Search, UserRound,
+  MonitorSmartphone, Play, PlayCircle, Plug, RotateCcw, Search, UserRound, Home, FileQuestion, Tags, Activity,
 } from 'lucide-react'
 import { texts } from '../content/texts'
 import { api, ApiError } from '../lib/api'
@@ -36,7 +36,7 @@ interface Command {
   quick?: (() => Promise<void>) | null
 }
 
-const RECENT_KEY = 'meridian.palette.recent'
+const RECENT_KEY = 'grimoire.palette.recent'
 
 function readRecent(): string[] {
   try {
@@ -88,7 +88,7 @@ function defaultParams(a: Automation): Record<string, unknown> | null {
   return params
 }
 
-export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boolean; onClose: () => void; onSuggest: () => void; onUser: () => void }) {
+export function CommandPalette({ open, onClose, onSuggest, onUser, onFabric }: { open: boolean; onClose: () => void; onSuggest: () => void; onUser: () => void; onFabric: () => void }) {
   const navigate = useNavigate()
   const toast = useToast()
   const dialog = useRef<HTMLDialogElement>(null)
@@ -131,7 +131,7 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
         id: `a:${a.id}`, section: 'automations', title: a.name, subtitle: a.category,
         keywords: `${a.description} ${a.tags.join(' ')} ${a.id}`,
         icon: <SpellIcon name={a.icon} size={18} />, hint: texts.palette.hints.open,
-        trailing: <span className="text-xs text-haze">{texts.library.minutesSaved(a.estimated_minutes_saved)}</span>,
+        trailing: <span className="text-xs text-fg-3">{texts.library.minutesSaved(a.estimated_minutes_saved)}</span>,
         run: () => go(`/automatisations/${a.id}`, { preview: a }),
         quick: a.healthy && defaults ? async () => {
           const run = await api.run(a.id, defaults)
@@ -158,7 +158,11 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
       })
     }
     const pages: [string, string, ReactNode, string][] = [
-      ['/', texts.nav.library, <BookOpen size={18} />, 'accueil automatisations'],
+      ['/', texts.nav.home, <Home size={18} />, 'accueil rfpasenviedetravailler'],
+      ['/rfi', texts.nav.rfi, <FileQuestion size={18} />, 'rfi rfp questionnaire word excel remplir due diligence'],
+      ['/merge-codes', texts.nav.merge, <Tags size={18} />, 'qvidian merge codes annees experience bot'],
+      ['/suivi-activite', texts.nav.suivi, <Activity size={18} />, 'suivi activite appels offres pilotage tryv2'],
+      ['/sorts', texts.nav.library, <BookOpen size={18} />, 'sorts automatisations bibliotheque'],
       ['/atelier', texts.nav.atelier, <FileSpreadsheet size={18} />, 'excel questionnaire remplir'],
       ['/tableau-de-bord', texts.nav.dashboard, <LayoutDashboard size={18} />, 'dashboard statistiques planification'],
       ['/historique', texts.nav.history, <History size={18} />, 'registre executions'],
@@ -169,6 +173,7 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
     }
     items.push(
       { id: 'act:suggest', section: 'actions', title: texts.palette.actions.suggest, icon: <Lightbulb size={18} />, hint: texts.palette.hints.do, run: () => { onClose(); onSuggest() } },
+      { id: 'act:fabric', section: 'actions', title: texts.palette.actions.fabric, keywords: 'fabric lakehouse connexion microsoft vscode', icon: <Plug size={18} />, hint: texts.palette.hints.do, run: () => { onClose(); onFabric() } },
       { id: 'act:user', section: 'actions', title: texts.palette.actions.user, icon: <UserRound size={18} />, hint: texts.palette.hints.do, run: () => { onClose(); onUser() } },
       {
         id: 'act:lowpower', section: 'actions', title: texts.palette.actions.lowPower, keywords: '3d 2d performance', icon: <MonitorSmartphone size={18} />,
@@ -178,7 +183,7 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
       { id: 'act:intro', section: 'actions', title: texts.palette.actions.intro, icon: <RotateCcw size={18} />, hint: texts.palette.hints.do, run: () => { setSkipIntro(false); go('/intro') } },
     )
     return items
-  }, [data, go, onClose, onSuggest, onUser, toast])
+  }, [data, go, onClose, onSuggest, onUser, onFabric, toast])
 
   const results = useMemo(() => {
     const q = query.trim()
@@ -255,9 +260,9 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
       className="m-0 mx-auto mt-[12vh] w-[min(92vw,42rem)] max-w-none bg-transparent p-0 backdrop:bg-transparent"
     >
       {open && (
-        <div ref={panel} className="glass overflow-hidden rounded-2xl shadow-[var(--shadow-deep),var(--shadow-glow-steel)]">
+        <div ref={panel} className="glass overflow-hidden rounded-2xl shadow-[var(--shadow-deep),var(--shadow-glow-magic)]">
           <div className="flex items-center gap-3 border-b hairline px-5">
-            <Search size={18} className="shrink-0 text-champagne-300" aria-hidden="true" />
+            <Search size={18} className="shrink-0 text-sun-300" aria-hidden="true" />
             <input
               ref={input}
               role="combobox"
@@ -269,21 +274,21 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKeyDown}
               placeholder={texts.palette.placeholder}
-              className="h-16 flex-1 bg-transparent text-lg text-ivory placeholder:text-haze focus:outline-none"
+              className="h-16 flex-1 bg-transparent text-lg text-fg placeholder:text-fg-3 focus:outline-none"
             />
-            <kbd className="rounded-md border border-line-strong px-2 py-0.5 font-mono text-[0.7rem] text-haze">Esc</kbd>
+            <kbd className="rounded-md border border-line-strong px-2 py-0.5 font-mono text-[0.7rem] text-fg-3">Esc</kbd>
           </div>
 
           <ul ref={list} id="palette-list" role="listbox" aria-label={texts.palette.label} className="max-h-[52vh] overflow-y-auto p-2" data-lenis-prevent>
-            {!data && <li className="px-4 py-6 text-sm text-haze">{texts.palette.loading}</li>}
-            {data && results.length === 0 && <li className="px-4 py-6 text-sm text-mist">{texts.palette.empty}</li>}
+            {!data && <li className="px-4 py-6 text-sm text-fg-3">{texts.palette.loading}</li>}
+            {data && results.length === 0 && <li className="px-4 py-6 text-sm text-fg-2">{texts.palette.empty}</li>}
             {results.map((c, i) => {
               const header = c.section !== lastSection ? texts.palette.sections[c.section] : null
               lastSection = c.section
               const selected = i === active
               return (
                 <li key={`${c.section}-${c.id}`} role="presentation">
-                  {header && <p className="px-3 pb-1 pt-3 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-haze" aria-hidden="true">{header}</p>}
+                  {header && <p className="px-3 pb-1 pt-3 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-fg-3" aria-hidden="true">{header}</p>}
                   <div
                     id={`palette-${i}`}
                     data-index={i}
@@ -292,17 +297,17 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
                     onMouseMove={() => active !== i && setActive(i)}
                     onClick={(e) => execute(c, e.shiftKey)}
                     className={`group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-[var(--duration-instant)] ${
-                      selected ? 'bg-white/[0.07] shadow-[inset_0_0_0_1px_var(--color-line-strong)]' : ''}`}
+                      selected ? 'bg-fg/[0.07] shadow-[inset_0_0_0_1px_var(--color-line-strong)]' : ''}`}
                   >
-                    <span className={`grid size-9 shrink-0 place-items-center rounded-lg border ${selected ? 'border-champagne-400/50 text-champagne-300' : 'border-line text-steel-300'}`}>{c.icon}</span>
+                    <span className={`grid size-9 shrink-0 place-items-center rounded-lg border ${selected ? 'border-sun-400/50 text-sun-300' : 'border-line text-magic-300'}`}>{c.icon}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[0.95rem] text-ivory">{c.title}</span>
-                      {c.subtitle && <span className="block truncate text-xs text-haze">{c.subtitle}</span>}
+                      <span className="block truncate text-[0.95rem] text-fg">{c.title}</span>
+                      {c.subtitle && <span className="block truncate text-xs text-fg-3">{c.subtitle}</span>}
                     </span>
                     {c.trailing}
                     {selected && (
-                      <span className="hidden items-center gap-1 text-xs text-mist sm:flex">
-                        {c.quick && <span className="mr-2 inline-flex items-center gap-1 text-champagne-300"><PlayCircle size={14} aria-hidden="true" />⇧↵</span>}
+                      <span className="hidden items-center gap-1 text-xs text-fg-2 sm:flex">
+                        {c.quick && <span className="mr-2 inline-flex items-center gap-1 text-sun-300"><PlayCircle size={14} aria-hidden="true" />⇧↵</span>}
                         {c.hint} <CornerDownLeft size={13} aria-hidden="true" />
                       </span>
                     )}
@@ -312,10 +317,10 @@ export function CommandPalette({ open, onClose, onSuggest, onUser }: { open: boo
             })}
           </ul>
 
-          <footer className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t hairline px-5 py-3 text-xs text-haze">
-            <span><kbd className="font-mono text-mist">↑↓</kbd> {texts.palette.footer.navigate}</span>
-            <span><kbd className="font-mono text-mist">↵</kbd> {texts.palette.footer.select}</span>
-            <span className="inline-flex items-center gap-1"><Play size={11} aria-hidden="true" /><kbd className="font-mono text-mist">⇧↵</kbd> {texts.palette.footer.quick}</span>
+          <footer className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t hairline px-5 py-3 text-xs text-fg-3">
+            <span><kbd className="font-mono text-fg-2">↑↓</kbd> {texts.palette.footer.navigate}</span>
+            <span><kbd className="font-mono text-fg-2">↵</kbd> {texts.palette.footer.select}</span>
+            <span className="inline-flex items-center gap-1"><Play size={11} aria-hidden="true" /><kbd className="font-mono text-fg-2">⇧↵</kbd> {texts.palette.footer.quick}</span>
             <span className="ml-auto" aria-live="polite">
               {current?.section === 'automations' && !current.quick ? texts.palette.quickRunUnavailable : current?.quick ? texts.palette.quickRun : ''}
             </span>

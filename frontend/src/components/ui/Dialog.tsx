@@ -31,7 +31,7 @@ export function Dialog({
       }}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-labelledby="dialog-title"
-      className={`glass m-auto w-[92vw] ${size === 'lg' ? 'max-w-[46rem]' : 'max-w-[32rem]'} rounded-[var(--radius-card)] p-0 text-ivory shadow-[var(--shadow-deep)] backdrop:bg-transparent`}
+      className={`glass m-auto w-[92vw] ${size === 'lg' ? 'max-w-[46rem]' : 'max-w-[32rem]'} rounded-[var(--radius-card)] p-0 text-fg shadow-[var(--shadow-deep)] backdrop:bg-transparent`}
     >
       {open && (
         <div className="flex flex-col max-h-[85vh]">

@@ -1,5 +1,5 @@
 /**
- * Grille façon tableur : en-têtes dorés, colonne clé sage, cellules cibles qui s'illuminent,
+ * Grille façon tableur : en-têtes dorés, colonne clé mint, cellules cibles qui s'illuminent,
  * colonnes déposables (glisser-déposer) et sélectionnables au clavier.
  * En aperçu, les nouvelles valeurs « tombent » dans leurs cellules.
  */
@@ -10,15 +10,15 @@ import type { Change, Extraction, Mapping, Preview, SheetAnalysis } from '../../
 import { gsap } from '../../motion/gsap'
 import { d, dist } from '../../motion/tokens'
 
-export const DRAG_TYPE = 'application/x-meridian-extraction'
+export const DRAG_TYPE = 'application/x-grimoire-extraction'
 
 const STATUS_STYLE: Record<string, string> = {
-  fill: 'text-champagne-200 bg-champagne-400/12',
-  overwrite: 'text-steel-300 bg-steel-500/15',
+  fill: 'text-sun-200 bg-sun-400/12',
+  overwrite: 'text-magic-300 bg-magic-500/15',
   conflict: 'text-warning bg-warning/10 underline decoration-dotted',
   unchanged: 'text-success/90',
   not_found: 'text-danger bg-danger/10',
-  protected: 'text-haze',
+  protected: 'text-fg-3',
 }
 
 interface Props {
@@ -81,14 +81,14 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
         <table className="border-separate border-spacing-0 text-[0.8rem]" aria-label={texts.atelier.gridLabel(sheet.name)}>
           <thead className="sticky top-0 z-20">
             <tr>
-              <th scope="col" className="sticky left-0 z-30 w-12 min-w-12 border-b border-r hairline bg-ink-2" aria-label="Lignes" />
+              <th scope="col" className="sticky left-0 z-30 w-12 min-w-12 border-b border-r hairline bg-card-2" aria-label="Lignes" />
               {cols.map((col) => {
                 const extraction = mapped[col] ? extractions[mapped[col]] : undefined
                 const isKey = col === keyColumn
                 const selected = selectedColumn === col
                 return (
                   <th key={col} scope="col" {...dropHandlers(col)}
-                    className={`min-w-36 border-b border-r hairline bg-ink-2 p-1 align-top transition-colors ${dragOver === col ? '!bg-sage-400/25' : ''}`}>
+                    className={`min-w-36 border-b border-r hairline bg-card-2 p-1 align-top transition-colors ${dragOver === col ? '!bg-mint-400/25' : ''}`}>
                     <button
                       type="button"
                       onClick={() => onSelectColumn(selected ? null : col)}
@@ -96,14 +96,14 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
                       disabled={isKey}
                       aria-label={`Colonne ${col}${isKey ? ' (clé)' : ''}${extraction ? ` : ${extraction.label}` : ''}`}
                       className={`w-full rounded-md px-2 py-1 font-mono text-xs font-bold transition-all ${
-                        selected ? 'bg-champagne-400 text-abyss shadow-[var(--shadow-glow-champagne)]' : isKey ? 'text-sage-300' : 'text-mist hover:bg-white/10'}`}
+                        selected ? 'bg-sun-400 text-on-accent shadow-[var(--shadow-glow-sun)]' : isKey ? 'text-mint-300' : 'text-fg-2 hover:bg-fg/10'}`}
                     >
                       {col}{isKey ? ' · clé' : ''}
                     </button>
                     {extraction && (
-                      <span className="mt-1 flex items-center gap-1 rounded-md border border-champagne-400/40 bg-champagne-400/10 px-1.5 py-0.5 text-left text-[0.7rem] font-medium text-champagne-200">
+                      <span className="mt-1 flex items-center gap-1 rounded-md border border-sun-400/40 bg-sun-400/10 px-1.5 py-0.5 text-left text-[0.7rem] font-medium text-sun-200">
                         <span className="truncate">{extraction.label}</span>
-                        <button type="button" onClick={() => onRemove(col)} aria-label={texts.atelier.removeMapping(col)} className="ml-auto shrink-0 text-champagne-300 hover:text-ivory">
+                        <button type="button" onClick={() => onRemove(col)} aria-label={texts.atelier.removeMapping(col)} className="ml-auto shrink-0 text-sun-300 hover:text-fg">
                           <X size={12} />
                         </button>
                       </span>
@@ -119,7 +119,7 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
               const isHeader = rowNumber === headerRow
               return (
                 <tr key={rowNumber}>
-                  <th scope="row" className={`sticky left-0 z-10 border-b border-r hairline bg-ink-2 px-2 text-right font-mono text-[0.7rem] ${isHeader ? 'text-champagne-300' : 'text-haze'}`}>
+                  <th scope="row" className={`sticky left-0 z-10 border-b border-r hairline bg-card-2 px-2 text-right font-mono text-[0.7rem] ${isHeader ? 'text-sun-300' : 'text-fg-3'}`}>
                     {rowNumber}
                   </th>
                   {row.map((cell, c) => {
@@ -129,16 +129,16 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
                     const isTarget = targets.has(ref)
                     const isMappedTarget = isTarget && !!mapped[col]
                     const showChange = change && showAfter && change.status !== 'protected'
-                    let cls = 'text-mist'
-                    if (isHeader) cls = 'bg-champagne-400/10 font-semibold text-champagne-200'
-                    else if (col === keyColumn && rowNumber > headerRow) cls = 'bg-sage-400/[0.07] font-mono text-sage-300'
-                    else if (cell.f) cls = 'text-haze italic'
+                    let cls = 'text-fg-2'
+                    if (isHeader) cls = 'bg-sun-400/10 font-semibold text-sun-200'
+                    else if (col === keyColumn && rowNumber > headerRow) cls = 'bg-mint-400/[0.07] font-mono text-mint-300'
+                    else if (cell.f) cls = 'text-fg-3 italic'
                     return (
                       <td key={col} {...dropHandlers(col)}
                         className={`relative h-8 max-w-64 border-b border-r hairline px-2 ${cell.n ? 'text-right tabular-nums' : ''} ${cls} ${
-                          selectedColumn === col ? 'bg-champagne-400/[0.06]' : ''} ${dragOver === col ? 'bg-sage-400/10' : ''}`}>
+                          selectedColumn === col ? 'bg-sun-400/[0.06]' : ''} ${dragOver === col ? 'bg-mint-400/10' : ''}`}>
                         {isTarget && !showChange && (
-                          <span aria-hidden="true" className={`pointer-events-none absolute inset-0.5 rounded-sm ${isMappedTarget ? 'animate-pulse-glow' : 'shadow-[inset_0_0_0_1px_rgb(134_191_174/0.35)]'}`} />
+                          <span aria-hidden="true" className={`pointer-events-none absolute inset-0.5 rounded-sm ${isMappedTarget ? 'animate-pulse-glow' : 'shadow-[inset_0_0_0_2px_rgb(46_196_182/0.7)]'}`} />
                         )}
                         {showChange ? (
                           <span data-drop={change.status === 'fill' || change.status === 'overwrite' ? '' : undefined}
@@ -159,7 +159,7 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
         </table>
       </div>
       {(sheet.grid.truncated_rows || sheet.grid.truncated_cols) && (
-        <p className="border-t hairline px-4 py-2 text-xs text-haze">{texts.atelier.truncated}</p>
+        <p className="border-t hairline px-4 py-2 text-xs text-fg-3">{texts.atelier.truncated}</p>
       )}
     </div>
   )

@@ -64,11 +64,11 @@ export function ScheduleDialog({
     >
       <div className="flex flex-col gap-5">
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-mist">{texts.schedule.frequency}</legend>
+          <legend className="mb-2 text-sm font-medium text-fg-2">{texts.schedule.frequency}</legend>
           <div className="grid grid-cols-2 gap-2">
             {options.map(([value, text]) => (
-              <label key={value} className={`cursor-pointer rounded-xl border px-4 py-3 text-sm transition-all duration-[var(--duration-fast)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-sage-400 ${
-                frequency === value ? 'border-champagne-400 bg-champagne-400/12 text-champagne-200 shadow-[var(--shadow-glow-champagne)]' : 'border-line-strong text-mist hover:border-steel-400/50'}`}>
+              <label key={value} className={`cursor-pointer rounded-xl border px-4 py-3 text-sm transition-all duration-[var(--duration-fast)] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-mint-400 ${
+                frequency === value ? 'border-sun-400 bg-sun-400/12 text-sun-200 shadow-[var(--shadow-glow-sun)]' : 'border-line-strong text-fg-2 hover:border-magic-400/50'}`}>
                 <input type="radio" name="frequency" value={value} checked={frequency === value} onChange={() => setFrequency(value)} className="sr-only" />
                 {text}
               </label>
@@ -76,7 +76,7 @@ export function ScheduleDialog({
           </div>
         </fieldset>
         {frequency === 'on_demand' ? (
-          <p className="text-mist">{texts.schedule.onDemandHint}</p>
+          <p className="text-fg-2">{texts.schedule.onDemandHint}</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {frequency === 'weekly' && (
@@ -103,7 +103,7 @@ export function ScheduleDialog({
             </Field>
           </div>
         )}
-        {frequency !== 'on_demand' && <p className="text-xs text-haze">{texts.schedule.paramsNote}</p>}
+        {frequency !== 'on_demand' && <p className="text-xs text-fg-3">{texts.schedule.paramsNote}</p>}
         {error && <p role="alert" className="text-sm text-danger">{error.message} {error.hint}</p>}
       </div>
     </Dialog>

@@ -1,7 +1,8 @@
 import { getUserName } from './storage'
 import { texts } from '../content/texts'
 import type {
-  Automation, Dashboard, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
+  RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -69,6 +70,44 @@ export const api = {
     request<Schedule>(`/schedules/${id}`, { method: 'PATCH', body: JSON.stringify({ enabled }), headers: { 'Content-Type': 'application/json' } }),
   deleteSchedule: (id: string) => request<{ ok: boolean }>(`/schedules/${id}`, { method: 'DELETE' }),
   suggest: (body: { title: string; description: string; urgency: string }) => request('/suggestions', json(body)),
+
+  fabric: {
+    status: () => request<FabricStatus>('/fabric'),
+    connect: (body: { server: string; database: string; user: string }) => request<FabricStatus>('/fabric/connect', json(body)),
+    disconnect: () => request<FabricStatus>('/fabric/disconnect', { method: 'POST' }),
+  },
+
+  rfi: {
+    facts: () => request<RfiFact[]>('/rfi/facts'),
+    funds: (q: string) => request<FundEntry[]>(`/rfi/funds?q=${encodeURIComponent(q)}`),
+    documents: () => request<RfiDocument[]>('/rfi/documents'),
+    document: (id: string) => request<RfiDocument>(`/rfi/documents/${id}`),
+    upload: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<RfiDocument>('/rfi/documents', { method: 'POST', body: form })
+    },
+    demo: (kind: 'xlsx' | 'docx') => request<RfiDocument>(`/rfi/demo/${kind}`, { method: 'POST' }),
+    answers: (id: string, body: RfiRequest) => request<RfiAnalysis>(`/rfi/documents/${id}/answers`, json(body)),
+    generate: (id: string, body: RfiRequest) => request<RfiGenerated>(`/rfi/documents/${id}/generate`, json(body)),
+    originalUrl: (id: string) => `/api/rfi/documents/${id}/original`,
+  },
+
+  merge: {
+    referentiel: () => request<MergeReferentiel>('/mergecodes/referentiel'),
+    uploadReferentiel: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<MergeReferentiel>('/mergecodes/referentiel', { method: 'POST', body: form })
+    },
+    demo: () => request<MergeAnalysis>('/mergecodes/demo', { method: 'POST' }),
+    upload: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<MergeAnalysis>('/mergecodes/documents', { method: 'POST', body: form })
+    },
+    apply: (id: string, decisions: MergeDecision[]) => request<MergeResult>(`/mergecodes/documents/${id}/appliquer`, json({ decisions })),
+  },
 
   atelier: {
     extractions: () => request<{ key_types: { id: string; label: string }[]; extractions: Extraction[] }>('/atelier/extractions'),

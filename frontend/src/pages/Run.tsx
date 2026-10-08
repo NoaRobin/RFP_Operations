@@ -107,11 +107,11 @@ export default function RunPage() {
     if (pokes.current % 4 === 0) toast('magic', pick(texts.easterEggs.orb, pokes.current / 4 - 1))
   }
 
-  const back = run?.target_type === 'recipe' ? '/atelier' : run ? `/automatisations/${run.target_id}` : '/'
+  const back = run?.target_type === 'recipe' ? '/atelier' : run?.target_type === 'rfi' ? '/rfi' : run?.target_type === 'mergecodes' ? '/merge-codes' : run ? `/automatisations/${run.target_id}` : '/sorts'
 
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-12">
-      <Link to={back} className="inline-flex items-center gap-2 text-sm text-mist hover:text-ivory">
+      <Link to={back} className="inline-flex items-center gap-2 text-sm text-fg-2 hover:text-fg">
         <ArrowLeft size={16} aria-hidden="true" />
         {run?.target_type === 'recipe' ? texts.nav.atelier : texts.automation.back}
       </Link>
@@ -127,7 +127,7 @@ export default function RunPage() {
             </div>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <StatusPill status={status} className="!text-sm" />
-              <p className="font-mono text-sm text-mist tabular-nums" aria-live="off">
+              <p className="font-mono text-sm text-fg-2 tabular-nums" aria-live="off">
                 {texts.run.elapsed} · {formatDuration(live ? elapsed : state.durationMs ?? run?.duration_ms ?? elapsed)}
               </p>
             </div>
@@ -138,19 +138,19 @@ export default function RunPage() {
         <div className="flex flex-col gap-6">
           <section data-enter className="glass rounded-[var(--radius-card)] p-6">
             <EnergyBar value={progress ?? stepProgress} status={status} label={`Progression de ${run?.target_name ?? 'cette exécution'}`} />
-            {state.progressMessage && <p className="mt-2 text-sm text-mist">{state.progressMessage}</p>}
+            {state.progressMessage && <p className="mt-2 text-sm text-fg-2">{state.progressMessage}</p>}
             <div className="mt-6 grid gap-6 sm:grid-cols-[1fr_auto]">
               <div>
-                <h2 className="mb-4 font-mono text-sm uppercase tracking-[0.2em] text-champagne-300">{texts.run.steps}</h2>
+                <h2 className="mb-4 font-mono text-sm uppercase tracking-[0.2em] text-sun-300">{texts.run.steps}</h2>
                 <Timeline steps={steps} />
               </div>
               <dl className="grid content-start gap-3 text-sm sm:min-w-48">
-                <div><dt className="text-haze">{texts.run.by}</dt><dd className="text-ivory">{run?.user ?? '…'}</dd></div>
-                <div><dt className="text-haze">Lancé</dt><dd className="text-ivory">{formatDateTime(run?.created_at)}</dd></div>
+                <div><dt className="text-fg-3">{texts.run.by}</dt><dd className="text-fg">{run?.user ?? '…'}</dd></div>
+                <div><dt className="text-fg-3">Lancé</dt><dd className="text-fg">{formatDateTime(run?.created_at)}</dd></div>
                 {run && Object.keys(run.params ?? {}).length > 0 && (
                   <div>
-                    <dt className="text-haze">{texts.run.params}</dt>
-                    <dd className="font-mono text-xs text-mist">
+                    <dt className="text-fg-3">{texts.run.params}</dt>
+                    <dd className="font-mono text-xs text-fg-2">
                       {Object.entries(run.params).filter(([, v]) => v !== null && v !== undefined).map(([k, v]) => <div key={k}>{k} = {String(v)}</div>)}
                     </dd>
                   </div>
@@ -164,24 +164,24 @@ export default function RunPage() {
 
           {!live && (
             <section ref={result} role={status === 'error' ? 'alert' : 'status'}
-              className={`rounded-[var(--radius-card)] border p-6 ${status === 'success' ? 'border-champagne-400/40 bg-champagne-400/[0.06]' : status === 'error' ? 'border-danger/40 bg-danger/[0.07]' : 'border-line-strong bg-white/[0.03]'}`}>
+              className={`rounded-[var(--radius-card)] border p-6 ${status === 'success' ? 'border-sun-400/40 bg-sun-400/[0.06]' : status === 'error' ? 'border-danger/40 bg-danger/[0.07]' : 'border-line-strong bg-fg/[0.03]'}`}>
               <h2 className="text-3xl">{title}</h2>
               {status === 'success' && (
                 <>
-                  {summary && <p className="mt-2 text-lg text-mist">{summary}</p>}
-                  {run && <p className="mt-1 text-sm text-champagne-300">{texts.run.minutesSaved(run.minutes_saved)}</p>}
+                  {summary && <p className="mt-2 text-lg text-fg-2">{summary}</p>}
+                  {run && <p className="mt-1 text-sm text-sun-300">{texts.run.minutesSaved(run.minutes_saved)}</p>}
                 </>
               )}
               {status === 'error' && (
                 <>
-                  <p className="mt-3 text-lg text-ivory">{error}</p>
+                  <p className="mt-3 text-lg text-fg">{error}</p>
                   {hint && (
-                    <p className="mt-2 text-mist"><span className="font-semibold text-ivory">{texts.run.whatToDo} </span>{hint}</p>
+                    <p className="mt-2 text-fg-2"><span className="font-semibold text-fg">{texts.run.whatToDo} </span>{hint}</p>
                   )}
-                  <p className="mt-3 text-sm italic text-haze">{joke}</p>
+                  <p className="mt-3 text-sm italic text-fg-3">{joke}</p>
                 </>
               )}
-              {status === 'cancelled' && <p className="mt-2 text-mist">{texts.run.cancelledBody}</p>}
+              {status === 'cancelled' && <p className="mt-2 text-fg-2">{texts.run.cancelledBody}</p>}
 
               {outputs.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-3">

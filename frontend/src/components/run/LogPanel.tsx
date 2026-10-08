@@ -5,8 +5,8 @@ import { d, ease } from '../../motion/tokens'
 import type { LogLine } from './useRunStream'
 
 const LEVEL = {
-  debug: 'text-haze',
-  info: 'text-mist',
+  debug: 'text-fg-3',
+  info: 'text-fg-2',
   success: 'text-success',
   warning: 'text-warning',
   error: 'text-danger',
@@ -41,17 +41,17 @@ export function LogPanel({ logs, live }: { logs: LogLine[]; live: boolean }) {
   return (
     <section aria-labelledby="logs-title" className="glass flex flex-col rounded-[var(--radius-card)]">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b hairline px-5 py-3">
-        <h2 id="logs-title" className="flex items-center gap-2 font-mono text-sm uppercase tracking-[0.2em] text-champagne-300">
-          {live && <span className="size-2 animate-pulse rounded-full bg-sage-400" aria-hidden="true" />}
+        <h2 id="logs-title" className="flex items-center gap-2 font-mono text-sm uppercase tracking-[0.2em] text-sun-300">
+          {live && <span className="size-2 animate-pulse rounded-full bg-mint-400" aria-hidden="true" />}
           {texts.run.logs}
         </h2>
         <div className="flex items-center gap-2 text-xs">
           {!follow && (
-            <button onClick={() => setFollow(true)} className="rounded-full border border-line-strong px-3 py-1 text-mist hover:text-ivory">
+            <button onClick={() => setFollow(true)} className="rounded-full border border-line-strong px-3 py-1 text-fg-2 hover:text-fg">
               {texts.run.followLogs}
             </button>
           )}
-          <button onClick={() => setDebug((v) => !v)} aria-pressed={debug} className="rounded-full border border-line-strong px-3 py-1 text-mist hover:text-ivory">
+          <button onClick={() => setDebug((v) => !v)} aria-pressed={debug} className="rounded-full border border-line-strong px-3 py-1 text-fg-2 hover:text-fg">
             {debug ? texts.run.hideDebug : texts.run.showDebug}
           </button>
         </div>
@@ -65,10 +65,10 @@ export function LogPanel({ logs, live }: { logs: LogLine[]; live: boolean }) {
         data-lenis-prevent
         className="h-80 overflow-y-auto px-5 py-4 font-mono text-[0.8rem] leading-6"
       >
-        {shown.length === 0 && <p className="text-haze">{texts.loading[0]}</p>}
+        {shown.length === 0 && <p className="text-fg-3">{texts.loading[0]}</p>}
         {shown.map((line) => (
-          <div key={line.id} data-log={line.id} className={`flex gap-3 ${LEVEL[line.level] ?? 'text-mist'}`}>
-            <span className="shrink-0 text-haze/70 tabular-nums">{line.ts.slice(11, 19)}</span>
+          <div key={line.id} data-log={line.id} className={`flex gap-3 ${LEVEL[line.level] ?? 'text-fg-2'}`}>
+            <span className="shrink-0 text-fg-3/70 tabular-nums">{line.ts.slice(11, 19)}</span>
             <span className="shrink-0 opacity-80">{TAG[line.level] ?? 'INF'}</span>
             <span className="whitespace-pre-wrap break-words">{line.message}</span>
           </div>

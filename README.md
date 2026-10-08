@@ -1,77 +1,83 @@
-# ◍ MERIDIAN — RFP Operations
+# ✦ GRIMOIRE — #RFPasenviedetravailler
 
 > *Les RFP, mais sans les sacrifices humains.*
 
-MERIDIAN regroupe les automatisations de l'équipe RFP dans une seule application : une **bibliothèque** d'automatisations lancées en un clic (ou au clavier avec **⌘K / Ctrl+K**), un **Atelier Excel** qui remplit les questionnaires à partir du Lakehouse Fabric, un **tableau de pilotage** et un **historique** complet.
+GRIMOIRE est l'application de l'équipe RFP. Elle fait quatre choses :
 
-Sans connexion Fabric, MERIDIAN démarre en **mode démonstration** avec un Lakehouse fictif. Vous pouvez donc tout voir dès la première minute.
+| Module | Ce qu'il fait |
+|---|---|
+| **Remplir un RFI** (`/rfi`) | Vous déposez un questionnaire **Excel ou Word**. Grimoire repère les questions quantitatives, cherche les réponses dans Fabric (≈ 90 % Product Info, le reste JUMP) et vous rend **exactement le même fichier**, avec les cases remplies. L'original n'est jamais modifié. |
+| **Merge codes Qvidian** (`/merge-codes`) | Le bot *mergecode* (repris tel quel depuis la branche `claude/merge-code`) repère les années d'expérience dans l'export Word de Qvidian et propose le bon `<<merge code>>`. Vous validez d'un clic, il insère et produit le compte rendu Excel. |
+| **Suivi d'activité** (`/suivi-activite`) | Le module *tryv2* (appels d'offres ouverts, gagnés, perdus, tarification), intégré sans modification sous `/suivi`. |
+| **Les sorts** (`/sorts`) | La bibliothèque d'automatisations (encours par part, top lignes, contrôles…) + l'Atelier Excel, le tableau de bord, l'historique, la palette **Ctrl+K**. |
+
+Sans connexion Fabric, Grimoire démarre en **mode démonstration** avec un Lakehouse fictif (ISIN `QZ…`, fonds imaginaires).
+
+> Identité : **cartoon néo-brutal** — papier crème, encre violette, contours épais, ombres décalées ; Fredoka + Nunito ; un grimoire vivant en 3D (three.js, ombrage toon) et des micro-animations GSAP. Le package Python s'appelle toujours `merlin` (nom technique interne).
+
+## Démarrage : un double-clic
+
+Prérequis : **Python 3.11+** (rien d'autre : l'interface est déjà compilée dans `frontend/dist`).
+
+1. Double-cliquez sur **`run.bat`** (Windows) — ou `./run.sh` / `python run.py` ailleurs.
+2. La première fois, il crée un environnement Python dans `%LOCALAPPDATA%\Grimoire` et installe les dépendances (quelques minutes).
+3. Le navigateur s'ouvre sur Grimoire.
+
+Options : `run.bat --demo` (force les données fictives) · `run.bat --doctor` (diagnostic) · `--port 8080` · `--no-browser` · `--rebuild` (recompile l'interface, Node requis).
+
+### Se connecter à Fabric (comme dans VS Code)
+Dans Grimoire, cliquez sur le badge **Fabric** en haut à droite, puis :
+1. **Serveur** : Fabric › Lakehouse › *SQL analytics endpoint* › copier la chaîne de connexion (la même que dans l'extension VS Code *mssql*) ;
+2. **Votre identifiant Microsoft** (prenom.nom@…) ;
+3. **Ouvrir la fenêtre Microsoft** : la fenêtre de connexion habituelle apparaît, vous validez. C'est tout.
+
+Grimoire utilise le pilote `mssql-python` (le même que l'extension VS Code, installé automatiquement sous Windows, aucun pilote ODBC requis) en `ActiveDirectoryInteractive`, lecture seule. Le serveur, la base et l'identifiant sont retenus dans `data/fabric.json` (**aucun mot de passe ni jeton n'est stocké**). Une seule fenêtre Microsoft par session : tous les sorts partagent la connexion.
+
+### Développement
+
+```bash
+cd backend && pip install -r requirements.txt && uvicorn merlin.main:app --reload   # API sur :8000
+cd frontend && npm install && npm run dev                                          # interface sur :5173
+cd backend && pytest                                                               # tests
+cd frontend && npm run build                                                       # recompile frontend/dist (à committer)
+```
 
 ---
 
-> Identité : **corporate premium** — encre, ivoire, champagne ; Instrument Serif + Inter Tight. Le package Python s'appelle toujours `merlin` (nom technique interne), l'application s'appelle MERIDIAN.
+## Remplir un RFI : comment ça marche
+1. **Détection** : dans un Excel, la colonne « Réponse / Answer » (sinon la première cellule vide à droite de la question) ; dans un Word, les tableaux question/réponse, les « … : » et les paragraphes vides après une question.
+2. **Correspondance** : chaque question est comparée au dictionnaire `backend/merlin/rfi/facts.yaml` (≈ 70 données : nom, ISIN, SRI, SFDR, frais, cut-off, encours, top 10…), par mots-clés FR/EN. **Pas d'IA externe, rien ne sort du poste.** Les questions qualitatives restent vides : Grimoire n'invente rien.
+3. **Vérification** : vous voyez chaque réponse proposée, son niveau de confiance, et pouvez changer la donnée ou ignorer la question.
+4. **Écriture** : Excel patché au niveau XML (mise en forme, formules, macros intactes), Word via python-docx (style des runs conservé). Fichier `<nom>_rempli_v<n>`.
 
-## Démarrage rapide
+Pour enseigner un nouveau mot-clé : ajoutez-le dans `facts.yaml` (le nom de colonne doit exister dans `catalog/fabric_schema.csv`, sinon la donnée est refusée au démarrage).
 
-Prérequis : **Python 3.11+** et **Node 20+**.
-
-```bash
-# 1. Configuration (facultative pour la démo)
-cp .env.example .env
-
-# 2. Backend (API + jobs + planificateur)
-cd backend
-python -m venv .venv
-# Windows : .venv\Scripts\activate    macOS/Linux : source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn merlin.main:app --reload --port 8000
-
-# 3. Frontend (autre terminal)
-cd frontend
-npm install
-npm run dev            # → http://localhost:5173
-```
-
-**Version « un seul serveur »** : `cd frontend && npm run build`, puis lancez seulement le backend. Il sert l'interface compilée sur http://localhost:8000.
-
-Tests backend : `cd backend && pip install -r requirements-dev.txt && pytest`.
-
-### Brancher Fabric
-Renseignez `FABRIC_SQL_ENDPOINT` dans `.env`. Pour le trouver : Lakehouse › *SQL analytics endpoint* › *Copier la chaîne de connexion*. Ensuite :
-```bash
-pip install pyodbc        # + « ODBC Driver 18 for SQL Server » installé sur le poste
-```
-Avec `MERLIN_DATA_MODE=auto` (par défaut), MERIDIAN utilise Fabric s'il est joignable et revient sinon au mode démo. Le badge en haut de l'écran indique la source active. L'authentification passe par Entra ID (`ActiveDirectoryInteractive` sur un poste, `ActiveDirectoryServicePrincipal` sur un serveur). **Aucun secret dans le code.**
+## Merge codes : le référentiel
+L'Excel « Années d'expérience – FR_EN pour Qvidian » (onglet *Data*) se dépose **une fois** dans l'écran Merge codes. Il reste dans `data/mergecodes/` sur votre poste et **n'est jamais committé** (données de collaborateurs).
 
 ---
 
 ## Arborescence
 
 ```
-catalog/
-  fabric_schema.csv        ← export INFORMATION_SCHEMA (source de vérité machine)
-  fabric_catalog.md        ← catalogue lisible : tables, colonnes, clés, relations, « À CONFIRMER »
-CLAUDE.md                  ← règles du projet (ne jamais deviner un nom de colonne)
-automations/               ← UN DOSSIER = UNE AUTOMATISATION (découverts au démarrage)
-  aum_par_part/            · type fabric  : manifest.yaml + query.sql
-  top_lignes_portefeuille/ · type fabric
-  controle_encours/        · type python  : manifest.yaml + run.py
+run.bat / run.sh / run.py  ← lanceur (venv, dépendances, navigateur)
+catalog/                   ← fabric_schema.csv (machine) + fabric_catalog.md (lisible, « À CONFIRMER »)
+automations/               ← UN DOSSIER = UN SORT (manifest.yaml + query.sql | run.py)
 backend/merlin/
-  data/        access.py   ← couche d'accès UNIQUE (Fabric | mock), validation contre le catalogue
-               catalog.py, mock.py
-  plugins/     manifest.py (schéma), registry.py (découverte), context.py (ctx), fabric_type.py
-  jobs/        manager.py (1 processus par exécution, SSE), worker.py
-  atelier/     analyzer.py, extractions.yaml, engine.py (aperçu + versions), store.py (recettes YAML)
-  api/         core.py, atelier.py
-  scheduler.py (APScheduler) · db.py (historique SQLite) · main.py
+  data/        access.py (accès UNIQUE Fabric | mock), fabric_link.py (connexion façon VS Code), catalog.py, mock.py
+  rfi/         facts.yaml, facts.py, detect.py, match.py, writer.py, service.py, demo.py
+  mergecodes/  service.py (pilote le bot vendorisé, sans Word ni pywin32)
+  suivi.py     monte tryv2 sous /suivi
+  plugins/ jobs/ atelier/ api/ scheduler.py db.py main.py
+backend/vendor/            ← code repris TEL QUEL : mergebot/ (+ bot_merge_codes.py), suivi/ (tryv2)
 frontend/src/
   content/texts.ts         ← TOUS les textes de l'interface (et l'humour)
-  motion/tokens.ts         ← courbes, durées, distances : le vocabulaire d'animation
-  styles/tokens.css        ← couleurs, typographies, ombres
-  components/three/        ← constellation de données 3D (R3F, InstancedMesh) + repli 2D automatique
-  components/fx/           ← champ de points, lueur du curseur, Lenis, easter eggs
-  components/CommandPalette.tsx ← palette ⌘K
-  pages/                   ← Intro, Library, AutomationPage, Run, Atelier, Dashboard, History, About, NotFound
-data/                      ← (généré, ignoré par git) historique, fichiers, versions, mock
+  motion/tokens.ts         ← courbes, durées, distances
+  styles/tokens.css        ← couleurs, typographies, ombres cartoon
+  components/three/        ← grimoire vivant 3D (toon + contours) + repli 2D SVG automatique
+  pages/                   ← Home, Rfi, MergeCodes, Suivi, Library (sorts), Atelier, Dashboard, History, About…
+frontend/dist/             ← interface compilée (committée : run.bat n'a pas besoin de Node)
+data/                      ← (généré, ignoré par git) historique, RFI, merge codes, suivi, mock
 ```
 
 ---
@@ -133,7 +139,7 @@ def run(ctx, as_of: str, seuil: float = 10.0):
 Ce que fournit `ctx` : `data` (accès Fabric), `log`, `step()`, `progress()`, `save_excel/csv/file`, `show_table`, `set_summary`, `output_dir`, `params`, `user`, et `browser`. Ce dernier est un emplacement réservé au futur navigateur Playwright : l'interface est en place, mais il lève une erreur explicite tant qu'il n'est pas implémenté. Une automatisation qui en dépend déclare `requires: [fabric, browser]`.
 
 ### Règles d'or
-1. **Les tables et les colonnes viennent de `catalog/fabric_catalog.md`.** Au démarrage, MERIDIAN valide chaque requête contre le catalogue, casse comprise. Une automatisation qui cite une colonne inconnue est marquée « indisponible » et ne peut pas être lancé.
+1. **Les tables et les colonnes viennent de `catalog/fabric_catalog.md`.** Au démarrage, Grimoire valide chaque requête contre le catalogue, casse comprise. Une automatisation qui cite une colonne inconnue est marquée « indisponible » et ne peut pas être lancé.
 2. Les modules ne se connectent jamais à Fabric eux-mêmes : ils passent par `ctx.data`.
 3. En mode démo, le T-SQL est traduit vers SQLite (sqlglot). Restez donc sur du SQL standard (SELECT, JOIN, CTE, GROUP BY, TOP, fonctions de fenêtre).
 
@@ -141,7 +147,7 @@ Ce que fournit `ctx` : `data` (accès Fabric), `log`, `step()`, `progress()`, `s
 
 ## L'Atelier Excel
 1. Déposez un `.xlsx`/`.xlsm`, ou cliquez sur **« Essayer avec un questionnaire de démo »**.
-2. MERIDIAN détecte la ligne d'en-tête, la **colonne clé** (ISIN reconnus dans le Lakehouse) et les **cellules à remplir** : vides, « ? », « TBD » ou surlignées en jaune. Les formules sont protégées.
+2. Grimoire détecte la ligne d'en-tête, la **colonne clé** (ISIN reconnus dans le Lakehouse) et les **cellules à remplir** : vides, « ? », « TBD » ou surlignées en jaune. Les formules sont protégées.
 3. Il propose des correspondances en-tête → extraction. Vous complétez par **glisser-déposer** depuis le catalogue (au clavier : sélectionnez la colonne, puis le bouton « Affecter »).
 4. **Aperçu** : les valeurs tombent dans les cellules ; vous pouvez basculer Avant/Après. Le bilan distingue ce qui est à remplir, ce qui est déjà juste, ce qui est introuvable, et les différences ignorées.
 5. **Exécuter** écrit `versions/<nom>_vN_<date>.xlsx` accompagné d'un journal des modifications. **L'original n'est jamais réécrit** (il est stocké en lecture seule).

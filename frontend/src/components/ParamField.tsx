@@ -72,10 +72,10 @@ export function ParamField({ automationId, spec, value, error, onChange }: Props
           case 'multiselect': {
             const selected = new Set(Array.isArray(value) ? value.map(String) : [])
             return (
-              <div id={id} role="group" aria-describedby={describedBy} className="flex max-h-56 flex-col gap-1 overflow-y-auto rounded-xl border border-line-strong bg-abyss/50 p-2">
+              <div id={id} role="group" aria-describedby={describedBy} className="flex max-h-56 flex-col gap-1 overflow-y-auto rounded-xl border border-line-strong bg-field/50 p-2">
                 {options?.map((o) => (
-                  <label key={String(o.value)} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-white/5">
-                    <input type="checkbox" className="accent-[var(--color-champagne-400)]" checked={selected.has(String(o.value))}
+                  <label key={String(o.value)} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-fg/5">
+                    <input type="checkbox" className="accent-[var(--color-sun-400)]" checked={selected.has(String(o.value))}
                       onChange={(e) => {
                         const next = new Set(selected)
                         if (e.target.checked) next.add(String(o.value))
@@ -84,7 +84,7 @@ export function ParamField({ automationId, spec, value, error, onChange }: Props
                       }} />
                     {o.label}
                   </label>
-                )) ?? <span className="p-2 text-sm text-haze">{texts.automation.loadingOptions}</span>}
+                )) ?? <span className="p-2 text-sm text-fg-3">{texts.automation.loadingOptions}</span>}
               </div>
             )
           }

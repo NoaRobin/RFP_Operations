@@ -3,8 +3,8 @@
 
 @layer base {
   html {
-    color-scheme: dark;
-    background: var(--color-night);
+    color-scheme: light;
+    background: var(--color-canvas);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -12,52 +12,60 @@
   body {
     margin: 0;
     min-height: 100dvh;
-    background:
-      radial-gradient(1200px 800px at 85% -10%, rgb(52 80 111 / 0.22), transparent 60%),
-      radial-gradient(900px 700px at -10% 110%, rgb(91 165 147 / 0.08), transparent 60%),
-      var(--color-night);
-    color: var(--color-ivory);
+    /* Papier crème + trame de points : le carnet de l'apprenti sorcier */
+    background-color: var(--color-canvas);
+    background-image: radial-gradient(rgb(27 21 48 / 0.09) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
+    color: var(--color-fg);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11", "tnum" 0;
-    letter-spacing: -0.005em;
+    font-size: 16px;
+    line-height: 1.55;
     overflow-x: hidden;
   }
-  ::selection { background: rgb(205 176 122 / 0.35); color: var(--color-ivory); }
+  ::selection { background: var(--color-sun-400); color: var(--color-fg); }
 
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
-    font-optical-sizing: auto;
-    font-weight: 400;
-    letter-spacing: -0.015em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
   }
 
-  /* Focus toujours visible : un anneau sage, impossible à rater. */
+  /* Focus toujours visible : contour violet épais + décalage, impossible à rater. */
   :focus-visible {
-    outline: 2px solid var(--color-sage-400);
+    outline: 3px solid var(--color-magic-500);
     outline-offset: 3px;
-    border-radius: 6px;
+    border-radius: 10px;
   }
-  button, [role="button"], a { -webkit-tap-highlight-color: transparent; }
+  button, [role="button"], a, label[for], summary { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:disabled { cursor: not-allowed; }
 
   /* Lenis */
   html.lenis, html.lenis body { height: auto; }
   .lenis.lenis-smooth { scroll-behavior: auto !important; }
   .lenis.lenis-stopped { overflow: hidden; }
 
-  /* Barres de défilement discrètes */
-  * { scrollbar-width: thin; scrollbar-color: rgb(143 166 195 / 0.35) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: rgb(27 21 48 / 0.35) transparent; }
 
-  dialog::backdrop { background: rgb(5 7 11 / 0.72); backdrop-filter: blur(6px); }
-
-  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8) sepia(0.4) hue-rotate(180deg); cursor: pointer; }
+  dialog::backdrop { background: rgb(27 21 48 / 0.45); backdrop-filter: blur(3px); }
 }
 
 @layer components {
+  /* Carte cartoon : fond blanc, contour d'encre, ombre pleine décalée. (Nom historique conservé.) */
   .glass {
-    background: linear-gradient(180deg, rgb(28 36 49 / 0.72), rgb(15 20 28 / 0.78));
-    border: 1px solid var(--color-line);
-    backdrop-filter: blur(14px) saturate(1.2);
+    background: var(--color-card);
+    border: 2.5px solid var(--color-fg);
+    box-shadow: var(--shadow-pop);
   }
+  .card-pop {
+    background: var(--color-card);
+    border: 2.5px solid var(--color-fg);
+    box-shadow: var(--shadow-pop);
+    transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-spring);
+  }
+  .card-pop:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-pop-lg); }
+  .card-pop:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 var(--color-fg); }
+
   /* SplitText enveloppe les lettres dans des <div>/<span> : chacune doit porter le dégradé */
   .text-gradient :is(div, span) {
     background-image: inherit;
@@ -66,34 +74,42 @@
     color: transparent;
   }
   .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.22em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-champagne-400);
+    color: var(--color-fg);
+    background: var(--color-sun-400);
+    border: 2px solid var(--color-fg);
+    border-radius: 999px;
+    padding: 0.15rem 0.7rem;
+    box-shadow: 2px 2px 0 0 var(--color-fg);
   }
   .text-gradient {
-    background: linear-gradient(100deg, var(--color-champagne-200), var(--color-champagne-400) 45%, var(--color-steel-300));
+    background: linear-gradient(100deg, var(--color-magic-500), var(--color-bubble-400) 55%, #ff8a3d);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+  /* Titre cartoon : lettres pleines, contour d'encre et ombre décalée */
+  .text-cartoon {
+    color: var(--color-sun-400);
+    -webkit-text-stroke: 0.06em var(--color-fg);
+    paint-order: stroke fill;
+    text-shadow: 0.06em 0.07em 0 var(--color-fg);
+  }
+  .text-cartoon :is(div, span) { -webkit-text-stroke: inherit; paint-order: stroke fill; }
   .hairline { border-color: var(--color-line); }
-  /* Halo qui suit le curseur (les variables --mx/--my sont posées en JS) */
+  /* Halo au survol (variables --mx/--my posées en JS) : une tache de couleur sous le curseur */
   .halo { position: relative; isolation: isolate; }
   .halo::before {
     content: "";
     position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
-    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), rgb(143 166 195 / 0.18), transparent 45%);
-    opacity: var(--halo-o, 0);
-    transition: opacity var(--duration-base) var(--ease-out-premium);
-  }
-  .halo::after {
-    content: "";
-    position: absolute; inset: -1px; border-radius: inherit; z-index: -1; pointer-events: none; padding: 1px;
-    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(205 176 122 / 0.7), transparent 50%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(255 210 63 / 0.35), transparent 55%);
     opacity: var(--halo-o, 0);
     transition: opacity var(--duration-base) var(--ease-out-premium);
   }
@@ -103,7 +119,7 @@
 }
 
 /* Mode aurore (easter egg Konami) */
-html.aurora { --color-steel-400: #b5d6cb; --color-sage-400: #c4b5fd; --color-champagne-300: #f6d7b0; }
+html.aurora { --color-sun-400: #ff6b9a; --color-mint-400: #9b82ff; --color-magic-500: #2ec4b6; }
 html.aurora body { animation: hue 6s linear infinite; }
 @keyframes hue { to { filter: hue-rotate(360deg); } }
 

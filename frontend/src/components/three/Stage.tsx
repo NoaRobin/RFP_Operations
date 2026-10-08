@@ -3,10 +3,10 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode 
 import { canUse3D } from '../../lib/perf'
 import { useLowPowerPref } from '../../lib/storage'
 import { useReducedMotion } from '../../motion/useReducedMotion'
-import ConstellationFallback from './ConstellationFallback'
+import GrimoireFallback from './GrimoireFallback'
 import type { Mood } from './moods'
 
-const ConstellationScene = lazy(() => import('./ConstellationScene'))
+const GrimoireScene = lazy(() => import('./GrimoireScene'))
 
 class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode; onError: () => void }, { failed: boolean }> {
   state = { failed: false }
@@ -42,13 +42,13 @@ export function Stage({ mood, onPoke, className = '' }: { mood: Mood; onPoke?: (
       }
     : undefined
 
-  const fallback = <ConstellationFallback mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} />
+  const fallback = <GrimoireFallback mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} />
   return (
     <div className={className || 'relative'}>
       {use3D ? (
         <SceneBoundary fallback={fallback} onError={() => setDegraded(true)}>
           <Suspense fallback={fallback}>
-            <ConstellationScene mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} onDegrade={() => setDegraded(true)} />
+            <GrimoireScene mood={mood} reduced={reduced} onPoke={poke} burstKey={burstKey} onDegrade={() => setDegraded(true)} />
           </Suspense>
         </SceneBoundary>
       ) : (

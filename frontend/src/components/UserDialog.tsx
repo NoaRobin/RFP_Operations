@@ -36,7 +36,7 @@ export function UserDialog({ open, onClose }: { open: boolean; onClose: () => vo
           save()
         }}
       >
-        <p className="text-mist">{texts.user.promptBody}</p>
+        <p className="text-fg-2">{texts.user.promptBody}</p>
         <Field label={texts.user.promptLabel}>
           {({ id }) => <TextInput id={id} value={name} maxLength={60} autoFocus onChange={(e) => setName(e.target.value)} placeholder="Viviane L." />}
         </Field>

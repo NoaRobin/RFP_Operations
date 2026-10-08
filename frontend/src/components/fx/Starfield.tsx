@@ -1,5 +1,5 @@
 /**
- * Champ d'étoiles en canvas 2D (léger) : parallaxe douce à la souris, scintillement, étoiles filantes rares.
+ * Confettis d'étoiles en canvas 2D (léger) : parallaxe douce à la souris, scintillement, étoiles filantes rares.
  * En mouvement réduit : dessin statique unique. En arrière-plan d'onglet : pause.
  */
 import { useEffect, useRef } from 'react'
@@ -42,7 +42,7 @@ export function Starfield() {
     }
 
     const color = (hue: number, alpha: number) =>
-      hue < 0.6 ? `rgba(243,239,231,${alpha})` : hue < 0.82 ? `rgba(183,198,218,${alpha})` : hue < 0.94 ? `rgba(227,207,161,${alpha})` : `rgba(134,191,174,${alpha})`
+      hue < 0.55 ? `rgba(27,21,48,${alpha * 0.18})` : hue < 0.7 ? `rgba(255,190,30,${alpha * 0.55})` : hue < 0.82 ? `rgba(124,92,255,${alpha * 0.4})` : hue < 0.92 ? `rgba(46,196,182,${alpha * 0.45})` : `rgba(255,107,154,${alpha * 0.45})`
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, width, height)
@@ -67,10 +67,11 @@ export function Starfield() {
         for (let i = shooting.length - 1; i >= 0; i--) {
           const s = shooting[i]
           const grad = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 12, s.y - s.vy * 12)
-          grad.addColorStop(0, `rgba(227,207,161,${s.life})`)
-          grad.addColorStop(1, 'rgba(227,207,161,0)')
+          grad.addColorStop(0, `rgba(124,92,255,${s.life * 0.7})`)
+          grad.addColorStop(1, 'rgba(255,107,154,0)')
           ctx.strokeStyle = grad
-          ctx.lineWidth = 1.4
+          ctx.lineWidth = 2.5
+          ctx.lineCap = 'round'
           ctx.beginPath()
           ctx.moveTo(s.x, s.y)
           ctx.lineTo(s.x - s.vx * 12, s.y - s.vy * 12)
@@ -103,14 +104,14 @@ export function Starfield() {
     window.addEventListener('resize', resize)
     window.addEventListener('pointermove', onMove, { passive: true })
     document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('meridian:shower', onShower)
+    window.addEventListener('grimoire:shower', onShower)
     if (!reduced) raf = requestAnimationFrame(loop)
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onMove)
       document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('meridian:shower', onShower)
+      window.removeEventListener('grimoire:shower', onShower)
     }
   }, [reduced])
 

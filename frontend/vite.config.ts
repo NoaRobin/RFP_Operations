@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
-    proxy: { '/api': { target: backend, changeOrigin: true } },
+    proxy: { '/api': { target: backend, changeOrigin: true }, '/suivi': { target: backend, changeOrigin: true } },
   },
   build: {
     target: 'es2022',

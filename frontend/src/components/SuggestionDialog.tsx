@@ -49,7 +49,7 @@ export function SuggestionDialog({ open, onClose }: { open: boolean; onClose: ()
       }
     >
       <div className="flex flex-col gap-5">
-        <p className="text-mist">{texts.suggest.body}</p>
+        <p className="text-fg-2">{texts.suggest.body}</p>
         <Field label={texts.suggest.titleLabel} required error={error}>
           {({ id, describedBy, invalid }) => (
             <TextInput id={id} aria-describedby={describedBy} aria-invalid={invalid} value={title} maxLength={140}
@@ -60,11 +60,11 @@ export function SuggestionDialog({ open, onClose }: { open: boolean; onClose: ()
           {({ id }) => <TextArea id={id} value={description} placeholder={texts.suggest.descriptionPlaceholder} onChange={(e) => setDescription(e.target.value)} />}
         </Field>
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-mist">{texts.suggest.urgency}</legend>
+          <legend className="mb-2 text-sm font-medium text-fg-2">{texts.suggest.urgency}</legend>
           <div className="flex flex-wrap gap-2">
             {Object.entries(texts.suggest.urgencies).map(([value, label]) => (
-              <label key={value} className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-sage-400 ${
-                urgency === value ? 'border-champagne-400 bg-champagne-400/15 text-champagne-200' : 'border-line-strong text-mist hover:text-ivory'}`}>
+              <label key={value} className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-mint-400 ${
+                urgency === value ? 'border-sun-400 bg-sun-400/15 text-sun-200' : 'border-line-strong text-fg-2 hover:text-fg'}`}>
                 <input type="radio" name="urgency" value={value} checked={urgency === value} onChange={() => setUrgency(value)} className="sr-only" />
                 {label}
               </label>

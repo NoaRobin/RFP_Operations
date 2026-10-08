@@ -80,7 +80,7 @@ function SpellForm({ automation, previous }: { automation: Automation; previous?
     >
       <h2 className="text-2xl">{texts.automation.paramsTitle}</h2>
       <div className="mt-6 flex flex-col gap-5">
-        {automation.params.length === 0 && <p className="text-mist">{texts.automation.noParams}</p>}
+        {automation.params.length === 0 && <p className="text-fg-2">{texts.automation.noParams}</p>}
         {automation.params.map((spec) => (
           <ParamField key={spec.name} automationId={automation.id} spec={spec} value={values[spec.name]} error={errors[spec.name]}
             onChange={(v) => {
@@ -92,7 +92,7 @@ function SpellForm({ automation, previous }: { automation: Automation; previous?
       {submitError && (
         <div role="alert" className="mt-6 rounded-xl border border-danger/40 bg-danger/10 p-4">
           <p className="font-semibold text-danger">{submitError.message}</p>
-          {submitError.hint && <p className="mt-1 text-sm text-mist">{submitError.hint}</p>}
+          {submitError.hint && <p className="mt-1 text-sm text-fg-2">{submitError.hint}</p>}
         </div>
       )}
       <div ref={button} className="mt-8 flex flex-wrap items-center gap-3">
@@ -132,27 +132,27 @@ export default function AutomationPage() {
 
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,72rem)] pt-12">
-      <Link to="/" className="inline-flex items-center gap-2 text-sm text-mist hover:text-ivory">
+      <Link to="/sorts" className="inline-flex items-center gap-2 text-sm text-fg-2 hover:text-fg">
         <ArrowLeft size={16} aria-hidden="true" />
         {texts.automation.back}
       </Link>
 
       <header className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-start">
         <div data-flip-id={`icon-${automation.id}`}
-          className="grid size-20 shrink-0 place-items-center rounded-3xl border border-champagne-400/40 bg-[radial-gradient(circle_at_30%_25%,rgb(227_207_161/0.3),rgb(52_80_111/0.3)_60%,transparent)] text-champagne-300 shadow-[var(--shadow-glow-champagne)]">
+          className="grid size-20 shrink-0 place-items-center rounded-3xl border border-sun-400/40 bg-[radial-gradient(circle_at_30%_25%,rgb(227_207_161/0.3),rgb(52_80_111/0.3)_60%,transparent)] text-sun-300 shadow-[var(--shadow-glow-sun)]">
           <SpellIcon name={automation.icon} size={38} strokeWidth={1.5} />
         </div>
         <div className="min-w-0">
-          <p className="eyebrow !text-steel-300">{automation.category}</p>
-          <h1 data-flip-id={`title-${automation.id}`} className="mt-2 text-[clamp(2.25rem,5vw,3.75rem)] font-light leading-none">{automation.name}</h1>
-          <p className="mt-4 max-w-3xl text-lg text-mist">{automation.description}</p>
+          <p className="eyebrow !text-magic-300">{automation.category}</p>
+          <h1 data-flip-id={`title-${automation.id}`} className="mt-2 text-[clamp(2.25rem,5vw,3.75rem)] font-bold leading-none">{automation.name}</h1>
+          <p className="mt-4 max-w-3xl text-lg text-fg-2">{automation.description}</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <Badge tone="champagne"><Clock size={12} aria-hidden="true" />{texts.library.minutesSaved(automation.estimated_minutes_saved)}</Badge>
+            <Badge tone="sun"><Clock size={12} aria-hidden="true" />{texts.library.minutesSaved(automation.estimated_minutes_saved)}</Badge>
             <Badge tone="muted">{texts.library.types[automation.type]}</Badge>
             {automation.requires.map((r) => (
-              <Badge key={r} tone="sage">{r === 'browser' ? <Globe size={12} aria-hidden="true" /> : <Database size={12} aria-hidden="true" />}{texts.automation.needs[r] ?? r}</Badge>
+              <Badge key={r} tone="mint">{r === 'browser' ? <Globe size={12} aria-hidden="true" /> : <Database size={12} aria-hidden="true" />}{texts.automation.needs[r] ?? r}</Badge>
             ))}
-            {automation.tags.map((t) => <Badge key={t} tone="steel">#{t}</Badge>)}
+            {automation.tags.map((t) => <Badge key={t} tone="magic">#{t}</Badge>)}
           </div>
         </div>
       </header>
@@ -160,8 +160,8 @@ export default function AutomationPage() {
       {!automation.healthy && (
         <div role="alert" className="mt-8 rounded-[var(--radius-card)] border border-danger/40 bg-danger/10 p-5">
           <p className="flex items-center gap-2 font-semibold text-danger"><TriangleAlert size={18} aria-hidden="true" />{texts.automation.unhealthyTitle}</p>
-          <p className="mt-1 text-mist">{texts.automation.unhealthyBody}</p>
-          <ul className="mt-2 list-disc pl-6 font-mono text-sm text-haze">{automation.problems.map((p) => <li key={p}>{p}</li>)}</ul>
+          <p className="mt-1 text-fg-2">{texts.automation.unhealthyBody}</p>
+          <ul className="mt-2 list-disc pl-6 font-mono text-sm text-fg-3">{automation.problems.map((p) => <li key={p}>{p}</li>)}</ul>
         </div>
       )}
 
@@ -172,9 +172,9 @@ export default function AutomationPage() {
           {automation.outputs.length > 0 && (
             <section className="glass rounded-[var(--radius-card)] p-6" data-enter>
               <h2 className="text-xl">{texts.automation.outputs}</h2>
-              <ul className="mt-4 space-y-2 text-mist">
+              <ul className="mt-4 space-y-2 text-fg-2">
                 {automation.outputs.map((o) => (
-                  <li key={o.label} className="flex items-center gap-2"><Sparkles size={14} className="text-champagne-300" aria-hidden="true" />{o.label}</li>
+                  <li key={o.label} className="flex items-center gap-2"><Sparkles size={14} className="text-sun-300" aria-hidden="true" />{o.label}</li>
                 ))}
               </ul>
             </section>
@@ -182,15 +182,15 @@ export default function AutomationPage() {
           <section className="glass rounded-[var(--radius-card)] p-6" data-enter>
             <h2 className="text-xl">{texts.automation.recent}</h2>
             {!data?.recent_runs?.length ? (
-              <p className="mt-3 text-mist">{texts.automation.noRecent}</p>
+              <p className="mt-3 text-fg-2">{texts.automation.noRecent}</p>
             ) : (
               <ul className="mt-4 divide-y divide-[var(--color-line)]">
                 {data.recent_runs.map((r) => (
                   <li key={r.id}>
-                    <Link to={`/executions/${r.id}`} className="flex items-center gap-3 py-3 text-sm hover:text-ivory">
+                    <Link to={`/executions/${r.id}`} className="flex items-center gap-3 py-3 text-sm hover:text-fg">
                       <StatusPill status={r.status} />
-                      <span className="truncate text-mist">{r.user}</span>
-                      <span className="ml-auto shrink-0 text-haze">{formatRelative(r.created_at)} · {formatDuration(r.duration_ms)}</span>
+                      <span className="truncate text-fg-2">{r.user}</span>
+                      <span className="ml-auto shrink-0 text-fg-3">{formatRelative(r.created_at)} · {formatDuration(r.duration_ms)}</span>
                     </Link>
                   </li>
                 ))}
@@ -205,7 +205,7 @@ export default function AutomationPage() {
                 <ChevronDown className={`transition-transform duration-[var(--duration-base)] ${showSql ? 'rotate-180' : ''}`} size={20} aria-hidden="true" />
               </button>
               {showSql && (
-                <pre className="mt-4 max-h-96 overflow-auto rounded-xl bg-abyss/80 p-4 font-mono text-xs leading-relaxed text-sage-300">{data.query.trim()}</pre>
+                <pre className="mt-4 max-h-96 overflow-auto rounded-xl bg-field/80 p-4 font-mono text-xs leading-relaxed text-mint-300">{data.query.trim()}</pre>
               )}
             </section>
           )}

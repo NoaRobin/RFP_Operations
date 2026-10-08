@@ -15,7 +15,7 @@ const TONE = {
   success: 'text-success',
   error: 'text-danger',
   info: 'text-info',
-  magic: 'text-champagne-300',
+  magic: 'text-sun-300',
 }
 
 function ToastView({ item, onClose }: { item: ToastItem; onClose: () => void }) {
@@ -28,10 +28,10 @@ function ToastView({ item, onClose }: { item: ToastItem; onClose: () => void }) 
     <div ref={ref} className="glass pointer-events-auto flex w-[min(92vw,24rem)] items-start gap-3 rounded-2xl p-4 shadow-[var(--shadow-deep)]">
       <Icon className={`mt-0.5 shrink-0 ${TONE[item.tone]}`} size={20} aria-hidden="true" />
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-ivory">{item.title}</p>
-        {item.body && <p className="mt-1 text-sm text-mist">{item.body}</p>}
+        <p className="font-semibold text-fg">{item.title}</p>
+        {item.body && <p className="mt-1 text-sm text-fg-2">{item.body}</p>}
       </div>
-      <button onClick={onClose} aria-label="Fermer la notification" className="text-haze hover:text-ivory"><X size={16} /></button>
+      <button onClick={onClose} aria-label="Fermer la notification" className="text-fg-3 hover:text-fg"><X size={16} /></button>
     </div>
   )
 }

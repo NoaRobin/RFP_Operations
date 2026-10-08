@@ -17,10 +17,10 @@ function StepNode({ step, index }: { step: StepState; index: number }) {
   }, [step.status])
 
   const styles = {
-    pending: 'border-line-strong text-haze bg-ink',
-    running: 'border-sage-400 text-sage-300 bg-sage-400/10 animate-pulse-glow',
-    done: 'border-champagne-400 text-abyss bg-champagne-300 shadow-[0_0_16px_rgb(205_176_122/0.6)]',
-    error: 'border-danger text-ivory bg-danger/70',
+    pending: 'border-fg/30 text-fg-3 bg-card',
+    running: 'border-fg text-fg bg-mint-400 animate-pulse',
+    done: 'border-fg text-on-accent bg-sun-400 shadow-[2px_2px_0_0_var(--color-fg)]',
+    error: 'border-fg text-white bg-danger',
   }[step.status]
 
   return (
@@ -29,9 +29,9 @@ function StepNode({ step, index }: { step: StepState; index: number }) {
         {step.status === 'done' ? <Check size={16} strokeWidth={3} /> : step.status === 'error' ? <X size={16} strokeWidth={3} /> : index + 1}
       </span>
       <div className="pt-1">
-        <p className={`font-medium ${step.status === 'pending' ? 'text-haze' : 'text-ivory'}`}>{step.name}</p>
-        <p className="text-xs text-haze">
-          {step.status === 'running' && <span className="text-sage-300">en cours…</span>}
+        <p className={`font-medium ${step.status === 'pending' ? 'text-fg-3' : 'text-fg'}`}>{step.name}</p>
+        <p className="text-xs text-fg-3">
+          {step.status === 'running' && <span className="text-mint-300">en cours…</span>}
           {step.status === 'done' && step.duration !== undefined && formatDuration(step.duration * 1000)}
         </p>
       </div>
@@ -41,13 +41,13 @@ function StepNode({ step, index }: { step: StepState; index: number }) {
 
 export function Timeline({ steps }: { steps: StepState[] }) {
   const done = steps.filter((s) => s.status === 'done').length
-  if (!steps.length) return <p className="text-sm text-haze">{texts.run.noSteps}</p>
+  if (!steps.length) return <p className="text-sm text-fg-3">{texts.run.noSteps}</p>
   return (
     <ol className="relative" aria-label={`${texts.run.steps} : ${done} sur ${steps.length} terminées`}>
       <span aria-hidden="true" className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-line-strong" />
       <span
         aria-hidden="true"
-        className="absolute left-[15px] top-2 w-0.5 bg-gradient-to-b from-champagne-300 to-sage-400 transition-[height] duration-[var(--duration-slow)] ease-[var(--ease-out-premium)]"
+        className="absolute left-[15px] top-2 w-0.5 bg-gradient-to-b from-sun-400 to-mint-400 transition-[height] duration-[var(--duration-slow)] ease-[var(--ease-out-premium)]"
         style={{ height: `calc((100% - 1rem) * ${steps.length > 1 ? Math.min(done, steps.length - 1) / (steps.length - 1) : 0})` }}
       />
       {steps.map((step, i) => <StepNode key={step.name} step={step} index={i} />)}

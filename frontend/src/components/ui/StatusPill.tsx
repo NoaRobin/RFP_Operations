@@ -2,11 +2,11 @@ import type { RunStatus } from '../../lib/types'
 import { texts } from '../../content/texts'
 
 const STYLES: Record<RunStatus, string> = {
-  queued: 'text-mist border-line-strong bg-white/5',
-  running: 'text-sage-300 border-sage-400/50 bg-sage-400/10',
+  queued: 'text-fg-2 border-line-strong bg-fg/5',
+  running: 'text-mint-300 border-mint-400/50 bg-mint-400/10',
   success: 'text-success border-success/40 bg-success/10',
   error: 'text-danger border-danger/40 bg-danger/10',
-  cancelled: 'text-haze border-line-strong bg-white/5',
+  cancelled: 'text-fg-3 border-line-strong bg-fg/5',
 }
 
 export function StatusPill({ status, className = '' }: { status: RunStatus; className?: string }) {
@@ -21,12 +21,12 @@ export function StatusPill({ status, className = '' }: { status: RunStatus; clas
   )
 }
 
-export function Badge({ children, tone = 'steel', className = '' }: { children: React.ReactNode; tone?: 'steel' | 'champagne' | 'sage' | 'muted' | 'danger'; className?: string }) {
+export function Badge({ children, tone = 'magic', className = '' }: { children: React.ReactNode; tone?: 'magic' | 'sun' | 'mint' | 'muted' | 'danger'; className?: string }) {
   const tones = {
-    steel: 'text-steel-300 border-steel-400/30 bg-steel-500/10',
-    champagne: 'text-champagne-300 border-champagne-400/35 bg-champagne-400/10',
-    sage: 'text-sage-300 border-sage-400/35 bg-sage-400/10',
-    muted: 'text-mist border-line-strong bg-white/5',
+    magic: 'text-magic-300 border-magic-400/30 bg-magic-500/10',
+    sun: 'text-sun-300 border-sun-400/35 bg-sun-400/10',
+    mint: 'text-mint-300 border-mint-400/35 bg-mint-400/10',
+    muted: 'text-fg-2 border-line-strong bg-fg/5',
     danger: 'text-danger border-danger/40 bg-danger/10',
   }
   return <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${tones[tone]} ${className}`}>{children}</span>

@@ -24,18 +24,18 @@ function FeaturedAtelier() {
   const ref = useTilt<HTMLDivElement>(3)
   return (
     <div ref={ref} className="halo relative overflow-hidden rounded-[calc(var(--radius-card)*1.4)] glass p-8 sm:p-10" data-reveal>
-      <div aria-hidden="true" className="absolute -right-16 -top-24 size-80 rounded-full bg-[radial-gradient(circle,rgb(205_176_122/0.22),transparent_65%)] blur-2xl" />
+      <div aria-hidden="true" className="absolute -right-16 -top-24 size-80 rounded-full bg-[radial-gradient(circle,rgb(255_210_63/0.45),transparent_65%)] blur-2xl" />
       <div aria-hidden="true" className="absolute right-6 top-6 hidden sm:grid grid-cols-6 gap-1.5 opacity-60" style={{ transform: 'translateZ(40px)' }}>
         {Array.from({ length: 24 }, (_, i) => (
-          <span key={i} className={`h-5 w-9 rounded-sm border ${[3, 8, 9, 14, 20].includes(i) ? 'border-sage-400/70 bg-sage-400/15 animate-pulse-glow' : 'border-line-strong bg-white/[0.02]'}`} />
+          <span key={i} className={`h-5 w-9 rounded-sm border ${[3, 8, 9, 14, 20].includes(i) ? 'border-mint-400/70 bg-mint-400/15 animate-pulse-glow' : 'border-line-strong bg-fg/[0.02]'}`} />
         ))}
       </div>
       <p className="eyebrow">{texts.library.featuredEyebrow}</p>
       <h2 className="mt-3 flex items-center gap-3 text-4xl sm:text-5xl">
-        <FileSpreadsheet className="text-champagne-300" size={36} aria-hidden="true" />
+        <FileSpreadsheet className="text-sun-300" size={36} aria-hidden="true" />
         {texts.library.featuredTitle}
       </h2>
-      <p className="mt-4 max-w-2xl text-lg text-mist">{texts.library.featuredBody}</p>
+      <p className="mt-4 max-w-2xl text-lg text-fg-2">{texts.library.featuredBody}</p>
       <ButtonLink to="/atelier" variant="primary" size="lg" className="mt-8" icon={<ArrowRight size={18} />}>
         {texts.library.featuredCta}
       </ButtonLink>
@@ -131,10 +131,10 @@ export default function Library() {
       key={value}
       onClick={() => changeFilter(() => setCategory(value))}
       aria-pressed={category === value}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-all duration-[var(--duration-fast)] ${
+      className={`inline-flex items-center gap-1.5 rounded-full border-2 px-4 py-2 text-sm font-bold transition-all duration-[var(--duration-fast)] ${
         category === value
-          ? 'border-champagne-400/70 bg-champagne-400/15 text-champagne-200 shadow-[var(--shadow-glow-champagne)]'
-          : 'border-line-strong text-mist hover:text-ivory hover:border-steel-400/50'}`}
+          ? 'border-fg bg-sun-400 text-fg shadow-[2px_2px_0_0_var(--color-fg)]'
+          : 'border-fg/25 bg-card text-fg-2 hover:text-fg hover:border-fg'}`}
     >
       {label}
     </button>
@@ -144,12 +144,12 @@ export default function Library() {
     <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-16 sm:pt-24">
       <section aria-labelledby="hero-title" className="max-w-4xl">
         <p className="eyebrow">{texts.library.eyebrow}</p>
-        <h1 id="hero-title" data-hero-title className="mt-4 text-[clamp(2.75rem,7vw,5.5rem)] font-light leading-[0.95]">
+        <h1 id="hero-title" data-hero-title className="mt-4 text-[clamp(2.75rem,7vw,5.5rem)] font-bold leading-[0.95]">
           {greeting()}{name ? `, ${name}` : ''}.
           <br />
-          <em className="text-gradient">{texts.greeting.question}</em>
+          <span className="text-cartoon">{texts.greeting.question}</span>
         </h1>
-        <p data-hero-sub className="mt-6 max-w-2xl text-lg text-mist">{subtitle}</p>
+        <p data-hero-sub className="mt-6 max-w-2xl text-lg text-fg-2">{subtitle}</p>
       </section>
 
       <div className="mt-14">
@@ -160,14 +160,14 @@ export default function Library() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between" data-reveal>
           <div>
             <h2 id="spells-title" className="text-4xl">{texts.library.title}</h2>
-            <p className="mt-2 text-mist">
+            <p className="mt-2 text-fg-2">
               {texts.library.available(automations.length)}
-              {health?.data_mode === 'mock' && <span className="text-champagne-300"> · {texts.app.demoBadge.toLowerCase()}</span>}
+              {health?.data_mode === 'mock' && <span className="text-sun-300"> · {texts.app.demoBadge.toLowerCase()}</span>}
             </p>
           </div>
           <div className="relative w-full lg:w-96">
             <label htmlFor="spell-search" className="sr-only">{texts.library.searchLabel}</label>
-            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-haze" size={18} aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-3" size={18} aria-hidden="true" />
             <input
               id="spell-search"
               ref={search}
@@ -175,7 +175,7 @@ export default function Library() {
               value={query}
               onChange={(e) => changeFilter(() => setQuery(e.target.value))}
               placeholder={texts.library.searchPlaceholder}
-              className="h-12 w-full rounded-full border border-line-strong bg-abyss/60 pl-11 pr-4 text-ivory placeholder:text-haze transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:border-sage-400 focus:outline-none focus:shadow-[0_0_0_3px_rgb(134_191_174/0.18)]"
+              className="h-12 w-full rounded-full border-2 border-fg bg-card pl-11 pr-4 font-semibold text-fg placeholder:text-fg-3 transition-[border-color,box-shadow] duration-[var(--duration-fast)] focus:outline-none focus:shadow-[3px_3px_0_0_var(--color-magic-500)]"
             />
           </div>
         </div>
@@ -204,11 +204,11 @@ export default function Library() {
               <div data-item className={category === ALL && !query ? '' : 'hidden'}>
                 <button
                   onClick={openSuggest}
-                  className="group flex h-full min-h-72 w-full flex-col items-start justify-end rounded-[var(--radius-card)] border border-dashed border-champagne-400/40 p-6 text-left transition-all duration-[var(--duration-base)] hover:border-champagne-400 hover:bg-champagne-400/5"
+                  className="group flex h-full min-h-72 w-full flex-col items-start justify-end rounded-[var(--radius-card)] border-[2.5px] border-dashed border-fg/40 bg-card/60 p-6 text-left transition-all duration-[var(--duration-base)] hover:border-sun-400 hover:bg-sun-400/5"
                 >
-                  <Lightbulb className="text-champagne-300 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:-rotate-12 group-hover:scale-110" size={32} aria-hidden="true" />
-                  <span className="mt-4 font-display text-2xl text-ivory">{texts.library.suggestCardTitle}</span>
-                  <span className="mt-2 text-mist">{texts.library.suggestCardBody}</span>
+                  <Lightbulb className="text-sun-300 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:-rotate-12 group-hover:scale-110" size={32} aria-hidden="true" />
+                  <span className="mt-4 font-display text-2xl text-fg">{texts.library.suggestCardTitle}</span>
+                  <span className="mt-2 text-fg-2">{texts.library.suggestCardBody}</span>
                 </button>
               </div>
             </div>
@@ -229,9 +229,9 @@ export default function Library() {
             {data.broken.length > 0 && (
               <div className="mt-12 rounded-[var(--radius-card)] border border-warning/30 bg-warning/5 p-6" role="note">
                 <h3 className="flex items-center gap-2 text-xl"><TriangleAlert className="text-warning" size={20} aria-hidden="true" />{texts.library.brokenTitle}</h3>
-                <p className="mt-2 text-mist">{texts.library.brokenBody}</p>
-                <ul className="mt-3 space-y-1 font-mono text-sm text-haze">
-                  {data.broken.map((b) => <li key={b.folder}><span className="text-ivory">{b.folder}</span> — {b.problems.join(' ; ')}</li>)}
+                <p className="mt-2 text-fg-2">{texts.library.brokenBody}</p>
+                <ul className="mt-3 space-y-1 font-mono text-sm text-fg-3">
+                  {data.broken.map((b) => <li key={b.folder}><span className="text-fg">{b.folder}</span> — {b.problems.join(' ; ')}</li>)}
                 </ul>
               </div>
             )}

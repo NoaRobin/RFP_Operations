@@ -1,4 +1,4 @@
-# CLAUDE.md — règles du projet MERIDIAN (package backend : `merlin`)
+# CLAUDE.md — règles du projet GRIMOIRE (package backend : `merlin`)
 
 ## Source de vérité des données
 - `catalog/fabric_catalog.md` (lisible) et `catalog/fabric_schema.csv` (machine) décrivent **toutes** les tables Fabric connues.
@@ -10,18 +10,24 @@
 ## Architecture (rappel)
 - `backend/merlin` : FastAPI. Accès aux données **uniquement** via `merlin.data.access.DataAccess` (jamais de connexion Fabric directe dans un module).
 - `automations/<id>/` : un plugin = `manifest.yaml` (+ `run.py` exposant `run(ctx, **params)` pour le type `python`, ou `query.sql` pour le type `fabric`).
-- Les jobs tournent dans des processus séparés (`merlin/jobs`). Logs et statut diffusés en SSE.
-- `frontend/` : React + Vite + TS. Textes de l'interface centralisés dans `src/content/texts.ts`, tokens de motion dans `src/motion/tokens.ts`, tokens visuels dans `src/styles/tokens.css`.
+- Les jobs tournent dans des threads (`MERLIN_JOB_EXECUTOR=process` pour des processus séparés, `merlin/jobs`). Logs et statut diffusés en SSE.
+- Modules : `merlin/rfi` (remplissage RFI Excel/Word, dictionnaire `facts.yaml` validé contre le catalogue), `merlin/mergecodes` (pilote le bot vendorisé), `merlin/suivi.py` (monte tryv2 sous `/suivi`).
+- `backend/vendor/` : code repris **tel quel** (bot merge codes, tryv2). Ne pas le modifier ; adapter dans `merlin/` à la place.
+- Connexion Fabric : `merlin/data/fabric_link.py` (mssql-python, `ActiveDirectoryInteractive`, une seule connexion partagée ; jobs en threads par défaut).
+- `frontend/` : React + Vite + TS. `frontend/dist` est committé (le lanceur `run.bat` n'a pas besoin de Node) : relancer `npm run build` après toute modification du front. Textes de l'interface centralisés dans `src/content/texts.ts`, tokens de motion dans `src/motion/tokens.ts`, tokens visuels dans `src/styles/tokens.css`.
 
 ## Règles
 - Aucun secret dans le code : variables d'environnement (voir `.env.example`).
 - Aucune donnée réelle dans les exemples, mocks ou tests (ISIN fictifs préfixés `QZ`, fonds imaginaires).
 - Les fichiers Excel déposés dans l'Atelier ne sont **jamais** modifiés : chaque exécution écrit une nouvelle version.
+- Idem pour les RFI : le document rendu doit rester identique à l'original hormis les cellules de réponse (test `test_modules.py`).
+- Le référentiel Excel des merge codes (noms de collaborateurs) n'est **jamais** committé : il vit dans `data/mergecodes/`.
 - SQL des automatisations écrit en dialecte T-SQL (Fabric). En mode mock, il est traduit automatiquement vers SQLite (sqlglot) : rester sur du SQL standard (SELECT, JOIN, GROUP BY, TOP, CTE).
 - `prefers-reduced-motion` doit toujours être respecté ; le fun ne bloque jamais une action.
 - Les scripts historiques `JUMP_OMNI.py` et `OMNI_MENSUEL.py` (Windows/Excel/Outlook) sont conservés tels quels ; ils ne font pas partie de Merlin.
 
 ## Commandes
+- Utilisateur : double-clic sur `run.bat` (ou `python run.py`)
 - Backend : `cd backend && pip install -r requirements.txt && uvicorn merlin.main:app --reload`
 - Tests backend : `cd backend && pytest`
 - Frontend : `cd frontend && npm install && npm run dev` (build : `npm run build`)

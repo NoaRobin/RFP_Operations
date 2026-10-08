@@ -7,24 +7,25 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
 const base =
-  'relative inline-flex items-center justify-center gap-2 font-semibold select-none whitespace-nowrap rounded-[var(--radius-pill)] ' +
-  'transition-[background,box-shadow,color,border-color] duration-[var(--duration-fast)] ease-[var(--ease-out-premium)] ' +
-  'disabled:opacity-45 disabled:cursor-not-allowed overflow-hidden'
+  'relative inline-flex items-center justify-center gap-2 font-display font-semibold select-none whitespace-nowrap rounded-[var(--radius-pill)] ' +
+  'border-[2.5px] border-fg transition-[transform,box-shadow,background,color] duration-[var(--duration-fast)] ease-[var(--ease-spring)] ' +
+  'hover:-translate-x-0.5 hover:-translate-y-0.5 active:translate-x-0.5 active:translate-y-0.5 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 overflow-hidden'
+
+// Néo-brutal cartoon : contour d'encre, ombre pleine décalée qui grandit au survol et disparaît à l'appui.
+const pop = 'shadow-[3px_3px_0_0_var(--color-fg)] hover:shadow-[5px_5px_0_0_var(--color-fg)] active:shadow-[0_0_0_0_var(--color-fg)]'
 
 const variants: Record<Variant, string> = {
-  primary:
-    'text-abyss bg-[linear-gradient(110deg,var(--color-champagne-300),var(--color-champagne-400)_45%,var(--color-champagne-200)_55%,var(--color-champagne-400))] ' +
-    'bg-[length:220%_100%] hover:bg-[position:100%_0] shadow-[var(--shadow-glow-champagne)] hover:shadow-[0_0_0_1px_rgb(205_176_122/0.6),0_16px_50px_-12px_rgb(205_176_122/0.7)]',
-  secondary:
-    'text-ivory bg-ink-3/70 border border-line-strong hover:border-steel-400/60 hover:bg-ink-3 hover:shadow-[var(--shadow-glow-steel)]',
-  ghost: 'text-mist hover:text-ivory hover:bg-white/5',
-  danger: 'text-ivory bg-danger/15 border border-danger/40 hover:bg-danger/25',
+  primary: `text-on-accent bg-sun-400 hover:bg-sun-600 ${pop}`,
+  secondary: `text-fg bg-card hover:bg-card-2 ${pop}`,
+  ghost: 'text-fg-2 border-transparent hover:text-fg hover:bg-fg/5 hover:border-fg/20 hover:translate-x-0 hover:translate-y-0',
+  danger: `text-fg bg-[#ffd6dc] hover:bg-[#ffc2cb] ${pop}`,
 }
 
 const sizes: Record<Size, string> = {
   sm: 'h-9 px-4 text-sm',
-  md: 'h-11 px-5 text-[0.95rem]',
-  lg: 'h-14 px-8 text-base',
+  md: 'h-11 px-5 text-[0.98rem]',
+  lg: 'h-14 px-8 text-lg',
 }
 
 export function buttonClass(variant: Variant = 'secondary', size: Size = 'md', extra = '') {
@@ -105,7 +106,7 @@ export function IconButton({ label, children, className = '', ...rest }: ButtonH
       ref={(n) => { ref.current = n }}
       aria-label={label}
       title={label}
-      className={`inline-grid place-items-center size-10 rounded-full text-mist hover:text-ivory hover:bg-white/8 transition-colors duration-[var(--duration-fast)] ${className}`}
+      className={`inline-grid place-items-center size-10 rounded-full text-fg-2 hover:text-fg hover:bg-fg/8 transition-colors duration-[var(--duration-fast)] ${className}`}
       {...handlers}
       {...rest}
     >

@@ -14,9 +14,9 @@ export function EasterEggs() {
     if (!greeted) {
       greeted = true
       console.info(
-        '%c◍ MERIDIAN%c\n' + texts.easterEggs.console,
-        'font: 600 20px Georgia, serif; color: #e3cfa1; text-shadow: 0 0 8px #8fa6c3;',
-        'color: #bfc3cc;',
+        '%c✦ GRIMOIRE%c\n' + texts.easterEggs.console,
+        'font: 700 22px Fredoka, sans-serif; color: #ffd23f; -webkit-text-stroke: 1px #1b1530; text-shadow: 2px 2px 0 #1b1530;',
+        'color: #7c5cff;',
       )
     }
     let konami = 0
@@ -28,7 +28,7 @@ export function EasterEggs() {
       if (konami === KONAMI.length) {
         konami = 0
         const on = document.documentElement.classList.toggle('aurora')
-        window.dispatchEvent(new Event('meridian:shower'))
+        window.dispatchEvent(new Event('grimoire:shower'))
         toast('magic', on ? texts.easterEggs.konami : texts.easterEggs.konamiOff)
       }
       if (target.closest('input, textarea, select, [contenteditable="true"]')) return
@@ -36,7 +36,7 @@ export function EasterEggs() {
         typed = (typed + e.key.toLowerCase()).slice(-WORD.length)
         if (typed === WORD) {
           typed = ''
-          window.dispatchEvent(new Event('meridian:shower'))
+          window.dispatchEvent(new Event('grimoire:shower'))
           toast('magic', texts.easterEggs.abracadabra)
         }
       }

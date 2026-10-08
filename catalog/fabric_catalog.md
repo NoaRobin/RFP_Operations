@@ -11,7 +11,7 @@
 | Lakehouse (base) | `LKH_RFPTeam_Bronze` |
 | Schéma | `dbo` |
 | Couche | Bronze (données brutes chargées depuis JUMP) — *provenance JUMP déduite du préfixe et des scripts existants : À CONFIRMER* |
-| Nombre de tables | 2 |
+| Nombre de tables | 5 (2 JUMP + 3 Product Info) |
 | Contraintes déclarées | Aucune (tables Delta d'un Lakehouse : ni clé primaire ni clé étrangère n'existent physiquement). Toutes les clés ci-dessous sont **déduites**. |
 | Nullabilité | Toutes les colonnes acceptent `NULL`. |
 | Chaînes | `varchar(8000)` partout : mapping standard du SQL endpoint Fabric pour les colonnes `string` Delta (aucune longueur métier n'est imposée). |
@@ -98,6 +98,24 @@ Référence SQL complète d'une table : `[LKH_RFPTeam_Bronze].[dbo].[<table>]` (
 
 ---
 
+## 3. Tables Product Info (`pi_out_product_active`, `PI_OUT_Share`, `PI_OUT_CountryOfRegistration`)
+
+Ajoutées d'après le `schema.json` d'App4everyone (longueurs non fournies → `NULL` ; nullabilité supposée `YES` : **À CONFIRMER**).
+
+| Table | Colonnes | Grain (déduit — À CONFIRMER) | Clé (déduite — À CONFIRMER) |
+|---|---|---|---|
+| `dbo.pi_out_product_active` | 434 | une ligne = un fonds actif | `pi_productid` (= `JUMP_*.ID_PI_FONDS`) |
+| `dbo.PI_OUT_Share` | 284 | une ligne = une part | `pi_shareid` (= `JUMP_portfolio_aum.ID_PI_PART`) ; `ISIN_Code` ; lien fonds via `ProductID` |
+| `dbo.PI_OUT_CountryOfRegistration` | 14 | une ligne = un pays d'enregistrement d'une part | — |
+
+Colonnes utilisées par le remplissage de RFI (dictionnaire `backend/merlin/rfi/facts.yaml`) :
+- **Fonds** : `Product_Name`, `Legal_Form`, `Domiciliation`, `Umbrella_Name`, `Applicable_UCI_Regulation`, `Creation_Date`, `Accounting_Currency`, `LEI_Code`, `Asset_Class`, `Investment_Zone`, `AMF_Classification`, `Fund_Range`, `Maturity_date`, `Official_Risk_Scale`, `Official_Risk_Scale_SRRI`, `ESG_SFDR_Article`, `ESG_AMF_Category`, labels (`Finansol_Label`, `Belgium_Towards_Sustainability_label`…), `Volatility_target`, `Recommended_Investment_Period`, `Portfolio_Manager`, `Portfolio_Manager_backup_1`, `Start_date_Portfolio_manager`, `Depositary`, `Custodian`, `Fund_Administrator`, `Commissaire_Aux_Comptes`, `Transfer_Agent`, `Centralizing_Agent`, `NAV_Frequency`, `Max_management_fee_PerCent`, `Performance_fees`, `High_Water_Mark`, `Gips_Compliance`, `Benchmark_Name`.
+- **Part** : `Share_Name`, `ISIN_Code`, `Subscription_Currency`, `Creation_Date`, `First_NAV_Date`, `Initial_NAV`, `Initial_Subscription_Minimum_Amount`, `Actual_Financial_Management_Fees`, `Max_Financial_Management_Fees`, `Ongoing_Charges_ex_post`, `Ongoing_Charges_ex_ante`, `Maximum_Subscription_Fee_Rate_Not_Retained`, `Maximum_Redemption_Fee_Rate_Not_Retained`, cut-offs et règlements, `Income_Distribution`, `Distribution_Frequency`, `Bloomberg_Ticker`, `Morningstar_rating`, `Investor_Type`, `Share_Hedged_Against_FX_Exposure`, `Swing_Pricing`, `Gate`, `TER_Max`, `Wkn_Number`, `Sedol_Code`, `Swiss_Valor_Number`.
+
+**Unités À CONFIRMER** : les taux (frais, frais courants) sont-ils stockés en fraction (0,015) ou en pourcentage (1,5) ? Le moteur RFI considère qu'une valeur ≤ 0,05 est une fraction.
+
+---
+
 ## Relations (toutes déduites — À CONFIRMER)
 
 ```
@@ -121,6 +139,7 @@ JUMP_portfolio_aum (n parts × n dates)          JUMP_portfolio_holdings (n lign
 | Automatisation `aum_par_part` (encours d'une date) | `JUMP_portfolio_aum` : `CODE_ISIN_PART`, `NOM_PART`, `DATE_VL`, `VL_UNITAIRE`, `DEVISE_VL`, `ACTIF_NET_PART_EURO`, `ACTIF_NET_TOTAL_EURO`, `NOM_BENCH` |
 | Automatisation `top_lignes_portefeuille` | `JUMP_portfolio_holdings` : `NOM_FONDS`, `DATE_INVENTAIRE`, `CODE_ISIN_INSTRUMENT`, `NOM_INSTRUMENT`, `CLASSE_ACTIF`, `DEVISE_INSTRUMENT`, `MONTANT_DEVISE_FONDS`, `POIDS_LIGNE_EXPO` |
 | Extractions de l'Atelier Excel | voir `backend/merlin/atelier/extractions.yaml` |
+| Remplissage de RFI (Excel / Word) | Product Info (≈ 90 %) + JUMP (encours, VL, lignes) : voir `backend/merlin/rfi/facts.yaml` |
 
 ## Questions ouvertes pour l'équipe
 

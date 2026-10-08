@@ -44,7 +44,7 @@ export interface RunOutput { name: string; kind: string; label: string; size: nu
 
 export interface Run {
   id: string
-  target_type: 'automation' | 'recipe'
+  target_type: 'automation' | 'recipe' | 'rfi' | 'mergecodes'
   target_id: string
   target_name: string
   user: string
@@ -214,3 +214,131 @@ export interface Change {
 }
 
 export interface Preview { sheet: string; as_of: string; rows: number; changes: Change[]; stats: Record<ChangeStatus, number> }
+
+/* ---------------------------------------------------------------- Fabric */
+export interface FabricStatus {
+  state: 'connected' | 'disconnected' | 'error'
+  mode: 'mock' | 'fabric'
+  server: string
+  database: string
+  user: string
+  client: string
+  saved: boolean
+  error?: string | null
+}
+
+/* ---------------------------------------------------------------- RFI */
+export interface FundShare { isin: string; name: string }
+export interface FundEntry { pid: string; name: string; shares: FundShare[] }
+export interface FundSuggestion { pid: string; name: string; isin: string | null; share_name: string | null; reason: string }
+
+export interface RfiVersion { version: number; file: string; written: number; as_of: string; by: string; created_at: string }
+
+export interface RfiDocument {
+  id: string
+  filename: string
+  suffix: string
+  size: number
+  user: string
+  uploaded_at: string
+  versions?: RfiVersion[]
+  kind?: 'xlsx' | 'docx'
+  language?: 'fr' | 'en'
+  question_count?: number
+  suggestions?: FundSuggestion[]
+}
+
+export type RfiStatus = 'fill' | 'existing' | 'no_value' | 'unmatched' | 'skipped'
+
+export interface RfiQuestion {
+  id: string
+  text: string
+  location: string
+  existing: string
+  context: string
+  fact: string | null
+  fact_label: string | null
+  confidence: number
+  answer: string | null
+  status: RfiStatus
+  alternatives: { fact: string; label: string; confidence: number }[]
+}
+
+export interface RfiAnalysis {
+  stats: Record<RfiStatus, number>
+  language: 'fr' | 'en'
+  as_of: string
+  errors: string[]
+  questions: RfiQuestion[]
+}
+
+export interface RfiGenerated extends RfiAnalysis { version: number; written: number; file: string; download: string }
+
+export interface RfiFact { id: string; label: string; scope: string; format: string; source: string; healthy: boolean }
+
+export interface RfiRequest {
+  pid?: string | null
+  isin?: string | null
+  as_of?: string | null
+  language?: 'fr' | 'en' | null
+  overrides?: Record<string, string | null>
+  overwrite?: boolean
+}
+
+/* ---------------------------------------------------------------- Merge codes */
+export interface MergeProposition {
+  code: string
+  merge_code: string
+  libelle: string
+  type: string
+  valeur_excel: number | null
+  incomplet: boolean
+  statut: string
+}
+
+export interface MergeCandidate {
+  index: number
+  texte_id: string
+  titre: string
+  type: string
+  sur: boolean
+  valeur_texte: string
+  cadre: string
+  remarques: string[]
+  avant: string
+  nombre: string
+  apres: string
+  propositions: MergeProposition[]
+}
+
+export interface MergeReferentiel {
+  present: boolean
+  meta?: { filename: string; uploaded_at: string } | null
+  personnes?: number
+  codes_equipe?: number
+  annee?: number
+  anomalies?: string[]
+  nb_anomalies?: number
+}
+
+export interface MergeAnalysis {
+  id: string
+  filename: string
+  textes: number
+  ids: string[]
+  candidats: MergeCandidate[]
+  signalements: { texte_id: string; motif: string; extrait: string }[]
+  referentiel: MergeReferentiel
+}
+
+export interface MergeDecision { choix: 'proposition' | 'ignorer' | 'code'; proposition?: number; code?: string }
+
+export interface MergeResult {
+  document: string
+  rapport: string
+  statuts: Record<string, number>
+  inseres: number
+  journal: string
+  document_url: string
+  rapport_url: string
+}
