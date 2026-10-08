@@ -6,8 +6,9 @@ venv/
 .pytest_cache/
 # Node
 node_modules/
-# Merlin runtime (historique, fichiers déposés, versions, mock)
-data/
+# Données générées à la racine uniquement (historique, fichiers déposés, versions, mock).
+# Ancré avec « / » pour ne pas exclure le module source backend/merlin/data.
+/data/
 # Secrets
 .env
 backend/.env
