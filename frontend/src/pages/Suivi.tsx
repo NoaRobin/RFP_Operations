@@ -1,4 +1,4 @@
-/** Suivi d'activité : le module tryv2, servi tel quel sous /suivi, encadré façon Grimoire. */
+/** Suivi d'activité : le module tryv2, servi tel quel sous /suivi, encadré façon RFP pas envie. */
 import { useEffect, useState } from 'react'
 import { Activity, ExternalLink } from 'lucide-react'
 import { EmptyState, Loading } from '../components/ui/States'

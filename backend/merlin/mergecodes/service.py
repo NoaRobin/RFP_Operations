@@ -1,4 +1,4 @@
-"""Merge codes Qvidian dans Grimoire : le bot `mergebot` (inchangé, backend/vendor) piloté depuis l'interface.
+"""Merge codes Qvidian dans RFP pas envie de travailler : le bot `mergebot` (inchangé, backend/vendor) piloté depuis l'interface.
 
 Différences avec l'usage en terminal :
 - le Word est déposé dans l'application (pas besoin de Word ni de pywin32) : insertion via python-docx ;

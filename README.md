@@ -1,37 +1,37 @@
-# ✦ GRIMOIRE — #RFPasenviedetravailler
+# ✦ RFP pas envie de travailler — #RFPasenviedetravailler
 
-> *Les RFP, mais sans les sacrifices humains.*
+> *My RFP will go on… mais sans nous.*
 
-GRIMOIRE est l'application de l'équipe RFP. Elle fait quatre choses :
+**RFP pas envie de travailler** est l'application de l'équipe RFP. Elle fait quatre choses :
 
 | Module | Ce qu'il fait |
 |---|---|
-| **Remplir un RFI** (`/rfi`) | Vous déposez un questionnaire **Excel ou Word**. Grimoire repère les questions quantitatives, cherche les réponses dans Fabric (≈ 90 % Product Info, le reste JUMP) et vous rend **exactement le même fichier**, avec les cases remplies. L'original n'est jamais modifié. |
+| **Remplir un RFI** (`/rfi`) | Vous déposez un questionnaire **Excel ou Word**. L'app repère les questions quantitatives, cherche les réponses dans Fabric (≈ 90 % Product Info, le reste JUMP) et vous rend **exactement le même fichier**, avec les cases remplies. L'original n'est jamais modifié. |
 | **Merge codes Qvidian** (`/merge-codes`) | Le bot *mergecode* (repris tel quel depuis la branche `claude/merge-code`) repère les années d'expérience dans l'export Word de Qvidian et propose le bon `<<merge code>>`. Vous validez d'un clic, il insère et produit le compte rendu Excel. |
 | **Suivi d'activité** (`/suivi-activite`) | Le module *tryv2* (appels d'offres ouverts, gagnés, perdus, tarification), intégré sans modification sous `/suivi`. |
-| **Les sorts** (`/sorts`) | La bibliothèque d'automatisations (encours par part, top lignes, contrôles…) + l'Atelier Excel, le tableau de bord, l'historique, la palette **Ctrl+K**. |
+| **Les épreuves** (`/sorts`) | La bibliothèque d'automatisations (chaque automatisation est une épreuve, façon Koh-Lanta, que vous ne passerez plus à la main) (encours par part, top lignes, contrôles…) + l'Atelier Excel, le tableau de bord, l'historique, la palette **Ctrl+K**. |
 
-Sans connexion Fabric, Grimoire démarre en **mode démonstration** avec un Lakehouse fictif (ISIN `QZ…`, fonds imaginaires).
+Sans connexion Fabric, l'app démarre en **mode démonstration** avec un Lakehouse fictif (ISIN `QZ…`, fonds imaginaires).
 
-> Identité : **cartoon néo-brutal** — papier crème, encre violette, contours épais, ombres décalées ; Fredoka + Nunito ; un grimoire vivant en 3D (three.js, ombrage toon) et des micro-animations GSAP. Le package Python s'appelle toujours `merlin` (nom technique interne).
+> Identité : **cartoon néo-brutal** — papier crème, encre violette, contours épais, ombres décalées ; Fredoka + Nunito ; un livre vivant en 3D (three.js, ombrage toon), une course-poursuite de livres traqués par des RFI/RFP/DDQ, Mathilde qui regarde passer les RFP à sa fenêtre (et cite Céline Dion), des micro-animations GSAP. Easter eggs : tapez `celine` ou `kohlanta`. Le package Python s'appelle toujours `merlin` (nom technique interne).
 
 ## Démarrage : un double-clic
 
 Prérequis : **Python 3.11+** (rien d'autre : l'interface est déjà compilée dans `frontend/dist`).
 
 1. Double-cliquez sur **`run.bat`** (Windows) — ou `./run.sh` / `python run.py` ailleurs.
-2. La première fois, il crée un environnement Python dans `%LOCALAPPDATA%\Grimoire` et installe les dépendances (quelques minutes).
-3. Le navigateur s'ouvre sur Grimoire.
+2. La première fois, il crée un environnement Python dans `%LOCALAPPDATA%\RFPpasenvie` et installe les dépendances (quelques minutes).
+3. Le navigateur s'ouvre sur l'app.
 
 Options : `run.bat --demo` (force les données fictives) · `run.bat --doctor` (diagnostic) · `--port 8080` · `--no-browser` · `--rebuild` (recompile l'interface, Node requis).
 
 ### Se connecter à Fabric (comme dans VS Code)
-Dans Grimoire, cliquez sur le badge **Fabric** en haut à droite, puis :
+Dans l'app, cliquez sur le badge **Fabric** en haut à droite, puis :
 1. **Serveur** : Fabric › Lakehouse › *SQL analytics endpoint* › copier la chaîne de connexion (la même que dans l'extension VS Code *mssql*) ;
 2. **Votre identifiant Microsoft** (prenom.nom@…) ;
 3. **Ouvrir la fenêtre Microsoft** : la fenêtre de connexion habituelle apparaît, vous validez. C'est tout.
 
-Grimoire utilise le pilote `mssql-python` (le même que l'extension VS Code, installé automatiquement sous Windows, aucun pilote ODBC requis) en `ActiveDirectoryInteractive`, lecture seule. Le serveur, la base et l'identifiant sont retenus dans `data/fabric.json` (**aucun mot de passe ni jeton n'est stocké**). Une seule fenêtre Microsoft par session : tous les sorts partagent la connexion.
+L'app utilise le pilote `mssql-python` (le même que l'extension VS Code, installé automatiquement sous Windows, aucun pilote ODBC requis) en `ActiveDirectoryInteractive`, lecture seule. Le serveur, la base et l'identifiant sont retenus dans `data/fabric.json` (**aucun mot de passe ni jeton n'est stocké**). Une seule fenêtre Microsoft par session : toutes les épreuves partagent la connexion.
 
 ### Développement
 
@@ -46,7 +46,7 @@ cd frontend && npm run build                                                    
 
 ## Remplir un RFI : comment ça marche
 1. **Détection** : dans un Excel, la colonne « Réponse / Answer » (sinon la première cellule vide à droite de la question) ; dans un Word, les tableaux question/réponse, les « … : » et les paragraphes vides après une question.
-2. **Correspondance** : chaque question est comparée au dictionnaire `backend/merlin/rfi/facts.yaml` (≈ 70 données : nom, ISIN, SRI, SFDR, frais, cut-off, encours, top 10…), par mots-clés FR/EN. **Pas d'IA externe, rien ne sort du poste.** Les questions qualitatives restent vides : Grimoire n'invente rien.
+2. **Correspondance** : chaque question est comparée au dictionnaire `backend/merlin/rfi/facts.yaml` (≈ 70 données : nom, ISIN, SRI, SFDR, frais, cut-off, encours, top 10…), par mots-clés FR/EN. **Pas d'IA externe, rien ne sort du poste.** Les questions qualitatives restent vides : l'app n'invente rien.
 3. **Vérification** : vous voyez chaque réponse proposée, son niveau de confiance, et pouvez changer la donnée ou ignorer la question.
 4. **Écriture** : Excel patché au niveau XML (mise en forme, formules, macros intactes), Word via python-docx (style des runs conservé). Fichier `<nom>_rempli_v<n>`.
 
@@ -74,7 +74,8 @@ frontend/src/
   content/texts.ts         ← TOUS les textes de l'interface (et l'humour)
   motion/tokens.ts         ← courbes, durées, distances
   styles/tokens.css        ← couleurs, typographies, ombres cartoon
-  components/three/        ← grimoire vivant 3D (toon + contours) + repli 2D SVG automatique
+  components/three/        ← livre vivant 3D (toon + contours) + repli 2D SVG automatique
+  components/fx/Chase.tsx, Mathilde.tsx ← course-poursuite et Mathilde à sa fenêtre (SVG + GSAP)
   pages/                   ← Home, Rfi, MergeCodes, Suivi, Library (sorts), Atelier, Dashboard, History, About…
 frontend/dist/             ← interface compilée (committée : run.bat n'a pas besoin de Node)
 data/                      ← (généré, ignoré par git) historique, RFI, merge codes, suivi, mock
@@ -139,7 +140,7 @@ def run(ctx, as_of: str, seuil: float = 10.0):
 Ce que fournit `ctx` : `data` (accès Fabric), `log`, `step()`, `progress()`, `save_excel/csv/file`, `show_table`, `set_summary`, `output_dir`, `params`, `user`, et `browser`. Ce dernier est un emplacement réservé au futur navigateur Playwright : l'interface est en place, mais il lève une erreur explicite tant qu'il n'est pas implémenté. Une automatisation qui en dépend déclare `requires: [fabric, browser]`.
 
 ### Règles d'or
-1. **Les tables et les colonnes viennent de `catalog/fabric_catalog.md`.** Au démarrage, Grimoire valide chaque requête contre le catalogue, casse comprise. Une automatisation qui cite une colonne inconnue est marquée « indisponible » et ne peut pas être lancé.
+1. **Les tables et les colonnes viennent de `catalog/fabric_catalog.md`.** Au démarrage, l'app valide chaque requête contre le catalogue, casse comprise. Une automatisation qui cite une colonne inconnue est marquée « indisponible » et ne peut pas être lancé.
 2. Les modules ne se connectent jamais à Fabric eux-mêmes : ils passent par `ctx.data`.
 3. En mode démo, le T-SQL est traduit vers SQLite (sqlglot). Restez donc sur du SQL standard (SELECT, JOIN, CTE, GROUP BY, TOP, fonctions de fenêtre).
 
@@ -147,7 +148,7 @@ Ce que fournit `ctx` : `data` (accès Fabric), `log`, `step()`, `progress()`, `s
 
 ## L'Atelier Excel
 1. Déposez un `.xlsx`/`.xlsm`, ou cliquez sur **« Essayer avec un questionnaire de démo »**.
-2. Grimoire détecte la ligne d'en-tête, la **colonne clé** (ISIN reconnus dans le Lakehouse) et les **cellules à remplir** : vides, « ? », « TBD » ou surlignées en jaune. Les formules sont protégées.
+2. l'app détecte la ligne d'en-tête, la **colonne clé** (ISIN reconnus dans le Lakehouse) et les **cellules à remplir** : vides, « ? », « TBD » ou surlignées en jaune. Les formules sont protégées.
 3. Il propose des correspondances en-tête → extraction. Vous complétez par **glisser-déposer** depuis le catalogue (au clavier : sélectionnez la colonne, puis le bouton « Affecter »).
 4. **Aperçu** : les valeurs tombent dans les cellules ; vous pouvez basculer Avant/Après. Le bilan distingue ce qui est à remplir, ce qui est déjà juste, ce qui est introuvable, et les différences ignorées.
 5. **Exécuter** écrit `versions/<nom>_vN_<date>.xlsx` accompagné d'un journal des modifications. **L'original n'est jamais réécrit** (il est stocké en lecture seule).

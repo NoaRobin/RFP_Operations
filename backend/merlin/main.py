@@ -50,13 +50,13 @@ async def lifespan(app: FastAPI):
     state = create_state()
     set_state(state)
     state.scheduler.start()
-    log.info("Grimoire prêt — mode données : %s — %d automatisation(s)", state.data.mode, len(state.registry.plugins))
+    log.info("RFP pas envie de travailler : prêt — mode données : %s — %d automatisation(s)", state.data.mode, len(state.registry.plugins))
     yield
     state.scheduler.shutdown()
     state.jobs.shutdown()
 
 
-app = FastAPI(title="Grimoire", version="1.0", lifespan=lifespan)
+app = FastAPI(title="RFP pas envie de travailler", version="1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=get_settings().cors_origins, allow_methods=["*"], allow_headers=["*"],
 )

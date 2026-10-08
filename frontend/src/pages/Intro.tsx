@@ -12,7 +12,7 @@ import { d, ease, prefersReducedMotion, stagger } from '../motion/tokens'
 
 function markSeen() {
   try {
-    sessionStorage.setItem('grimoire.intro.seen', '1')
+    sessionStorage.setItem('rfppasenvie.intro.seen', '1')
   } catch {
     /* rien */
   }
@@ -101,7 +101,7 @@ export default function Intro() {
 
       <div data-copy className="relative z-10 flex flex-col items-center text-center pointer-events-none">
         <p data-eyebrow className="eyebrow">{texts.intro.eyebrow}</p>
-        <h1 data-title className="mt-6 font-display text-[clamp(3.25rem,13vw,10.5rem)] leading-[0.9] font-bold tracking-[0.02em] text-cartoon [perspective:600px]">
+        <h1 data-title className="mt-6 font-display text-[clamp(2.5rem,8vw,7rem)] leading-[0.95] font-bold tracking-[0.02em] text-cartoon [perspective:600px]">
           {texts.app.name}
         </h1>
         <p data-subtitle className="mt-6 max-w-xl font-display text-[clamp(1.25rem,2.6vw,1.75rem)] font-semibold text-magic-300">

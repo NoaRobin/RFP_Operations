@@ -10,7 +10,7 @@ import type { Change, Extraction, Mapping, Preview, SheetAnalysis } from '../../
 import { gsap } from '../../motion/gsap'
 import { d, dist } from '../../motion/tokens'
 
-export const DRAG_TYPE = 'application/x-grimoire-extraction'
+export const DRAG_TYPE = 'application/x-rfp-extraction'
 
 const STATUS_STYLE: Record<string, string> = {
   fill: 'text-sun-200 bg-sun-400/12',

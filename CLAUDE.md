@@ -1,4 +1,4 @@
-# CLAUDE.md — règles du projet GRIMOIRE (package backend : `merlin`)
+# CLAUDE.md — règles du projet « RFP pas envie de travailler » (package backend : `merlin`)
 
 ## Source de vérité des données
 - `catalog/fabric_catalog.md` (lisible) et `catalog/fabric_schema.csv` (machine) décrivent **toutes** les tables Fabric connues.

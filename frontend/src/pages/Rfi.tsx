@@ -239,7 +239,7 @@ export default function Rfi() {
     try {
       const r = await api.rfi.generate(doc.id, request())
       setResult(r)
-      window.dispatchEvent(new Event('grimoire:shower'))
+      window.dispatchEvent(new Event('rfp:shower'))
       toast('success', texts.rfi.done(r.written))
     } catch (e) {
       toast('error', e instanceof ApiError ? e.message : texts.errors.generic, e instanceof ApiError ? e.hint : undefined)

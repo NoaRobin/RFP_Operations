@@ -1,4 +1,4 @@
-/** Repli 2D du grimoire vivant : même livre cartoon en SVG, mêmes humeurs, animé au GSAP, aucune dépendance 3D. */
+/** Repli 2D du livre vivant : même livre cartoon en SVG, mêmes humeurs, animé au GSAP, aucune dépendance 3D. */
 import { useEffect, useRef } from 'react'
 import { gsap } from '../../motion/gsap'
 import { d, ease } from '../../motion/tokens'
@@ -7,7 +7,7 @@ import type { Mood } from './moods'
 const INK = '#1b1530'
 const STAR = 'M0 -14 L4.1 -5.6 13.3 -4.3 6.7 2.1 8.2 11.3 0 7 -8.2 11.3 -6.7 2.1 -13.3 -4.3 -4.1 -5.6Z'
 
-export default function GrimoireFallback({ mood, reduced, onPoke, burstKey }: { mood: Mood; reduced: boolean; onPoke?: () => void; burstKey: number }) {
+export default function BookFallback({ mood, reduced, onPoke, burstKey }: { mood: Mood; reduced: boolean; onPoke?: () => void; burstKey: number }) {
   const root = useRef<SVGSVGElement>(null)
   const book = useRef<SVGGElement>(null)
   const cover = useRef<SVGGElement>(null)

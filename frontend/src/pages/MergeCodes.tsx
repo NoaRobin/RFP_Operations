@@ -121,7 +121,7 @@ export default function MergeCodes() {
     try {
       const r = await api.merge.apply(analysis.id, decisions)
       setResult(r)
-      window.dispatchEvent(new Event('grimoire:shower'))
+      window.dispatchEvent(new Event('rfp:shower'))
       toast('success', texts.merge.done(r.inseres))
     } catch (e) {
       toast('error', e instanceof ApiError ? e.message : texts.errors.generic, e instanceof ApiError ? e.hint : undefined)

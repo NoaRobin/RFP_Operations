@@ -104,14 +104,14 @@ export function Starfield() {
     window.addEventListener('resize', resize)
     window.addEventListener('pointermove', onMove, { passive: true })
     document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('grimoire:shower', onShower)
+    window.addEventListener('rfp:shower', onShower)
     if (!reduced) raf = requestAnimationFrame(loop)
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
       window.removeEventListener('pointermove', onMove)
       document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('grimoire:shower', onShower)
+      window.removeEventListener('rfp:shower', onShower)
     }
   }, [reduced])
 

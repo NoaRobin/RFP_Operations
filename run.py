@@ -1,7 +1,7 @@
-"""Lanceur Grimoire — double-cliquer sur run.bat (Windows) ou `python run.py`.
+"""Lanceur RFP pas envie de travailler — double-cliquer sur run.bat (Windows) ou `python run.py`.
 
 Ce qu'il fait, sans rien demander :
-1. crée (une fois) un environnement Python hors du projet : %LOCALAPPDATA%\\Grimoire (ou ~/.cache/grimoire) ;
+1. crée (une fois) un environnement Python hors du projet : %LOCALAPPDATA%\\RFPpasenvie (ou ~/.cache/rfppasenvie) ;
 2. installe les dépendances manquantes (quelques minutes la première fois) ;
 3. démarre le serveur et ouvre le navigateur.
 
@@ -47,11 +47,11 @@ def fail(msg: str, hint: str = "") -> None:
 
 
 def venv_dir() -> Path:
-    custom = os.environ.get("GRIMOIRE_VENV")
+    custom = os.environ.get("RFP_VENV") or os.environ.get("GRIMOIRE_VENV")
     if custom:
         return Path(custom)
     base = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") if WIN else Path.home() / ".cache"
-    return base / ("Grimoire" if WIN else "grimoire") / f"venv-py{sys.version_info.major}{sys.version_info.minor}"
+    return base / ("RFPpasenvie" if WIN else "rfppasenvie") / f"venv-py{sys.version_info.major}{sys.version_info.minor}"
 
 
 def venv_python(folder: Path) -> Path:
@@ -75,7 +75,7 @@ def ensure_environment() -> Path:
             venv.create(folder, with_pip=True)
         except Exception as error:  # noqa: BLE001
             fail(f"Création de l'environnement impossible : {error}",
-                 "Sous Windows, réinstallez Python depuis python.org ; ou définissez GRIMOIRE_VENV vers un dossier accessible.")
+                 "Sous Windows, réinstallez Python depuis python.org ; ou définissez RFP_VENV vers un dossier accessible.")
     modules = REQUIRED + (["mssql_python"] if WIN else [])
     if not has_modules(py, modules):
         say("Installation des dépendances (quelques minutes la première fois)…")
@@ -95,7 +95,7 @@ def pick_port(wanted: int) -> int:
     for port in range(wanted, wanted + 20):
         if port_free(port):
             return port
-    fail(f"Aucun port libre entre {wanted} et {wanted + 19}.", "Fermez les autres instances de Grimoire.")
+    fail(f"Aucun port libre entre {wanted} et {wanted + 19}.", "Fermez les autres instances de RFP pas envie de travailler.")
     return wanted
 
 
@@ -106,7 +106,7 @@ def open_when_ready(url: str, browser: bool, proc: subprocess.Popen) -> None:
                 return
             try:
                 with urllib.request.urlopen(url + "/api/health", timeout=1):
-                    say(f"Grimoire est prêt : {url}")
+                    say(f"RFP pas envie de travailler est prêt : {url}")
                     if browser:
                         webbrowser.open(url)
                     return
@@ -130,7 +130,7 @@ def doctor() -> None:
     print(f"  Système       : {platform.platform()}")
     print(f"  Projet        : {ROOT}")
     if len(str(ROOT)) > 180 or "onedrive" in str(ROOT).lower():
-        print("  ⚠ Projet dans OneDrive ou chemin très long : préférez un dossier court et local (ex. C:\\dev\\Grimoire).")
+        print("  ⚠ Projet dans OneDrive ou chemin très long : préférez un dossier court et local (ex. C:\\dev\\RFPpasenvie).")
     folder = venv_dir()
     print(f"  Environnement : {folder} ({'présent' if venv_python(folder).exists() else 'absent'})")
     print(f"  Interface     : {'compilée' if DIST.exists() else 'ABSENTE — git pull, ou python run.py --rebuild'}")
@@ -139,7 +139,7 @@ def doctor() -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Lance Grimoire.")
+    ap = argparse.ArgumentParser(description="Lance RFP pas envie de travailler.")
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--demo", action="store_true", help="données fictives uniquement")
@@ -147,7 +147,7 @@ def main() -> None:
     ap.add_argument("--rebuild", action="store_true")
     args = ap.parse_args()
 
-    print("\n  ✦ GRIMOIRE — #RFPasenviedetravailler\n")
+    print("\n  ✦ RFP PAS ENVIE DE TRAVAILLER — #RFPasenviedetravailler\n  « My RFP will go on… »\n")
     if args.doctor:
         doctor()
         return
@@ -164,7 +164,7 @@ def main() -> None:
     proc = subprocess.Popen([str(py), "-m", "uvicorn", "merlin.main:app", "--host", "127.0.0.1", "--port", str(port)],
                             cwd=BACKEND, env=env)
     open_when_ready(url, not args.no_browser, proc)
-    say("Fermez cette fenêtre (ou Ctrl+C) pour arrêter Grimoire.")
+    say("Fermez cette fenêtre (ou Ctrl+C) pour arrêter RFP pas envie de travailler.")
     try:
         sys.exit(proc.wait())
     except KeyboardInterrupt:

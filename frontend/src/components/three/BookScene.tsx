@@ -1,5 +1,5 @@
 /**
- * « Le Grimoire vivant » : la signature 3D de GRIMOIRE, chargée à la demande.
+ * « Le livre vivant » : la signature 3D de RFP pas envie de travailler, chargée à la demande.
  * Un livre de sorts cartoon (ombrage toon 3 tons + contour d'encre par coque inversée) qui a des yeux,
  * suit le curseur, s'ouvre quand il travaille, feuillette ses pages, et fait jaillir des étoiles quand c'est réussi.
  * Budget : une vingtaine de meshes simples, aucune texture externe, DPR plafonné à 1,5, repli 2D si les FPS chutent.
@@ -146,7 +146,7 @@ function LivingBook({ mood, reduced, onPoke, burstKey }: SceneProps) {
       body.current.scale.set(1 + s * 0.12, 1 - s * 0.15, 1 + s * 0.12)
     }
     if (cover.current) cover.current.rotation.y = -L.open
-    // Page qui se tourne en boucle quand le grimoire travaille
+    // Page qui se tourne en boucle quand le livre travaille
     if (flip.current) {
       const flipping = mood === 'focus' && !reduced
       flip.current.visible = flipping
@@ -294,7 +294,7 @@ function CameraFit() {
   return null
 }
 
-export default function GrimoireScene({ mood, reduced, onPoke, burstKey, onDegrade }: SceneProps & { onDegrade?: () => void }) {
+export default function BookScene({ mood, reduced, onPoke, burstKey, onDegrade }: SceneProps & { onDegrade?: () => void }) {
   const container = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(true)
   const [dpr, setDpr] = useState(1.5)

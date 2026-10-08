@@ -36,7 +36,7 @@ interface Command {
   quick?: (() => Promise<void>) | null
 }
 
-const RECENT_KEY = 'grimoire.palette.recent'
+const RECENT_KEY = 'rfppasenvie.palette.recent'
 
 function readRecent(): string[] {
   try {

@@ -12,11 +12,18 @@ export function Loading({ label, compact = false }: { label?: string; compact?: 
   const message = useRotatingMessage(texts.loading)
   return (
     <div role="status" aria-live="polite" className={`flex items-center gap-4 ${compact ? '' : 'justify-center py-16'}`}>
-      <span className="relative inline-block size-9" aria-hidden="true">
-        <span className="absolute inset-0 rounded-full border-[3px] border-fg/15" />
-        <span className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-magic-500 border-r-bubble-400 animate-spin" />
-        <span className="absolute inset-[30%] rounded-full border-2 border-fg bg-sun-400 animate-bounce" />
-      </span>
+      <svg viewBox="0 0 40 44" className="size-10 shrink-0" aria-hidden="true">
+        <g className="runner-hop">
+          <line className="runner-leg-a" x1="15" y1="32" x2="15" y2="41" stroke="#1b1530" strokeWidth="3" strokeLinecap="round" />
+          <line className="runner-leg-b" x1="24" y1="32" x2="24" y2="41" stroke="#1b1530" strokeWidth="3" strokeLinecap="round" />
+          <rect x="8" y="4" width="24" height="29" rx="3" fill="#7c5cff" stroke="#1b1530" strokeWidth="2.4" />
+          <ellipse cx="16" cy="14" rx="3" ry="3.6" fill="#fff" stroke="#1b1530" strokeWidth="1.5" />
+          <ellipse cx="24" cy="14" rx="3" ry="3.6" fill="#fff" stroke="#1b1530" strokeWidth="1.5" />
+          <circle cx="15" cy="14.5" r="1.4" fill="#1b1530" />
+          <circle cx="23" cy="14.5" r="1.4" fill="#1b1530" />
+          <ellipse cx="20" cy="23" rx="2" ry="2.8" fill="#1b1530" />
+        </g>
+      </svg>
       <span className="font-display text-base font-semibold text-fg-2">{label ?? message}</span>
     </div>
   )

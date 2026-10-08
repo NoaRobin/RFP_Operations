@@ -1,4 +1,4 @@
-/** 404 : un apprenti s'est téléporté de travers. Le grimoire le cherche du regard ; le bouton de retour reste évident. */
+/** 404 : un apprenti s'est téléporté de travers. Mathilde le cherche par la fenêtre ; le bouton de retour reste évident. */
 import { useRef } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { ButtonLink } from '../components/ui/Button'

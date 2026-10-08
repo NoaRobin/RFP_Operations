@@ -1,6 +1,6 @@
 export type Mood = 'calm' | 'awaken' | 'focus' | 'success' | 'failure'
 
-/** Humeurs du grimoire vivant (partagées entre la 3D et le repli 2D). */
+/** Humeurs du livre vivant (partagées entre la 3D et le repli 2D). */
 export const MOODS: Record<Mood, {
   speed: number
   packets: number

@@ -25,6 +25,6 @@ def build_suivi_app(data_dir: Path):
         import server  # noqa: PLC0415 — importe tarification, qui lit core.DOSSIER_DONNEES
 
         return server.app
-    except Exception:  # noqa: BLE001 — le reste de Grimoire doit démarrer même si le suivi échoue
+    except Exception:  # noqa: BLE001 — le reste de l'app doit démarrer même si le suivi échoue
         log.exception("Le module Suivi d'activité n'a pas pu démarrer")
         return None

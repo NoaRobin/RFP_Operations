@@ -6,7 +6,7 @@ import { useUserName } from '../../lib/storage'
 import { gsap } from '../../motion/gsap'
 import { d, ease, stagger } from '../../motion/tokens'
 import { IconButton } from '../ui/Button'
-import { GrimoireMark } from '../ui/GrimoireMark'
+import { AppMark } from '../ui/AppMark'
 import { isMac, useApp } from './AppContext'
 
 const NAV = [
@@ -25,10 +25,10 @@ const MORE = [
 function Logo() {
   return (
     <NavLink to="/" className="group flex items-center gap-3" aria-label={`${texts.app.name} — ${texts.nav.home}`}>
-      <GrimoireMark className="size-9 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:-rotate-12 group-hover:scale-110" />
+      <AppMark className="size-9 transition-transform duration-[var(--duration-slow)] ease-[var(--ease-spring)] group-hover:-rotate-12 group-hover:scale-110" />
       <span className="flex flex-col leading-none">
-        <span className="font-display text-[1.4rem] font-bold tracking-[0.06em] text-fg">{texts.app.name}</span>
-        <span className="mt-0.5 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-magic-300 xl:block">{texts.app.suite}</span>
+        <span className="whitespace-nowrap font-display text-[1.05rem] font-bold leading-none text-fg sm:text-[1.2rem]">{texts.app.short}</span>
+        <span className="mt-0.5 whitespace-nowrap font-display text-[0.8rem] font-semibold leading-none text-bubble-300">{texts.app.sub}</span>
       </span>
     </NavLink>
   )

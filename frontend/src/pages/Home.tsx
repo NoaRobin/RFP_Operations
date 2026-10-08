@@ -1,10 +1,12 @@
 /**
- * Accueil GRIMOIRE : le grimoire vivant, et en plein milieu, le cri de ralliement #RFPasenviedetravailler,
+ * Accueil « RFP pas envie de travailler » : le livre vivant, la course-poursuite, Mathilde à sa fenêtre, et en plein milieu, le cri de ralliement #RFPasenviedetravailler,
  * entouré des automatisations en autocollants. Lettres qui rebondissent (SplitText), autocollants qui flottent.
  */
 import { useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Activity, ArrowRight, BookOpen, Command, FileQuestion, FileSpreadsheet, Sparkles, Tags } from 'lucide-react'
+import { Chase } from '../components/fx/Chase'
+import { Mathilde } from '../components/fx/Mathilde'
 import { useApp } from '../components/layout/AppContext'
 import { Stage } from '../components/three/Stage'
 import { ButtonLink } from '../components/ui/Button'
@@ -124,8 +126,13 @@ export default function Home() {
         </ul>
       </section>
 
+      {/* La course-poursuite livres / appels d'offres */}
+      <section aria-label={texts.home.chase.title} className="mt-16">
+        <Chase />
+      </section>
+
       {/* Compteurs */}
-      <section aria-label="Compteurs" className="mt-16 grid gap-4 sm:grid-cols-3">
+      <section aria-label="Compteurs" className="mt-10 grid gap-4 sm:grid-cols-3">
         {[
           { value: counters?.spells_total ?? 0, label: texts.home.stats.spells, color: 'bg-sun-400', digits: 0 },
           { value: (counters?.minutes_saved_total ?? 0) / 60, label: texts.home.stats.hours, color: 'bg-mint-400', digits: 1 },
@@ -158,6 +165,16 @@ export default function Home() {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* Mathilde à sa fenêtre */}
+      <section aria-labelledby="mathilde-title" className="mt-24 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <Mathilde className="mx-auto w-full max-w-md" />
+        <div>
+          <p className="eyebrow">{texts.home.mathilde.eyebrow}</p>
+          <h2 id="mathilde-title" className="mt-4 text-4xl sm:text-5xl">{texts.home.mathilde.title}</h2>
+          <p className="mt-4 text-lg font-semibold text-fg-2">{texts.home.mathilde.body}</p>
         </div>
       </section>
 

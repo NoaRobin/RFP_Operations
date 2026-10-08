@@ -94,3 +94,11 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
+
+/* Petit livre qui court (chargements) */
+@keyframes leg-a { from { transform: rotate(-32deg); } to { transform: rotate(32deg); } }
+@keyframes leg-b { from { transform: rotate(32deg); } to { transform: rotate(-32deg); } }
+@keyframes hop { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+.runner-leg-a { transform-box: fill-box; transform-origin: 50% 0%; animation: leg-a 0.18s ease-in-out infinite alternate; }
+.runner-leg-b { transform-box: fill-box; transform-origin: 50% 0%; animation: leg-b 0.18s ease-in-out infinite alternate; }
+.runner-hop { animation: hop 0.18s ease-out infinite alternate; }
