@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .catalog import Catalog
 
-MOCK_VERSION = "4"
+MOCK_VERSION = "5"
 
 FUNDS = [
     ("Avalon Actions Europe", "EUR", "Actions", "Indice Fictif Actions Europe NR"),
@@ -104,6 +104,16 @@ STYLE_INFO = {
 }
 
 
+def fake_lei(r: random.Random) -> str:
+    """LEI fictif (préfixe QZ) avec clés de contrôle ISO 17442 valides."""
+    body = "QZ00" + "".join(r.choice("0123456789ABCDEFGHJKLMNPRSTUVWXYZ") for _ in range(14))
+    num = int("".join(str(int(c, 36)) for c in body + "00"))
+    return body + f"{98 - num % 97:02d}"
+
+
+REGISTRATION_COUNTRIES = ["France", "Luxembourg", "Belgium", "Germany", "Italy", "Spain", "Switzerland", "Netherlands", "Austria"]
+
+
 def _pi_product(i: int, name: str, ccy: str, style: str, bench: str, pi_id: str, fund_id: str, start: date) -> dict:
     r = random.Random(1000 + i)
     asset, zone, sri, sfdr, horizon = STYLE_INFO[style]
@@ -121,7 +131,7 @@ def _pi_product(i: int, name: str, ccy: str, style: str, bench: str, pi_id: str,
         "Start_date_Portfolio_manager": date(r.randint(2012, 2022), 1, 1).isoformat() + " 00:00:00",
         "Depositary": r.choice(DEPOSITARIES), "Custodian": r.choice(DEPOSITARIES), "Fund_Administrator": "Administrateur Fictif",
         "Commissaire_Aux_Comptes": r.choice(AUDITORS), "Transfer_Agent": "Agent de Transfert Fictif",
-        "Centralizing_Agent": "Centralisateur Fictif", "LEI_Code": f"QZ00{r.randint(10**15, 10**16 - 1)}",
+        "Centralizing_Agent": "Centralisateur Fictif", "LEI_Code": fake_lei(r),
         "Recommended_Investment_Period": f"{horizon} ans" if horizon >= 1 else "3 mois",
         "NAV_Frequency": "Quotidienne", "NAV_Calculation_Day": "Chaque jour ouvré",
         "Max_management_fee_PerCent": round(r.choice([0.5, 0.8, 1.2, 1.6, 2.0]), 2),
@@ -131,6 +141,24 @@ def _pi_product(i: int, name: str, ccy: str, style: str, bench: str, pi_id: str,
         "Investment_objective_FR": f"Surperformer {bench or 'son objectif de gestion'} sur {horizon} ans (texte fictif).",
         "Investment_objective_EN": f"Outperform {bench or 'its management objective'} over {horizon} years (fictitious).",
         "AIM_Portfolio_Code": f"AIM{i:03d}", "Fund_Administrator_Portfolio_Code": fund_id,
+        # Champs Product Info supplémentaires (valeurs mêlant FR / EN, comme dans le référentiel réel)
+        "Investment_Manager": "Société de Gestion Fictive", "Annual_closing_date": "31/12",
+        "Strategy_based_on_derivatives": r.choice(["Yes", "No"]), "Global_Exposure_Calculation": "Commitment",
+        "No_Capital_Guarantee": "Yes", "Fund_of_Funds": "No", "Feeder_Fund_": "No", "ETF_Fund": "No",
+        "Investment_Management_Delegation": "No", "OPC_Eligible_US_Person": "No", "Volatility_target": 0,
+        "Leveraged_Financial_or_Contingent_Liability_Instr": "No",
+        "Does_it_consider_PAI_EET_20100": "Yes" if sfdr != "Article 6" else "No",
+        "Does_it_invest_in_SI_EET_20170": "Yes" if sfdr != "Article 6" else "No",
+        "PerCent_Min_SI_EET_20420": 10 if sfdr == "Article 8" else (80 if sfdr == "Article 9" else 0),
+        "PerCent_Min_Aligned_Taxonomy_Incl_Sovereing_EET_20600": 0,
+        "RSI_french_label": 1 if sfdr != "Article 6" else 0, "Finansol_Label": 0, "Belgium_Towards_Sustainability_label": 0,
+        "Tobacco_Exclusion_EET_52000": "Yes", "Controversial_Weapons_Considered_EET_31140": "Yes",
+        "Nuclear_Weapons_Exclusion_EET_51400": "Yes", "Gambling_Exclusion_EET_50900": "No", "Alcohol_Exclusion_EET_50200": "No",
+        "Oil_Exclusion_EET_51500": "No", "Palm_Oil_Exclusion_EET_51700": "No",
+        "Aligned_With_Paris_Agreement_EET_20580": "No", "Reference_ESG_Benchmark_EET_20370": "No",
+        "PEA_taxation_effective_Date": (created.isoformat() + " 00:00:00") if asset == "Actions" and ccy == "EUR" else None,
+        "Max_Indirect_Management_fees_PerCent": 0.0, "Actual_Management_Fees_PerCent": None,
+        "Comparison_index": None, "Entity_in_charge_of_risk_monitoring": "Direction des risques (fictive)",
     }
 
 
@@ -154,6 +182,16 @@ def _pi_share(i: int, k: int, part: dict, pi_id: str, start: date) -> dict:
         "Investor_Type": "Institutionnel" if institutional else "Tous souscripteurs",
         "Share_Hedged_Against_FX_Exposure": "Oui" if part["name"].endswith(" H") else "Non",
         "Main_Share": "Oui" if k == 0 else "Non", "Performance_fees": "Non", "Product_Status": "Active",
+        "NAV_Frequency": r.choice(["Quotidienne", "Daily"]), "Distribution_Frequency": "Annuelle",
+        "Max_admin_fees": 0.2, "Actual_admin_fees": 0.15, "TER_Max": round(fee + 0.4, 2),
+        "Subscription_Fee_Retained": 0.0, "Redemption_Fee_Retained": 0.0,
+        "Standard_Trailer_Fees_Holdings": 0.0 if institutional else round(fee / 2, 2),
+        "Swing_Pricing": "Yes", "Gate": "Yes", "Gaterate": 5.0, "Redemption_Notice": 0,
+        "Investor_Type_Retail": "No" if institutional else "Yes", "Investor_Type_Professional": "Yes",
+        "Euroclear_France_Admission": "Yes", "Clearstream_Referencing": "Yes", "Fundsettle_Referencing": "No", "Export_AllFunds": 1 if not institutional else 0,
+        "Tax_StatusUK": "No", "Priips_Share": "Yes", "Mifid2_Share": "Yes",
+        "Code_RIC": f"{part['isin'][:10]}.QZ", "Wkn_Number": None, "Sedol_Code": None,
+        "Centralisation_day": "Chaque jour ouvré (J)", "Share_Class_Decimalisation": "Millièmes",
     }
 
 
@@ -184,7 +222,8 @@ def build_mock_lakehouse(catalog: Catalog, path: Path, today: date | None = None
         cols = ", ".join(f'"{c.name}" {_sqlite_type(c.kind)}' for c in table.columns)
         conn.execute(f'CREATE TABLE "{table.name}" ({cols})')
 
-    start = date(today.year - 1, today.month, 1)
+    start = date(today.year - 4, today.month, 1)  # 4 ans de VL : performances 1, 3 ans et années civiles
+    inventory_start = date(today.year - 1, today.month, 1)
     load_ts = datetime.combine(today, datetime.min.time()).replace(hour=6, minute=12).isoformat(" ")
 
     # ---------------------------------------------------------- instruments
@@ -213,7 +252,7 @@ def build_mock_lakehouse(catalog: Catalog, path: Path, today: date | None = None
     pi_products: list[dict] = []
     pi_shares: list[dict] = []
     nav_days = business_days(start, today - timedelta(days=1))
-    inventory_days = month_ends(start, today - timedelta(days=1))
+    inventory_days = month_ends(inventory_start, today - timedelta(days=1))
 
     for f_index, (fund_name, fund_ccy, style, bench) in enumerate(FUNDS):
         fund_id, pi_id = f"F{1000 + f_index}", f"PI-{700 + f_index}"
@@ -302,7 +341,13 @@ def build_mock_lakehouse(catalog: Catalog, path: Path, today: date | None = None
 
     conn.executemany(f"INSERT INTO JUMP_portfolio_aum VALUES ({','.join('?' * 23)})", aum_rows)
     conn.executemany(f"INSERT INTO JUMP_portfolio_holdings VALUES ({','.join('?' * 30)})", holdings_rows)
-    for table, rows in (("pi_out_product_active", pi_products), ("PI_OUT_Share", pi_shares)):
+    registrations = []
+    for k, share in enumerate(pi_shares):
+        rr = random.Random(5000 + k)
+        for country in ["France"] + rr.sample(REGISTRATION_COUNTRIES[1:], rr.randint(1, 5)):
+            registrations.append({"Id": f"reg-{share['pi_shareid']}-{country}", "pi_shareid": share["pi_shareid"], "Country": country,
+                                  "pi_name": f"{share['Share_Name']} - {country}", "statecodename": "Active"})
+    for table, rows in (("pi_out_product_active", pi_products), ("PI_OUT_Share", pi_shares), ("PI_OUT_CountryOfRegistration", registrations)):
         if table in catalog.tables:
             for row in rows:
                 cols = ", ".join(f'"{c}"' for c in row)

@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field
 from ..data.access import DataError
 from ..db import now_iso
 from ..rfi.demo import demo_docx, demo_xlsx
-from ..rfi.facts import load_facts
-from ..rfi.service import ALLOWED, RfiStore, analyze, document_text, generate, load_detection, search_funds, suggest_funds
+from ..rfi.ontology import load_ontology
+from ..rfi.service import ALLOWED, RfiStore, _library, analyze, document_text, generate, load_layout, search_funds, suggest_funds
 from ..state import AppState
 from .deps import bad_request, current_user, not_found, state
 
@@ -28,7 +28,7 @@ def _store(s: AppState) -> RfiStore:
 def _describe(s: AppState, doc_id: str) -> dict[str, Any]:
     store = _store(s)
     try:
-        path, detection = load_detection(store, doc_id)
+        path, layout = load_layout(store, doc_id)
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     except Exception as error:  # noqa: BLE001
@@ -37,13 +37,21 @@ def _describe(s: AppState, doc_id: str) -> dict[str, Any]:
         suggestions = suggest_funds(s.data, document_text(path))
     except DataError:
         suggestions = []
-    return {**store.meta(doc_id), "kind": detection.kind, "language": detection.language,
-            "question_count": len(detection.questions), "suggestions": suggestions}
+    return {**store.meta(doc_id), "kind": layout.kind, "language": layout.language, "question_count": len(layout.slots),
+            "dropdowns": sum(1 for s in layout.slots if s.options), "placeholders": sum(1 for s in layout.slots if s.state == "placeholder"),
+            "isins": layout.isins[:50], "notes": layout.notes, "suggestions": suggestions}
 
 
 @router.get("/facts")
 def facts(s: AppState = Depends(state)) -> list[dict[str, Any]]:
-    return [f.to_dict() for f in load_facts(s.catalog).values() if not f.problems]
+    return [c.to_dict() for c in load_ontology(s.catalog).usable()]
+
+
+@router.get("/ontology")
+def ontology(s: AppState = Depends(state)) -> dict[str, Any]:
+    o = load_ontology(s.catalog)
+    return {"concepts": [c.to_dict() for c in o.concepts.values()], "vocabularies": {k: len(v) for k, v in o.vocabularies.items()},
+            "library": _library(_store(s)).stats()}
 
 
 @router.get("/funds")
@@ -91,19 +99,25 @@ class AnswerRequest(BaseModel):
     isin: str | None = None
     as_of: str | None = None
     language: str | None = Field(None, pattern="^(fr|en)$")
-    overrides: dict[str, str | None] = Field(default_factory=dict)
+    overrides: dict[str, Any] = Field(default_factory=dict)  # id → concept | None (ne pas remplir) | {"text": …}
     overwrite: bool = False
+    accept: list[str] = Field(default_factory=list)  # propositions « à vérifier » validées par l'utilisateur
+    reusable: list[str] = Field(default_factory=list)  # réponses saisies réutilisables pour tous les fonds
+    remember: bool = True
 
 
 @router.post("/documents/{doc_id}/answers")
 def answers(doc_id: str, body: AnswerRequest, s: AppState = Depends(state)):
     store = _store(s)
     try:
-        path, detection = load_detection(store, doc_id)
+        path, layout = load_layout(store, doc_id)
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     try:
-        return analyze(s.data, path, detection, body.pid, body.isin, body.as_of, body.language, body.overrides)
+        result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides)
+        for row in result["questions"]:
+            row.pop("_value", None)
+        return result
     except DataError as error:
         raise bad_request(str(error), error.hint) from error
 
@@ -113,7 +127,8 @@ def generate_version(doc_id: str, body: AnswerRequest, s: AppState = Depends(sta
     store = _store(s)
     try:
         meta = store.meta(doc_id)
-        result = generate(s.data, store, doc_id, body.pid, body.isin, body.as_of, body.language, body.overrides, body.overwrite, user)
+        result = generate(s.data, store, doc_id, body.pid, body.isin, body.as_of, body.language, body.overrides, body.overwrite,
+                          body.accept, user, remember=body.remember, reusable=body.reusable)
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     except DataError as error:

@@ -20,20 +20,23 @@ import { d, ease, prefersReducedMotion } from '../motion/tokens'
 const ACCEPT = '.xlsx,.xlsm,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 const AUTO = '__auto__'
 const SKIP = '__skip__'
+const TEXT = '__text__'
 
 const STATUS_STYLE: Record<RfiStatus, string> = {
-  fill: 'bg-mint-400',
+  auto: 'bg-mint-400',
+  review: 'bg-sun-400',
   existing: 'bg-card-3',
   no_value: 'bg-[#ffd6dc]',
   unmatched: 'bg-card',
   skipped: 'bg-card',
 }
 
-type Filter = 'todo' | 'all' | 'unmatched'
+type Filter = 'review' | 'auto' | 'all' | 'none'
+type Override = string | null | { text: string }
 
 function ConfidenceBar({ value }: { value: number }) {
   const pct = Math.round(value * 100)
-  const color = value >= 0.8 ? 'bg-mint-400' : value >= 0.55 ? 'bg-sun-400' : 'bg-bubble-400'
+  const color = value >= 0.7 ? 'bg-mint-400' : value >= 0.45 ? 'bg-sun-400' : 'bg-bubble-400'
   return (
     <span className="inline-flex items-center gap-2" title={`${pct} %`}>
       <span className="relative h-2.5 w-16 overflow-hidden rounded-full border-2 border-fg bg-card">
@@ -116,34 +119,52 @@ function FundPicker({ doc, pid, isin, onPick }: { doc: RfiDocument; pid: string 
   )
 }
 
-function QuestionRow({ q, facts, override, onOverride }: {
-  q: RfiQuestion; facts: RfiFact[]; override: string | null | undefined; onOverride: (value: string | null | undefined) => void
+function QuestionRow({ q, facts, override, onOverride, accepted, onAccept, reusable, onReusable }: {
+  q: RfiQuestion; facts: RfiFact[]; override: Override | undefined; onOverride: (value: Override | undefined) => void
+  accepted: boolean; onAccept: (v: boolean) => void; reusable: boolean; onReusable: (v: boolean) => void
 }) {
-  const selectValue = override === undefined ? AUTO : override === null ? SKIP : override
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(typeof override === 'object' && override ? override.text : '')
+  const isText = typeof override === 'object' && override !== null
+  const selectValue = override === undefined ? AUTO : override === null ? SKIP : isText ? TEXT : (override as string)
   return (
     <tr data-row className="border-t-2 border-dashed border-fg/15 align-top">
       <td className="py-3 pr-4">
-        <p className="font-semibold text-fg">{q.text}</p>
-        <p className="mt-0.5 text-xs font-semibold text-fg-3">{q.location}{q.context ? ` · ${q.context}` : ''}</p>
+        <p className="font-semibold text-fg">{q.question}</p>
+        <p className="mt-0.5 text-xs font-semibold text-fg-3">
+          {q.location}{q.entity?.isin ? ` · ${q.entity.isin}` : ''}{q.context && q.layout === 'list' ? ` · ${q.context}` : ''}
+        </p>
+        {q.hint && <p className="mt-1 inline-block rounded-lg border border-fg/20 bg-card-2 px-2 py-0.5 text-xs font-semibold text-fg-2">{texts.rfi.hint} : « {q.hint} »</p>}
+        {q.options.length > 0 && <p className="mt-1 text-xs font-semibold text-magic-300">{texts.rfi.options} : {q.options.slice(0, 8).join(' · ')}{q.options.length > 8 ? '…' : ''}</p>}
       </td>
       <td className="py-3 pr-4">
         {q.answer ? (
-          <p className={`font-display text-lg font-semibold ${q.status === 'existing' ? 'text-fg-3 line-through decoration-2' : 'text-fg'}`}>{q.answer}</p>
+          <p className={`font-display text-lg font-semibold ${q.status === 'existing' ? 'text-fg-3' : 'text-fg'}`}>{q.answer}</p>
         ) : (
-          <p className="text-fg-3">{texts.rfi.noAnswer}</p>
+          <p className="text-fg-3">{q.suggestion ? `(${q.suggestion} ?)` : texts.rfi.noAnswer}</p>
         )}
         {q.status === 'existing' && q.existing && <p className="text-xs font-semibold text-fg-2">Déjà : {q.existing}</p>}
+        {q.issues.length > 0 && (
+          <ul className="mt-1 space-y-0.5 text-xs font-semibold text-warning">{q.issues.slice(0, 3).map((i) => <li key={i}>⚠ {i}</li>)}</ul>
+        )}
+        {q.status === 'review' && q.answer && (
+          <button onClick={() => onAccept(!accepted)} aria-pressed={accepted}
+            className={`mt-2 inline-flex items-center gap-1 rounded-full border-2 border-fg px-3 py-0.5 text-xs font-bold transition-[transform,box-shadow] hover:-translate-y-0.5 ${accepted ? 'bg-mint-400 shadow-[2px_2px_0_0_var(--color-fg)]' : 'bg-card'}`}>
+            <Check size={12} aria-hidden="true" />{accepted ? texts.rfi.accepted : texts.rfi.accept}
+          </button>
+        )}
       </td>
-      <td className="py-3 pr-4 min-w-[13rem]">
-        <label className="sr-only" htmlFor={`ov-${q.id}`}>{texts.rfi.change} — {q.text}</label>
+      <td className="py-3 pr-4 min-w-[14rem]">
+        <label className="sr-only" htmlFor={`ov-${q.id}`}>{texts.rfi.change} — {q.question}</label>
         <select id={`ov-${q.id}`} value={selectValue}
-          onChange={(e) => onOverride(e.target.value === AUTO ? undefined : e.target.value === SKIP ? null : e.target.value)}
+          onChange={(e) => onOverride(e.target.value === AUTO ? undefined : e.target.value === SKIP ? null : e.target.value === TEXT ? { text: draft } : e.target.value)}
           className="w-full rounded-xl border-2 border-fg bg-card px-2.5 py-1.5 text-sm font-semibold focus:shadow-[3px_3px_0_0_var(--color-magic-500)] focus:outline-none">
-          <option value={AUTO}>{q.fact_label && override === undefined ? `Auto : ${q.fact_label}` : 'Auto'}</option>
+          <option value={AUTO}>{q.concept_label && override === undefined ? `Auto : ${q.concept_label}` : 'Auto'}</option>
           <option value={SKIP}>{texts.rfi.ignore}</option>
+          <option value={TEXT}>{texts.rfi.freeText}</option>
           {q.alternatives.length > 0 && (
-            <optgroup label="Suggestions">
-              {q.alternatives.map((a) => <option key={`alt-${a.fact}`} value={a.fact}>{a.label} ({Math.round(a.confidence * 100)}%)</option>)}
+            <optgroup label="Autres lectures">
+              {q.alternatives.map((a) => <option key={`alt-${a.concept}`} value={a.concept}>{a.label}{a.answer ? ` = ${a.answer}` : ''}</option>)}
             </optgroup>
           )}
           {(['fund', 'share'] as const).map((scope) => (
@@ -152,12 +173,34 @@ function QuestionRow({ q, facts, override, onOverride }: {
             </optgroup>
           ))}
         </select>
-        {q.fact && <div className="mt-1.5"><ConfidenceBar value={q.confidence} /></div>}
+        {isText && (
+          <div className="mt-2 flex flex-col gap-1.5">
+            <input value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => onOverride({ text: draft })}
+              placeholder={texts.rfi.freeTextPlaceholder}
+              className="w-full rounded-xl border-2 border-fg bg-card px-2.5 py-1.5 text-sm font-semibold focus:outline-none focus:shadow-[3px_3px_0_0_var(--color-magic-500)]" />
+            <label className="flex items-center gap-1.5 text-xs font-semibold text-fg-2">
+              <input type="checkbox" checked={reusable} onChange={(e) => onReusable(e.target.checked)} className="accent-[var(--color-magic-500)]" />
+              {texts.rfi.reusable}
+            </label>
+          </div>
+        )}
+        {q.concept && <div className="mt-1.5"><ConfidenceBar value={q.confidence} /></div>}
+        {(q.evidence || q.reasons.length > 0) && (
+          <button onClick={() => setOpen((o) => !o)} className="mt-1 text-xs font-bold text-magic-300 underline decoration-2 underline-offset-2">{texts.rfi.why}</button>
+        )}
+        {open && (
+          <div className="mt-1 rounded-lg border-2 border-fg/20 bg-card-2 p-2 text-xs font-semibold text-fg-2">
+            {q.evidence && <p><b>{texts.rfi.evidence} :</b> {q.evidence}{q.data_date ? ` (${q.data_date})` : ''}</p>}
+            {q.reasons.length > 0 && <p className="mt-0.5">{q.reasons.join(' · ')}</p>}
+            {q.understanding.length > 0 && <p className="mt-0.5 text-fg-3">{q.understanding.join(' · ')}</p>}
+          </div>
+        )}
       </td>
       <td className="py-3">
         <span className={`inline-block whitespace-nowrap rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${STATUS_STYLE[q.status]}`}>
           {texts.rfi.status[q.status]}
         </span>
+        <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-fg-3">{q.source}</p>
       </td>
     </tr>
   )
@@ -175,20 +218,24 @@ export default function Rfi() {
   const [isin, setIsin] = useState<string | null>(null)
   const [asOf, setAsOf] = useState(todayIso())
   const [language, setLanguage] = useState<'fr' | 'en'>('fr')
-  const [overrides, setOverrides] = useState<Record<string, string | null>>({})
+  const [overrides, setOverrides] = useState<Record<string, Override>>({})
+  const [accepted, setAccepted] = useState<Set<string>>(new Set())
+  const [reusable, setReusable] = useState<Set<string>>(new Set())
   const [overwrite, setOverwrite] = useState(false)
   const [analysis, setAnalysis] = useState<RfiAnalysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [result, setResult] = useState<RfiGenerated | null>(null)
-  const [filter, setFilter] = useState<Filter>('todo')
+  const [filter, setFilter] = useState<Filter>('review')
 
   useGSAP(() => {
     if (prefersReducedMotion()) return
     gsap.from('[data-enter]', { y: 30, opacity: 0, stagger: 0.08, duration: d('slow'), ease: ease.out })
   }, { scope: root, dependencies: [doc?.id, !!result] })
 
-  const request = (extra: Partial<RfiRequest> = {}): RfiRequest => ({ pid, isin, as_of: asOf, language, overrides, overwrite, ...extra })
+  const request = (extra: Partial<RfiRequest> = {}): RfiRequest => ({
+    pid, isin, as_of: asOf, language, overrides, overwrite, accept: [...accepted], reusable: [...reusable], ...extra,
+  })
 
   const open = async (loader: Promise<RfiDocument>) => {
     setBusy(true)
@@ -225,7 +272,7 @@ export default function Rfi() {
     }
   }
 
-  const setOverride = (id: string, value: string | null | undefined) => {
+  const setOverride = (id: string, value: Override | undefined) => {
     const next = { ...overrides }
     if (value === undefined) delete next[id]
     else next[id] = value
@@ -253,13 +300,24 @@ export default function Rfi() {
     setAnalysis(null)
     setResult(null)
     setOverrides({})
+    setAccepted(new Set())
+    setReusable(new Set())
+  }
+
+  const toggle = (set: Set<string>, id: string, on: boolean) => {
+    const next = new Set(set)
+    if (on) next.add(id)
+    else next.delete(id)
+    return next
   }
 
   const facts = factsQuery.data ?? []
   const visible = useMemo(() => (analysis?.questions ?? []).filter((q) =>
-    filter === 'all' ? true : filter === 'unmatched' ? q.status === 'unmatched' || q.status === 'no_value' : q.status === 'fill' || q.status === 'existing' || q.status === 'skipped'),
+    filter === 'all' ? true : filter === 'none' ? q.status === 'unmatched' || q.status === 'no_value'
+      : filter === 'auto' ? q.status === 'auto' || q.status === 'existing' : q.status === 'review'),
   [analysis, filter])
-  const toWrite = analysis ? analysis.stats.fill + (overwrite ? analysis.stats.existing : 0) : 0
+  const reviewIds = (analysis?.questions ?? []).filter((q) => q.status === 'review' && q.answer).map((q) => q.id)
+  const toWrite = analysis ? analysis.stats.auto + reviewIds.filter((id) => accepted.has(id)).length + (overwrite ? analysis.stats.existing : 0) : 0
 
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-10 sm:pt-14">
@@ -314,6 +372,9 @@ export default function Rfi() {
                 <p className="truncate font-display text-xl font-semibold">{doc.filename}</p>
                 <p className="text-sm font-semibold text-fg-2">
                   {texts.rfi.questions(doc.question_count ?? 0)} · {doc.language === 'en' ? 'anglais' : 'français'} {texts.rfi.detected}
+                  {doc.dropdowns ? ` · ${doc.dropdowns} liste${doc.dropdowns > 1 ? 's' : ''} déroulante${doc.dropdowns > 1 ? 's' : ''}` : ''}
+                  {doc.placeholders ? ` · ${doc.placeholders} consigne${doc.placeholders > 1 ? 's' : ''} client reconnue${doc.placeholders > 1 ? 's' : ''}` : ''}
+                  {doc.notes?.length ? ` · ${doc.notes.join(' · ')}` : ''}
                 </p>
               </div>
               <a href={api.rfi.originalUrl(doc.id)} className="text-sm font-bold text-magic-300 underline decoration-2 underline-offset-4">{texts.rfi.original}</a>
@@ -355,7 +416,7 @@ export default function Rfi() {
                   </p>
                 </div>
                 <div role="group" aria-label="Filtrer les questions" className="flex gap-2">
-                  {(['todo', 'all', 'unmatched'] as Filter[]).map((f) => (
+                  {(['review', 'auto', 'none', 'all'] as Filter[]).map((f) => (
                     <button key={f} onClick={() => setFilter(f)} aria-pressed={filter === f}
                       className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition-colors ${filter === f ? 'border-fg bg-magic-500 text-white' : 'border-fg/30 hover:border-fg'}`}>
                       {texts.rfi.filters[f]}
@@ -368,7 +429,15 @@ export default function Rfi() {
                   {analysis.errors.map((e) => <li key={e}>{e}</li>)}
                 </ul>
               )}
-              {filter === 'unmatched' && <p className="mt-4 text-sm font-semibold text-fg-2">{texts.rfi.unmatchedHint}</p>}
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-fg bg-card-2 px-4 py-3">
+                <span className="font-display text-xl font-bold">{texts.rfi.coverageRate(analysis.coverage.rate)}</span>
+                <span className="text-sm font-semibold text-fg-2">{texts.rfi.coverage(analysis.coverage.auto, analysis.coverage.review, analysis.coverage.total)}</span>
+                {reviewIds.length > 0 && (
+                  <Button size="sm" className="ml-auto" icon={<Check size={14} />} onClick={() => setAccepted(new Set(reviewIds))}>{texts.rfi.acceptAll(reviewIds.length)}</Button>
+                )}
+                <p className="w-full text-xs font-semibold text-fg-3">{texts.rfi.sentence}</p>
+              </div>
+              {filter === 'none' && <p className="mt-4 text-sm font-semibold text-fg-2">{texts.rfi.unmatchedHint}</p>}
               <div className={`mt-4 overflow-x-auto transition-opacity ${analyzing ? 'opacity-60' : ''}`}>
                 {visible.length === 0 ? (
                   <EmptyState title="Rien dans ce filtre." body="Essayez « Toutes »." />
@@ -384,7 +453,9 @@ export default function Rfi() {
                     </thead>
                     <tbody>
                       {visible.map((q) => (
-                        <QuestionRow key={q.id} q={q} facts={facts} override={q.id in overrides ? overrides[q.id] : undefined} onOverride={(v) => setOverride(q.id, v)} />
+                        <QuestionRow key={q.id} q={q} facts={facts} override={q.id in overrides ? overrides[q.id] : undefined} onOverride={(v) => setOverride(q.id, v)}
+                          accepted={accepted.has(q.id)} onAccept={(v) => setAccepted((a) => toggle(a, q.id, v))}
+                          reusable={reusable.has(q.id)} onReusable={(v) => setReusable((r) => toggle(r, q.id, v))} />
                       ))}
                     </tbody>
                   </table>
@@ -410,6 +481,7 @@ export default function Rfi() {
                   <div className="flex-1">
                     <p className="font-display text-2xl font-semibold">{texts.rfi.done(result.written)}</p>
                     <p className="font-semibold text-fg-2">{result.file} · {texts.rfi.minutes(result.written * 2)}</p>
+                    <p className="text-sm font-semibold text-fg-2">{texts.rfi.learned}</p>
                   </div>
                   <a href={result.download} className="inline-flex h-14 items-center gap-2 rounded-full border-[2.5px] border-fg bg-card px-7 font-display text-lg font-semibold shadow-[3px_3px_0_0_var(--color-fg)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-fg)]">
                     <Download size={20} aria-hidden="true" />{texts.rfi.download}

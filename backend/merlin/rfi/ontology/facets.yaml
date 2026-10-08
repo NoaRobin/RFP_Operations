@@ -1,0 +1,42 @@
+# Facettes : qualificatifs qui distinguent des concepts voisins (ex ante / ex post, maximum / réel, souscription / rachat…).
+# Une facette détectée dans la question doit être compatible avec celle du concept, sinon le concept est écarté.
+# Termes en texte normalisé (minuscules, sans accents). Ordre indifférent ; FR et EN mélangés.
+facets:
+  timing:
+    ex_ante: [ex ante, ex-ante, previsionnel, previsionnels, previsionnelle, prevus, estime, estimes, estimated, expected, anticipated, forward looking, prospective, priips]
+    ex_post: [ex post, ex-post, realise, realises, realisee, constate, constates, constatee, realised, realized, historical, historique, dernier exercice, last financial year, previous year, annee precedente, rapport annuel, annual report, kiid]
+  level:
+    max: [maximum, maximal, maximale, maximaux, max, plafond, plafonne, cap, capped, up to, at most, jusqu'a, prospectus]
+    actual: [reel, reels, reelle, reelles, effectif, effectifs, effective, actual, actuel, actuels, actuelle, applique, appliques, appliquee, applied, current, charged, preleve, preleves, en vigueur]
+  direction:
+    subscription: [souscription, souscriptions, entree, entrees, subscription, subscriptions, subscribe, entry, initial charge, front end, front-end, achat, purchase, buy, buying]
+    redemption: [rachat, rachats, sortie, sorties, redemption, redemptions, redeem, exit, back end, back-end, vente, sale, sell, selling, remboursement]
+  retention:
+    retained: [acquis, acquise, acquises, acquis au fonds, retained, paid to the fund, au profit du fonds, dilution levy, anti-dilution]
+    not_retained: [non acquis, non acquise, non acquises, not retained, au profit du distributeur, au profit de la societe de gestion, au profit du commercialisateur]
+  subject:
+    benchmark: [indice, indices, benchmark, benchmarks, indicateur de reference, indice de reference, index, reference index, bench]
+  annualization:
+    annualized: [annualise, annualisee, annualises, annualisees, annualised, annualized, p.a., pa, per annum, par an, moyenne annuelle, average annual]
+    cumulative: [cumule, cumulee, cumules, cumulees, cumulative, cumulated, total return]
+  currency_basis:
+    eur: [eur, euro, euros, "€", en euros, in euros]
+    fund_ccy: [devise du fonds, fund currency, base currency, devise de reference]
+    share_ccy: [devise de la part, share class currency, share currency, devise de cotation]
+
+# Mots de portée : aident à choisir entre la version « fonds » et la version « part » d'un concept.
+scope_terms:
+  fund: [fonds, fund, funds, opc, opcvm, sicav, fcp, compartiment, sub-fund, subfund, portefeuille, portfolio, strategie, strategy, produit, product, vehicule, vehicle]
+  share: [part, parts, share, shares, share class, share classes, classe de parts, categorie de parts, unit, units, isin, tranche, classe, class]
+
+# Mots d'un RFI qui n'apportent aucun sens propre : ignorés dans le calcul de couverture de la question.
+generic_terms: [veuillez, merci, de, du, des, la, le, les, l, d, un, une, et, ou, en, au, aux, a, pour, par, sur, dans, avec, sans,
+  est, sont, sera, peut, quel, quelle, quels, quelles, votre, vos, notre, nos, ce, cet, cette, ces, son, sa, ses, leur, leurs, il, elle, y, t,
+  indiquer, indiquez, preciser, precisez, renseigner, renseignez, fournir, fournissez, donner, donnez, communiquer, communiquez,
+  please, provide, indicate, state, specify, give, enter, insert, confirm, list, what, which, is, are, the, of, a, an, and, or, to,
+  for, in, on, at, by, with, if, any, your, its, this, that, does, do, has, have, be, been, applicable, relevant, applicable,
+  le cas echeant, if applicable, n/a, oui, non, yes, no, y/n, o/n, s, i, e, etc, actuel, current, information, informations,
+  details, detail, montant, amount, valeur, value, nombre, number, taux, rate, niveau, level, type, nom, name, code, date,
+  pourcentage, percentage, "%", en %, in %, (%), eur, euro, euros, usd, million, millions, m, mn, mio, k, md, bn, milliard, milliards,
+  "?", ":", q, question, reponse, answer, fonds, fund, part, share, classe, class, portefeuille, portfolio, il, elle, ils, elles, t,
+  dispose, disposer, have, has, apply, applies, applique, use, uses, utilise, considered, consider, prend, compte]

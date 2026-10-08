@@ -50,7 +50,7 @@ def _excel_serial(d: date) -> float:
     return (d - date(1899, 12, 30)).days
 
 
-def _set_cell(sheet_root, ref: str, value: Any) -> None:
+def _set_cell(sheet_root, ref: str, value: Any, date_cell: bool = False) -> None:
     sheet_data = sheet_root.find(f"{{{NS}}}sheetData")
     r_idx = _row_index(ref)
     row = next((r for r in sheet_data.findall(f"{{{NS}}}row") if int(r.get("r", 0)) == r_idx), None)
@@ -83,6 +83,10 @@ def _set_cell(sheet_root, ref: str, value: Any) -> None:
         v.text = repr(float(value)) if isinstance(value, float) else str(value)
         return
     if isinstance(value, (date, datetime)):
+        if date_cell:
+            v = etree.SubElement(cell, f"{{{NS}}}v")  # cellule déjà au format date : numéro de série Excel
+            v.text = str(_excel_serial(value if isinstance(value, date) and not isinstance(value, datetime) else value.date()))
+            return
         value = value.strftime("%d/%m/%Y")  # texte : aucun style de date à créer
     cell.set("t", "inlineStr")
     is_el = etree.SubElement(cell, f"{{{NS}}}is")
@@ -92,18 +96,24 @@ def _set_cell(sheet_root, ref: str, value: Any) -> None:
         t.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
 
 
-def write_xlsx(source: Path, target: Path, answers: list[tuple[dict, Any]]) -> int:
-    by_sheet: dict[str, list[tuple[str, Any]]] = {}
-    for tgt, value in answers:
-        by_sheet.setdefault(tgt["sheet"], []).append((tgt["cell"], value))
+def _is_date_format(fmt: str | None) -> bool:
+    from .understand import expected_from_format
+
+    return expected_from_format(fmt) == "date"
+
+
+def write_xlsx(source: Path, target: Path, answers: list[tuple]) -> int:
+    by_sheet: dict[str, list[tuple[str, Any, bool]]] = {}
+    for tgt, value, *_ in answers:
+        by_sheet.setdefault(tgt["sheet"], []).append((tgt["cell"], value, _is_date_format(tgt.get("number_format"))))
     with zipfile.ZipFile(source) as zin:
         paths = _sheet_paths(zin)
         patched: dict[str, bytes] = {}
         for sheet, cells in by_sheet.items():
             path = paths[sheet]
             root = etree.fromstring(zin.read(path))
-            for ref, value in cells:
-                _set_cell(root, ref, value)
+            for ref, value, date_cell in cells:
+                _set_cell(root, ref, value, date_cell)
             patched[path] = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
         drop_calc = "xl/calcChain.xml" in zin.namelist() and patched
         with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zout:
@@ -141,16 +151,95 @@ def _fill_paragraph(paragraph, text: str, model_run=None) -> None:
         _copy_format(model_run, run)
 
 
-def write_docx(source: Path, target: Path, answers: list[tuple[dict, Any]]) -> int:
+W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+W14 = "http://schemas.microsoft.com/office/word/2010/wordml"
+BOXES = "☐□▢⬜"
+
+
+def _container(document, tgt):
+    if "table" in tgt:
+        return document.tables[tgt["table"]].rows[tgt["row"]].cells[tgt["col"]]._tc
+    return document.paragraphs[tgt["paragraph"]]._p
+
+
+def _write_sdt(sdt, text: str) -> None:
+    """Contrôle de contenu : on remplace le texte affiché (liste déroulante, date, texte) en gardant la mise en forme."""
+    content = sdt.find(f"{{{W}}}sdtContent")
+    texts = list(content.iter(f"{{{W}}}t")) if content is not None else []
+    if texts:
+        texts[0].text = text
+        for t in texts[1:]:
+            t.text = ""
+    elif content is not None:
+        run = etree.SubElement(content, f"{{{W}}}r")
+        etree.SubElement(run, f"{{{W}}}t").text = text
+    pr = sdt.find(f"{{{W}}}sdtPr")
+    if pr is not None:
+        sh = pr.find(f"{{{W}}}showingPlcHdr")
+        if sh is not None:
+            pr.remove(sh)
+            # le texte n'est plus un espace réservé : on retire son style gris
+            for rpr in (content.iter(f"{{{W}}}rPr") if content is not None else []):
+                for tag in ("color", "rStyle"):
+                    el = rpr.find(f"{{{W}}}{tag}")
+                    if el is not None and (tag == "color" or "Placeholder" in (el.get(f"{{{W}}}val") or "")):
+                        rpr.remove(el)
+
+
+def _tick(container, label: str, options: list[str]) -> bool:
+    """Coche la case dont le libellé correspond (contrôle w14:checkbox ou glyphe ☐ → ☒)."""
+    from .ontology import norm
+
+    wanted = norm(label)
+    sdts = [s for s in container.iter(f"{{{W}}}sdt") if s.find(f"{{{W}}}sdtPr/{{{W14}}}checkbox") is not None]
+    if len(sdts) >= 2 and len(sdts) == len(options):
+        for k, opt in enumerate(options):
+            if norm(opt) == wanted:
+                box = sdts[k].find(f"{{{W}}}sdtPr/{{{W14}}}checkbox/{{{W14}}}checked")
+                if box is not None:
+                    box.set(f"{{{W14}}}val", "1")
+                for t in sdts[k].iter(f"{{{W}}}t"):
+                    t.text = "☒"
+                return True
+        return False
+    # Glyphes : la k-ième case du texte
+    try:
+        k = [norm(o) for o in options].index(wanted)
+    except ValueError:
+        return False
+    seen = 0
+    for t in container.iter(f"{{{W}}}t"):
+        chars = list(t.text or "")
+        for i, ch in enumerate(chars):
+            if ch in BOXES:
+                if seen == k:
+                    chars[i] = "☒"
+                    t.text = "".join(chars)
+                    return True
+                seen += 1
+    return False
+
+
+def write_docx(source: Path, target: Path, answers: list[tuple]) -> int:
     import docx
 
     document = docx.Document(str(source))
     paragraphs = document.paragraphs
     written = 0
-    for tgt, value in answers:
+    for tgt, value, *rest in answers:
+        options = rest[0] if rest else []
         text = value.strftime("%d/%m/%Y") if isinstance(value, (date, datetime)) else str(value)
         kind = tgt["type"]
-        if kind == "cell":
+        if kind == "checkbox":
+            if not _tick(_container(document, tgt), text, options or []):
+                continue
+        elif kind == "sdt":
+            sdts = list(_container(document, tgt).iter(f"{{{W}}}sdt"))
+            sdts = [s for s in sdts if s.find(f"{{{W}}}sdtPr/{{{W14}}}checkbox") is None]
+            if not sdts:
+                continue
+            _write_sdt(sdts[tgt.get("sdt", 0)], text)
+        elif kind == "cell":
             row = document.tables[tgt["table"]].rows[tgt["row"]]
             cell = row.cells[tgt["col"]]
             model = None
@@ -175,7 +264,7 @@ def write_docx(source: Path, target: Path, answers: list[tuple[dict, Any]]) -> i
                 run.bold = False
         elif kind == "placeholder":
             paragraph = paragraphs[tgt["paragraph"]]
-            pattern = re.compile(r"_{3,}|\.{4,}|…{2,}|\[\s*(?:à compléter|a completer|à remplir|a remplir|réponse|reponse|answer|to be completed|x+)\s*\]", re.I)
+            pattern = re.compile(re.escape(tgt["placeholder"])) if tgt.get("placeholder") else re.compile(r"_{3,}|\.{4,}|…{2,}")
             done = False
             for run in paragraph.runs:
                 if pattern.search(run.text):
@@ -193,7 +282,7 @@ def write_docx(source: Path, target: Path, answers: list[tuple[dict, Any]]) -> i
     return written
 
 
-def write(source: Path, target: Path, answers: list[tuple[dict, Any]]) -> int:
+def write(source: Path, target: Path, answers: list[tuple]) -> int:
     if not answers:
         shutil.copy2(source, target)
         return 0

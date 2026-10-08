@@ -45,12 +45,18 @@ cd frontend && npm run build                                                    
 ---
 
 ## Remplir un RFI : comment ça marche
-1. **Détection** : dans un Excel, la colonne « Réponse / Answer » (sinon la première cellule vide à droite de la question) ; dans un Word, les tableaux question/réponse, les « … : » et les paragraphes vides après une question.
-2. **Correspondance** : chaque question est comparée au dictionnaire `backend/merlin/rfi/facts.yaml` (≈ 70 données : nom, ISIN, SRI, SFDR, frais, cut-off, encours, top 10…), par mots-clés FR/EN. **Pas d'IA externe, rien ne sort du poste.** Les questions qualitatives restent vides : l'app n'invente rien.
-3. **Vérification** : vous voyez chaque réponse proposée, son niveau de confiance, et pouvez changer la donnée ou ignorer la question.
-4. **Écriture** : Excel patché au niveau XML (mise en forme, formules, macros intactes), Word via python-docx (style des runs conservé). Fichier `<nom>_rempli_v<n>`.
+Méthode complète, résultats et sources : [`docs/COMPLETEUR_RFI.md`](docs/COMPLETEUR_RFI.md).
+1. **Lecture** : listes de questions, grilles « une ligne / une colonne par part », cases pré-remplies de consignes
+   (« Indiquer… », « [à compléter] », « Oui/Non », « jj/mm/aaaa ») traitées comme vides, listes déroulantes Excel
+   (y compris vers un onglet caché) et Word, cases à cocher, format des cellules (%, date).
+2. **Ontologie** (`backend/merlin/rfi/ontology/`) : 177 concepts fonds / part reliés à Product Info, JUMP et aux
+   performances (méthode App4everyone), avec facettes (ex ante / ex post, maximum / réel, souscription / rachat…),
+   vocabulaires FR / EN et bornes de vraisemblance. **Pas d'IA externe, rien ne sort du poste.**
+3. **Revue** : chaque réponse a sa preuve (table.colonne, date) ; « automatique » seulement sans aucune réserve,
+   sinon « à vérifier » (un clic pour valider). Jamais de valeur hors liste, hors bornes ou à clé ISIN/LEI invalide.
+4. **Écriture** : même fichier, cases remplies au bon format ; chaque validation enrichit la bibliothèque.
 
-Pour enseigner un nouveau mot-clé : ajoutez-le dans `facts.yaml` (le nom de colonne doit exister dans `catalog/fabric_schema.csv`, sinon la donnée est refusée au démarrage).
+Mesure : `cd backend && python -m merlin.rfi.evaluate` (banc de 169 formulations dont 34 pièges : précision 100 % exigée).
 
 ## Merge codes : le référentiel
 L'Excel « Années d'expérience – FR_EN pour Qvidian » (onglet *Data*) se dépose **une fois** dans l'écran Merge codes. Il reste dans `data/mergecodes/` sur votre poste et **n'est jamais committé** (données de collaborateurs).
@@ -65,7 +71,7 @@ catalog/                   ← fabric_schema.csv (machine) + fabric_catalog.md (
 automations/               ← UN DOSSIER = UN SORT (manifest.yaml + query.sql | run.py)
 backend/merlin/
   data/        access.py (accès UNIQUE Fabric | mock), fabric_link.py (connexion façon VS Code), catalog.py, mock.py
-  rfi/         facts.yaml, facts.py, detect.py, match.py, writer.py, service.py, demo.py
+  rfi/         ontology/ (concepts, facettes, vocabulaires), layout, understand, match, values, perf, render, library, writer, evaluate
   mergecodes/  service.py (pilote le bot vendorisé, sans Word ni pywin32)
   suivi.py     monte tryv2 sous /suivi
   plugins/ jobs/ atelier/ api/ scheduler.py db.py main.py

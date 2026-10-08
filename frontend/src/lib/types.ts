@@ -245,23 +245,39 @@ export interface RfiDocument {
   kind?: 'xlsx' | 'docx'
   language?: 'fr' | 'en'
   question_count?: number
+  dropdowns?: number
+  placeholders?: number
+  notes?: string[]
   suggestions?: FundSuggestion[]
 }
 
-export type RfiStatus = 'fill' | 'existing' | 'no_value' | 'unmatched' | 'skipped'
+export type RfiStatus = 'auto' | 'review' | 'existing' | 'no_value' | 'unmatched' | 'skipped'
 
 export interface RfiQuestion {
   id: string
-  text: string
+  question: string
   location: string
+  state: 'empty' | 'placeholder' | 'answered'
   existing: string
+  hint: string
   context: string
-  fact: string | null
-  fact_label: string | null
+  options: string[]
+  options_source: string
+  layout: string
+  entity: { isin?: string }
+  concept: string | null
+  concept_label: string | null
   confidence: number
   answer: string | null
   status: RfiStatus
-  alternatives: { fact: string; label: string; confidence: number }[]
+  source: string
+  evidence: string | null
+  data_date: string | null
+  issues: string[]
+  reasons: string[]
+  understanding: string[]
+  suggestion?: string | null
+  alternatives: { concept: string; label: string; score: number; answer: string | null }[]
 }
 
 export interface RfiAnalysis {
@@ -270,19 +286,24 @@ export interface RfiAnalysis {
   as_of: string
   errors: string[]
   questions: RfiQuestion[]
+  coverage: { total: number; auto: number; review: number; rate: number }
+  notes: string[]
 }
 
 export interface RfiGenerated extends RfiAnalysis { version: number; written: number; file: string; download: string }
 
-export interface RfiFact { id: string; label: string; scope: string; format: string; source: string; healthy: boolean }
+export interface RfiFact { id: string; label: string; label_en?: string; scope: string; type: string; source: string; healthy: boolean }
 
 export interface RfiRequest {
   pid?: string | null
   isin?: string | null
   as_of?: string | null
   language?: 'fr' | 'en' | null
-  overrides?: Record<string, string | null>
+  overrides?: Record<string, string | null | { text: string }>
   overwrite?: boolean
+  accept?: string[]
+  reusable?: string[]
+  remember?: boolean
 }
 
 /* ---------------------------------------------------------------- Merge codes */
