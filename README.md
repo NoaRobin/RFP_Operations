@@ -169,3 +169,16 @@ Quelques-uns, discrets. Indices : ↑↑↓↓←→←→BA, une constellation 
 
 ## Scripts historiques
 `JUMP_OMNI.py` et `OMNI_MENSUEL.py` (pilotage d'Excel, de JUMP et d'Outlook sous Windows) sont conservés tels quels. Ce sont de bons candidats pour de futures automatisations `python`, une fois le navigateur ou le pilotage desktop branché sur `ctx`.
+
+
+
+L’application ne démarre pas :
+ModuleNotFoundError: No module named 'merlin.data'
+
+Dans le ZIP téléchargé, backend/merlin/data est absent, alors que backend/merlin/atelier/extractions.py importe DataAccess depuis ..data.access.
+
+Vérifie si les fichiers du module existent mais ont été exclus par une règle .gitignore comme data/. Si oui, corrige cette règle pour ignorer uniquement les données générées à la racine, sans exclure backend/merlin/data, puis ajoute les fichiers sources au dépôt.
+
+Si le module n’existe pas, restaure son implémentation réelle et compatible avec les imports existants. Ne crée pas de fichiers vides ni de faux correctif.
+
+Vérifie le démarrage en mode démo et committe la correction sur cette branche. Ne modifie pas les autres modules inutilement.
