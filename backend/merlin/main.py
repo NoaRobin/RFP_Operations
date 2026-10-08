@@ -10,16 +10,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import atelier, core
+from .api import atelier, core, mergecodes, rfi
 from .atelier.store import AtelierStore
 from .config import get_settings
-from .data.access import DataError, build_data_access, resolve_mode
+from .data.access import DataError, build_data_access, resolve_mode, set_shared
 from .db import Database, now_iso
 from .jobs.manager import JobManager
 from .plugins.registry import PluginRegistry
 from .scheduler import MerlinScheduler
 from .seed import seed_demo_history
 from .state import AppState, get_state, set_state
+from .suivi import build_suivi_app
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s")
 log = logging.getLogger("merlin")
@@ -29,6 +30,7 @@ def create_state() -> AppState:
     settings = get_settings()
     mode = resolve_mode(settings)
     data = build_data_access(mode, settings)
+    set_shared(data)
     registry = PluginRegistry(settings.automations_dir, data.catalog).discover()
     db = Database(settings.db_path)
     jobs = JobManager(settings, db, mode)
@@ -48,18 +50,24 @@ async def lifespan(app: FastAPI):
     state = create_state()
     set_state(state)
     state.scheduler.start()
-    log.info("MERIDIAN prêt — mode données : %s — %d automatisation(s)", state.data.mode, len(state.registry.plugins))
+    log.info("Grimoire prêt — mode données : %s — %d automatisation(s)", state.data.mode, len(state.registry.plugins))
     yield
     state.scheduler.shutdown()
     state.jobs.shutdown()
 
 
-app = FastAPI(title="MERIDIAN", version="1.0", lifespan=lifespan)
+app = FastAPI(title="Grimoire", version="1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=get_settings().cors_origins, allow_methods=["*"], allow_headers=["*"],
 )
 app.include_router(core.router)
 app.include_router(atelier.router)
+app.include_router(rfi.router)
+app.include_router(mergecodes.router)
+
+_suivi = build_suivi_app(get_settings().data_dir)
+if _suivi is not None:
+    app.mount("/suivi", _suivi, name="suivi")
 
 
 @app.exception_handler(DataError)
@@ -86,7 +94,7 @@ if (dist / "index.html").exists():
 
     @app.get("/{path:path}", include_in_schema=False)
     async def spa(path: str):
-        if path.startswith("api/"):
+        if path.startswith(("api/", "suivi/")):
             raise HTTPException(404, {"message": "Route API inconnue.", "hint": ""})
         candidate = (dist / path).resolve()
         if path and candidate.is_file() and dist.resolve() in candidate.parents:

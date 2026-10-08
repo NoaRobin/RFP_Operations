@@ -22,6 +22,16 @@ log = logging.getLogger("merlin.jobs")
 _CTX = mp.get_context("spawn")  # identique sous Windows, macOS et Linux
 
 
+class _ThreadJob(threading.Thread):
+    """Exécution dans un fil du serveur : partage la connexion Fabric (une seule fenêtre Microsoft).
+
+    `terminate` ne peut pas tuer un fil : l'annulation est signalée et les événements suivants sont ignorés.
+    """
+
+    def terminate(self) -> None:  # interface identique à multiprocessing.Process
+        pass
+
+
 class EventBus:
     """Diffusion thread-safe des événements vers les abonnés SSE (asyncio)."""
 
@@ -123,8 +133,12 @@ class JobManager:
                 self._start(job)
 
     def _start(self, job: ActiveJob) -> None:
-        job.queue = _CTX.Queue()
-        job.process = _CTX.Process(target=child_main, args=(job.spec, job.queue), daemon=True, name=f"merlin-{job.run_id}")
+        if self.settings.job_executor == "process":
+            job.queue = _CTX.Queue()
+            job.process = _CTX.Process(target=child_main, args=(job.spec, job.queue), daemon=True, name=f"merlin-{job.run_id}")
+        else:
+            job.queue = queue_mod.Queue()
+            job.process = _ThreadJob(target=child_main, args=(job.spec, job.queue), daemon=True, name=f"merlin-{job.run_id}")
         job.process.start()
         job.started = time.monotonic()
         self.db.update_run(job.run_id, status="running", started_at=now_iso())

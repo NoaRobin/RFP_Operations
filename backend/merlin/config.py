@@ -38,6 +38,8 @@ class FabricSettings:
     server: str = ""
     database: str = ""
     auth: str = "ActiveDirectoryInteractive"
+    user: str = ""
+    client: str = "mssql-python"
     client_id: str = ""
     client_secret: str = ""
     tenant_id: str = ""
@@ -60,6 +62,7 @@ class Settings:
     default_user: str
     job_timeout: int
     max_parallel_jobs: int
+    job_executor: str
     seed_demo_history: bool
     cors_origins: list[str] = field(default_factory=list)
     fabric: FabricSettings = field(default_factory=FabricSettings)
@@ -97,12 +100,16 @@ def get_settings() -> Settings:
         default_user=_env("MERLIN_DEFAULT_USER", "Utilisateur anonyme"),
         job_timeout=int(_env("MERLIN_JOB_TIMEOUT", "1800")),
         max_parallel_jobs=int(_env("MERLIN_MAX_PARALLEL_JOBS", "4")),
+        # thread (défaut) : connexion Fabric partagée ; process : isolation totale (une connexion par job)
+        job_executor=_env("MERLIN_JOB_EXECUTOR", "thread").lower(),
         seed_demo_history=_bool("MERLIN_SEED_DEMO_HISTORY", True),
         cors_origins=[o for o in _env("MERLIN_CORS_ORIGINS", "http://localhost:5173").split(",") if o],
         fabric=FabricSettings(
             server=_env("FABRIC_SQL_ENDPOINT"),
             database=_env("FABRIC_DATABASE", "LKH_RFPTeam_Bronze"),
             auth=_env("FABRIC_AUTH", "ActiveDirectoryInteractive"),
+            user=_env("FABRIC_USER"),
+            client=_env("FABRIC_CLIENT", "mssql-python").lower(),
             client_id=_env("FABRIC_CLIENT_ID"),
             client_secret=_env("FABRIC_CLIENT_SECRET"),
             tenant_id=_env("FABRIC_TENANT_ID"),

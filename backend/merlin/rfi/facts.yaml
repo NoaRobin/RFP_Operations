@@ -1,0 +1,513 @@
+# Dictionnaire des réponses quantitatives / factuelles d'un RFI.
+#
+# Chaque fait :
+#   scope    : fund (fonds Product Info) | share (part, par ISIN)
+#   source   : table.colonne (Product Info) ou jump: <requête nommée dans facts.py>
+#   format   : text | number | amount | percent | date | boolean | time
+#   keywords : groupes de termes (texte normalisé : minuscules, sans accents). Un groupe correspond si TOUS
+#              ses termes sont présents dans la question. Le meilleur groupe donne le score.
+#   exclude  : termes qui disqualifient le fait (ex. « part » pour un encours de fonds).
+# Les noms de colonnes viennent de catalog/fabric_schema.csv (jamais devinés). Unités des taux : À CONFIRMER
+# (une valeur ≤ 0,05 est lue comme une fraction et convertie en %).
+
+facts:
+  # ------------------------------------------------------------------ Identité du fonds
+  - id: fund.name
+    label: Nom du fonds
+    scope: fund
+    source: pi_out_product_active.Product_Name
+    format: text
+    keywords: [[nom du fonds], [fund name], [name of the fund], [denomination du fonds], [fund's name], [nom de l'opc], [nom de l opcvm]]
+    exclude: [gerant, manager, benchmark, indice, share, part]
+  - id: fund.legal_form
+    label: Forme juridique
+    scope: fund
+    source: pi_out_product_active.Legal_Form
+    format: text
+    keywords: [[forme juridique], [legal form], [legal structure], [structure juridique], [legal status], [vehicle type], [type de vehicule]]
+  - id: fund.domicile
+    label: Domicile
+    scope: fund
+    source: pi_out_product_active.Domiciliation
+    format: text
+    keywords: [[domicile], [domiciliation], [country of domicile], [pays de domiciliation], [fund domicile]]
+  - id: fund.umbrella
+    label: SICAV / ombrelle
+    scope: fund
+    source: pi_out_product_active.Umbrella_Name
+    format: text
+    keywords: [[umbrella], [ombrelle], [nom de la sicav], [sicav name]]
+  - id: fund.regulation
+    label: Réglementation (OPCVM / FIA)
+    scope: fund
+    source: pi_out_product_active.Applicable_UCI_Regulation
+    format: text
+    keywords: [[ucits], [opcvm], [fia], [aifmd], [regulatory status], [statut reglementaire], [regulation, fund]]
+    exclude: [sfdr, article]
+  - id: fund.launch_date
+    label: Date de création du fonds
+    scope: fund
+    source: pi_out_product_active.Creation_Date
+    format: date
+    keywords: [[date de creation, fonds], [date de lancement, fonds], [fund launch date], [fund inception], [inception date], [launch date], [date de creation], [date de lancement], [date of creation], [fund creation]]
+    exclude: [part, share, class]
+  - id: fund.base_currency
+    label: Devise de référence du fonds
+    scope: fund
+    source: pi_out_product_active.Accounting_Currency
+    format: text
+    keywords: [[devise de reference], [base currency], [reference currency], [fund currency], [devise du fonds], [devise de comptabilisation], [accounting currency]]
+    exclude: [part, share, class]
+  - id: fund.lei
+    label: Code LEI
+    scope: fund
+    source: pi_out_product_active.LEI_Code
+    format: text
+    keywords: [[lei]]
+  - id: fund.asset_class
+    label: Classe d'actifs
+    scope: fund
+    source: pi_out_product_active.Asset_Class
+    format: text
+    keywords: [[classe d'actifs], [asset class], [classe d actifs]]
+    exclude: [repartition, allocation, breakdown, "%"]
+  - id: fund.zone
+    label: Zone d'investissement
+    scope: fund
+    source: pi_out_product_active.Investment_Zone
+    format: text
+    keywords: [[zone d'investissement], [zone geographique], [investment zone], [geographical focus], [geographic focus], [region d'investissement]]
+    exclude: [repartition, breakdown, allocation, "%"]
+  - id: fund.amf_classification
+    label: Classification AMF
+    scope: fund
+    source: pi_out_product_active.AMF_Classification
+    format: text
+    keywords: [[classification amf], [amf classification]]
+  - id: fund.range
+    label: Gamme
+    scope: fund
+    source: pi_out_product_active.Fund_Range
+    format: text
+    keywords: [[gamme], [fund range]]
+  - id: fund.maturity
+    label: Échéance du fonds
+    scope: fund
+    source: pi_out_product_active.Maturity_date
+    format: date
+    keywords: [[date d'echeance], [echeance du fonds], [maturity date], [fund maturity], [target maturity]]
+
+  # ------------------------------------------------------------------ Risque & ESG
+  - id: fund.sri
+    label: SRI (échelle de risque)
+    scope: fund
+    source: pi_out_product_active.Official_Risk_Scale
+    format: number
+    keywords: [[sri], [indicateur de risque], [risk indicator], [summary risk indicator], [echelle de risque], [risk scale], [niveau de risque], [risk level]]
+    exclude: [srri]
+  - id: fund.srri
+    label: SRRI
+    scope: fund
+    source: pi_out_product_active.Official_Risk_Scale_SRRI
+    format: number
+    keywords: [[srri]]
+  - id: fund.sfdr
+    label: Classification SFDR
+    scope: fund
+    source: pi_out_product_active.ESG_SFDR_Article
+    format: text
+    keywords: [[sfdr], [article 8], [article 9], [article 6], [disclosure regulation]]
+    exclude: [pai, taxonomie, taxonomy, "%"]
+  - id: fund.amf_esg_category
+    label: Catégorie AMF (doctrine ESG)
+    scope: fund
+    source: pi_out_product_active.ESG_AMF_Category
+    format: text
+    keywords: [[categorie amf, esg], [doctrine amf], [amf esg category], [amf doctrine]]
+  - id: fund.label_towards_sustainability
+    label: Label Towards Sustainability
+    scope: fund
+    source: pi_out_product_active.Belgium_Towards_Sustainability_label
+    format: text
+    keywords: [[towards sustainability]]
+  - id: fund.label_finansol
+    label: Label Finansol
+    scope: fund
+    source: pi_out_product_active.Finansol_Label
+    format: text
+    keywords: [[finansol]]
+  - id: fund.volatility_target
+    label: Objectif de volatilité
+    scope: fund
+    source: pi_out_product_active.Volatility_target
+    format: percent
+    keywords: [[objectif de volatilite], [volatility target], [target volatility], [volatilite cible]]
+  - id: fund.recommended_period
+    label: Durée de placement recommandée
+    scope: fund
+    source: pi_out_product_active.Recommended_Investment_Period
+    format: text
+    keywords: [[duree de placement recommandee], [duree de placement], [recommended holding period], [recommended investment period], [investment horizon], [horizon d'investissement], [horizon de placement]]
+
+  # ------------------------------------------------------------------ Acteurs
+  - id: fund.pm
+    label: Gérant principal
+    scope: fund
+    source: pi_out_product_active.Portfolio_Manager
+    format: text
+    keywords: [[gerant principal], [lead portfolio manager], [portfolio manager], [lead manager], [nom du gerant], [fund manager name], [gerant du fonds], [fund manager]]
+    exclude: [experience, annees, years, backup, adjoint, deputy, depuis, since, societe de gestion, management company]
+  - id: fund.pm_backup
+    label: Gérant suppléant
+    scope: fund
+    source: pi_out_product_active.Portfolio_Manager_backup_1
+    format: text
+    keywords: [[gerant suppleant], [gerant adjoint], [co-gerant], [backup portfolio manager], [deputy portfolio manager], [co-manager], [deputy manager], [backup manager]]
+  - id: fund.pm_since
+    label: Gérant en poste depuis
+    scope: fund
+    source: pi_out_product_active.Start_date_Portfolio_manager
+    format: date
+    keywords: [[gerant, depuis], [manager, since], [manager, start date], [date de prise de fonction], [managing the fund since], [gere le fonds depuis]]
+  - id: fund.depositary
+    label: Dépositaire
+    scope: fund
+    source: pi_out_product_active.Depositary
+    format: text
+    keywords: [[depositaire], [depositary], [depository], [trustee]]
+  - id: fund.custodian
+    label: Conservateur
+    scope: fund
+    source: pi_out_product_active.Custodian
+    format: text
+    keywords: [[conservateur], [custodian], [teneur de compte conservateur]]
+  - id: fund.administrator
+    label: Administrateur / valorisateur
+    scope: fund
+    source: pi_out_product_active.Fund_Administrator
+    format: text
+    keywords: [[valorisateur], [administrateur du fonds], [fund administrator], [administrator], [delegataire de la gestion comptable], [fund accountant], [gestionnaire comptable]]
+  - id: fund.auditor
+    label: Commissaire aux comptes
+    scope: fund
+    source: pi_out_product_active.Commissaire_Aux_Comptes
+    format: text
+    keywords: [[commissaire aux comptes], [auditor], [external auditor], [statutory auditor], [cac]]
+  - id: fund.transfer_agent
+    label: Agent de transfert
+    scope: fund
+    source: pi_out_product_active.Transfer_Agent
+    format: text
+    keywords: [[agent de transfert], [transfer agent], [registrar]]
+  - id: fund.centralizer
+    label: Centralisateur
+    scope: fund
+    source: pi_out_product_active.Centralizing_Agent
+    format: text
+    keywords: [[centralisateur], [centralising agent], [centralizing agent], [centralisation des ordres]]
+    exclude: [heure, cut, time]
+
+  # ------------------------------------------------------------------ Valorisation & frais (fonds)
+  - id: fund.nav_frequency
+    label: Fréquence de valorisation
+    scope: fund
+    source: pi_out_product_active.NAV_Frequency
+    format: text
+    keywords: [[frequence de valorisation], [frequence de calcul de la vl], [nav frequency], [valuation frequency], [dealing frequency], [periodicite de la vl], [frequence de la vl], [liquidity, frequency]]
+  - id: fund.max_management_fee
+    label: Frais de gestion maximum (fonds)
+    scope: fund
+    source: pi_out_product_active.Max_management_fee_PerCent
+    format: percent
+    keywords: [[frais de gestion maximum], [maximum management fee], [max management fee]]
+    exclude: [part, share, class, reel, actual]
+  - id: fund.performance_fee
+    label: Commission de surperformance
+    scope: fund
+    source: pi_out_product_active.Performance_fees
+    format: boolean
+    keywords: [[commission de surperformance], [frais de surperformance], [performance fee], [commission de performance], [incentive fee]]
+  - id: fund.high_water_mark
+    label: High water mark
+    scope: fund
+    source: pi_out_product_active.High_Water_Mark
+    format: boolean
+    keywords: [[high water mark], [high-water mark], [hwm]]
+  - id: fund.gips
+    label: Conformité GIPS
+    scope: fund
+    source: pi_out_product_active.Gips_Compliance
+    format: boolean
+    keywords: [[gips]]
+  - id: fund.benchmark
+    label: Indicateur de référence
+    scope: fund
+    source: pi_out_product_active.Benchmark_Name
+    format: text
+    keywords: [[indicateur de reference], [indice de reference], [benchmark], [reference index], [comparison index]]
+    exclude: [devise, currency, performance, ecart, tracking, ticker]
+
+  # ------------------------------------------------------------------ Encours & portefeuille (JUMP)
+  - id: jump.fund_aum_eur
+    label: Encours du fonds (EUR)
+    scope: fund
+    source: jump:fund_aum
+    field: ACTIF_NET_TOTAL_EURO
+    format: amount
+    keywords: [[encours du fonds], [actif net du fonds], [fund aum], [fund size], [total net assets], [aum of the fund], [assets under management, fund], [taille du fonds], [encours sous gestion], [actif net total], [fund assets]]
+    exclude: [part, share, class, strategie, strategy, firm, societe, company, groupe, group, total aum of the]
+  - id: jump.fund_aum_date
+    label: Date de l'encours
+    scope: fund
+    source: jump:fund_aum
+    field: DATE_VL
+    format: date
+    keywords: [[date de l'encours], [aum date], [as of date], [date d'arrete], [date de valorisation], [valuation date]]
+  - id: jump.share_aum
+    label: Encours de la part (devise de la part)
+    scope: share
+    source: jump:share_aum
+    field: ACTIF_NET_DEVISE_PART
+    format: amount
+    keywords: [[encours de la part], [actif net de la part], [share class aum], [share class assets], [aum of the share], [aum, share class], [encours, part]]
+  - id: jump.nav
+    label: Valeur liquidative
+    scope: share
+    source: jump:share_aum
+    field: VL_UNITAIRE
+    format: number
+    keywords: [[valeur liquidative], [nav per share], [net asset value per], [derniere vl], [latest nav], [current nav], [nav]]
+    exclude: [frequence, frequency, initiale, initial, date, calcul, calculation, cut]
+  - id: jump.shares_outstanding
+    label: Nombre de parts en circulation
+    scope: share
+    source: jump:share_aum
+    field: NOMBRE_PARTS
+    format: number
+    keywords: [[nombre de parts], [shares outstanding], [units outstanding], [number of shares], [number of units]]
+    exclude: [classes, categories, catégories]
+  - id: jump.holdings_count
+    label: Nombre de lignes en portefeuille
+    scope: fund
+    source: jump:holdings_count
+    field: valeur
+    format: number
+    keywords: [[nombre de lignes], [nombre de titres], [nombre de positions], [number of holdings], [number of positions], [number of securities], [number of lines], [number of issuers], [nombre d'emetteurs], [number of stocks], [nombre de valeurs]]
+    exclude: [moyen, average, typique, typical, range, fourchette, max, min]
+  - id: jump.top10_weight
+    label: Poids des 10 premières lignes
+    scope: fund
+    source: jump:top10
+    field: valeur
+    format: percent
+    keywords: [[10 premieres lignes, poids], [10 premieres positions], [top 10, weight], [top ten, weight], [top 10 holdings, "%"], [concentration, top 10], [poids des 10]]
+  - id: jump.top10_list
+    label: 10 premières lignes
+    scope: fund
+    source: jump:top10_list
+    field: valeur
+    format: text
+    keywords: [[10 premieres lignes], [10 principales lignes], [top 10 holdings], [top ten holdings], [10 largest holdings], [principales positions]]
+    exclude: [poids, weight, "%", concentration]
+  - id: jump.asset_allocation
+    label: Répartition par classe d'actifs
+    scope: fund
+    source: jump:allocation_asset
+    field: valeur
+    format: text
+    keywords: [[repartition par classe d'actifs], [allocation par classe d'actifs], [asset allocation], [breakdown by asset class], [asset class breakdown], [asset class allocation]]
+  - id: jump.currency_allocation
+    label: Répartition par devise
+    scope: fund
+    source: jump:allocation_currency
+    field: valeur
+    format: text
+    keywords: [[repartition par devise], [exposition par devise], [currency breakdown], [currency allocation], [currency exposure], [breakdown by currency]]
+  - id: jump.share_classes_count
+    label: Nombre de parts du fonds
+    scope: fund
+    source: jump:share_classes
+    field: valeur
+    format: number
+    keywords: [[nombre de parts, fonds], [nombre de categories de parts], [number of share classes], [number of classes]]
+
+  # ------------------------------------------------------------------ Part (Product Info)
+  - id: share.name
+    label: Nom de la part
+    scope: share
+    source: PI_OUT_Share.Share_Name
+    format: text
+    keywords: [[nom de la part], [share class name], [libelle de la part], [name of the share class]]
+  - id: share.isin
+    label: Code ISIN de la part
+    scope: share
+    source: PI_OUT_Share.ISIN_Code
+    format: text
+    keywords: [[code isin], [isin code], [isin]]
+  - id: share.currency
+    label: Devise de la part
+    scope: share
+    source: PI_OUT_Share.Subscription_Currency
+    format: text
+    keywords: [[devise de la part], [share class currency], [currency of the share], [devise de cotation], [devise de souscription], [subscription currency]]
+  - id: share.launch_date
+    label: Date de création de la part
+    scope: share
+    source: PI_OUT_Share.Creation_Date
+    format: date
+    keywords: [[date de creation, part], [date de lancement, part], [share class launch], [share class inception], [inception date, share], [launch date, share]]
+  - id: share.first_nav_date
+    label: Date de première VL
+    scope: share
+    source: PI_OUT_Share.First_NAV_Date
+    format: date
+    keywords: [[premiere vl], [first nav], [date de premiere valorisation], [first valuation date]]
+  - id: share.initial_nav
+    label: VL d'origine
+    scope: share
+    source: PI_OUT_Share.Initial_NAV
+    format: number
+    keywords: [[vl d'origine], [vl initiale], [valeur liquidative d'origine], [initial nav], [launch price], [initial price]]
+  - id: share.min_subscription
+    label: Souscription initiale minimum
+    scope: share
+    source: PI_OUT_Share.Initial_Subscription_Minimum_Amount
+    format: amount
+    keywords: [[souscription initiale minimum], [souscription minimum], [minimum initial subscription], [minimum investment], [minimum subscription], [montant minimum de souscription], [investissement minimum]]
+  - id: share.management_fee
+    label: Frais de gestion financière (réels)
+    scope: share
+    source: PI_OUT_Share.Actual_Financial_Management_Fees
+    format: percent
+    keywords: [[frais de gestion financiere], [frais de gestion reels], [frais de gestion], [management fee], [management fees], [annual management charge], [amc], [commission de gestion]]
+    exclude: [maximum, max, performance, surperformance, indirect, administratif, administrative]
+  - id: share.max_management_fee
+    label: Frais de gestion maximum (part)
+    scope: share
+    source: PI_OUT_Share.Max_Financial_Management_Fees
+    format: percent
+    keywords: [[frais de gestion maximum, part], [frais de gestion maximum], [maximum management fee], [max management fee]]
+  - id: share.ongoing_charges
+    label: Frais courants (ex post)
+    scope: share
+    source: PI_OUT_Share.Ongoing_Charges_ex_post
+    format: percent
+    keywords: [[frais courants], [ongoing charges], [ongoing charge], [ocf], [ter], [total expense ratio]]
+    exclude: [ex ante, ex-ante, previsionnel, estimated, max]
+  - id: share.ongoing_charges_ex_ante
+    label: Frais courants (ex ante)
+    scope: share
+    source: PI_OUT_Share.Ongoing_Charges_ex_ante
+    format: percent
+    keywords: [[frais courants, ex ante], [ongoing charges, ex ante], [ongoing charges, ex-ante], [ocf, ex ante]]
+  - id: share.entry_fee
+    label: Droits d'entrée maximum
+    scope: share
+    source: PI_OUT_Share.Maximum_Subscription_Fee_Rate_Not_Retained
+    format: percent
+    keywords: [[droits d'entree], [droit d'entree], [frais d'entree], [commission de souscription], [entry fee], [entry charge], [subscription fee], [front-end load], [sales charge]]
+  - id: share.exit_fee
+    label: Droits de sortie maximum
+    scope: share
+    source: PI_OUT_Share.Maximum_Redemption_Fee_Rate_Not_Retained
+    format: percent
+    keywords: [[droits de sortie], [droit de sortie], [frais de sortie], [commission de rachat], [exit fee], [exit charge], [redemption fee], [back-end load]]
+  - id: share.subscription_cutoff
+    label: Heure limite de souscription
+    scope: share
+    source: PI_OUT_Share.Subscription_cut_off_time
+    format: time
+    keywords: [[cut-off, souscription], [cut off, souscription], [heure limite, souscription], [subscription cut-off], [subscription cut off], [cut-off], [cut off], [heure de centralisation], [dealing cut-off]]
+    exclude: [rachat, redemption]
+  - id: share.redemption_cutoff
+    label: Heure limite de rachat
+    scope: share
+    source: PI_OUT_Share.Redemption_cut_off_time
+    format: time
+    keywords: [[cut-off, rachat], [cut off, rachat], [heure limite, rachat], [redemption cut-off], [redemption cut off]]
+  - id: share.subscription_settlement
+    label: Règlement des souscriptions
+    scope: share
+    source: PI_OUT_Share.Subscription_Settlement_Date
+    format: text
+    keywords: [[reglement, souscription], [date de reglement des souscriptions], [subscription settlement], [settlement, subscription], [settlement period], [delai de reglement], [settlement date]]
+    exclude: [rachat, redemption]
+  - id: share.redemption_settlement
+    label: Règlement des rachats
+    scope: share
+    source: PI_OUT_Share.Redemption_Settlement_Date
+    format: text
+    keywords: [[reglement, rachat], [date de reglement des rachats], [redemption settlement], [settlement, redemption]]
+  - id: share.distribution
+    label: Affectation des résultats
+    scope: share
+    source: PI_OUT_Share.Income_Distribution
+    format: text
+    keywords: [[affectation des resultats], [affectation des sommes distribuables], [capitalisation ou distribution], [distribution policy], [income distribution], [accumulation or distribution], [dividend policy], [acc/dis], [capitalisation]]
+  - id: share.distribution_frequency
+    label: Fréquence de distribution
+    scope: share
+    source: PI_OUT_Share.Distribution_Frequency
+    format: text
+    keywords: [[frequence de distribution], [distribution frequency], [dividend frequency]]
+  - id: share.bloomberg
+    label: Ticker Bloomberg
+    scope: share
+    source: PI_OUT_Share.Bloomberg_Ticker
+    format: text
+    keywords: [[bloomberg], [ticker]]
+    exclude: [indice, index, benchmark]
+  - id: share.morningstar
+    label: Note Morningstar
+    scope: share
+    source: PI_OUT_Share.Morningstar_rating
+    format: number
+    keywords: [[morningstar rating], [note morningstar], [notation morningstar], [etoiles morningstar], [morningstar star], [morningstar]]
+  - id: share.investor_type
+    label: Type d'investisseurs
+    scope: share
+    source: PI_OUT_Share.Investor_Type
+    format: text
+    keywords: [[souscripteurs concernes], [type d'investisseurs], [investor type], [eligible investors], [target investors], [investisseurs cibles]]
+  - id: share.hedged
+    label: Part couverte contre le risque de change
+    scope: share
+    source: PI_OUT_Share.Share_Hedged_Against_FX_Exposure
+    format: boolean
+    keywords: [[couverte, change], [couverture de change], [currency hedged], [hedged share], [fx hedged], [hedging, currency]]
+  - id: share.swing_pricing
+    label: Swing pricing
+    scope: share
+    source: PI_OUT_Share.Swing_Pricing
+    format: boolean
+    keywords: [[swing pricing], [swing price]]
+  - id: share.gate
+    label: Mécanisme de gates
+    scope: share
+    source: PI_OUT_Share.Gate
+    format: boolean
+    keywords: [[gate], [gates], [plafonnement des rachats], [redemption gate]]
+  - id: share.ter_max
+    label: TER maximum
+    scope: share
+    source: PI_OUT_Share.TER_Max
+    format: percent
+    keywords: [[ter max], [ter maximum], [maximum ter]]
+  - id: share.wkn
+    label: Code WKN
+    scope: share
+    source: PI_OUT_Share.Wkn_Number
+    format: text
+    keywords: [[wkn]]
+  - id: share.sedol
+    label: Code SEDOL
+    scope: share
+    source: PI_OUT_Share.Sedol_Code
+    format: text
+    keywords: [[sedol]]
+  - id: share.valor
+    label: Numéro Valor (Suisse)
+    scope: share
+    source: PI_OUT_Share.Swiss_Valor_Number
+    format: text
+    keywords: [[valor number], [numero valor], [swiss valor]]

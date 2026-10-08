@@ -10,7 +10,7 @@ def catalog():
 
 def test_catalog_has_two_tables():
     tables = catalog().tables
-    assert set(tables) == {"JUMP_portfolio_aum", "JUMP_portfolio_holdings"}
+    assert {"JUMP_portfolio_aum", "JUMP_portfolio_holdings", "PI_OUT_Share", "pi_out_product_active"} <= set(tables)
     assert len(tables["JUMP_portfolio_aum"].columns) == 23
     assert len(tables["JUMP_portfolio_holdings"].columns) == 30
 

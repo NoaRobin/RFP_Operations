@@ -32,6 +32,37 @@ def health(s: AppState = Depends(state)) -> dict[str, Any]:
     }
 
 
+class FabricConnectRequest(BaseModel):
+    server: str
+    database: str = "LKH_RFPTeam_Bronze"
+    user: str = ""
+
+
+@router.get("/fabric")
+def fabric_status(s: AppState = Depends(state)) -> dict[str, Any]:
+    from ..data import fabric_link
+
+    return fabric_link.status(s)
+
+
+@router.post("/fabric/connect")
+def fabric_connect(body: FabricConnectRequest, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Ouvre la fenêtre Microsoft sur le poste (le serveur tourne en local) puis bascule tout Merlin sur Fabric."""
+    from ..data import fabric_link
+
+    try:
+        return fabric_link.connect(s, body.server, body.database, body.user)
+    except DataError as error:
+        raise bad_request(str(error), error.hint) from error
+
+
+@router.post("/fabric/disconnect")
+def fabric_disconnect(s: AppState = Depends(state)) -> dict[str, Any]:
+    from ..data import fabric_link
+
+    return fabric_link.disconnect(s)
+
+
 @router.get("/catalog")
 def catalog(s: AppState = Depends(state)) -> list[dict[str, Any]]:
     return s.catalog.to_dict()

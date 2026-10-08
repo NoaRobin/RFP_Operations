@@ -14,3 +14,7 @@ tzdata>=2024.1
 # pyodbc>=5.1   + "ODBC Driver 18 for SQL Server" installé sur la machine
 # Navigateur (prévu, non utilisé pour l'instant)
 # playwright>=1.45
+python-docx>=1.1
+plotly>=5.19        # module Suivi d'activité (tryv2)
+numpy>=1.23
+mssql-python>=0.13 ; sys_platform == "win32"   # connecteur Fabric officiel Microsoft (aucun pilote ODBC requis)
