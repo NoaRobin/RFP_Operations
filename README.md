@@ -179,12 +179,3 @@ Quelques-uns, discrets. Indices : ↑↑↓↓←→←→BA, une constellation 
 
 Intègre ce lot comme bibliothèque d'exemples de wording dans mon projet RFI existant, sans remplacer la base Product Info ni écraser les versions précédentes.
 
-Lis le guide puis le JSON. Les réponses sont historiques et non approuvées pour copie automatique. Le corpus contient des répétitions par fonds et des blocs candidats, pas uniquement des questions uniques. Les correspondances exactes de libellés ne sont pas des bindings SQL validés.
-
-Sépare la donnée, le concept métier et la rédaction. Utilise les exemples pour comprendre le ton, la longueur, la langue et la structure des réponses. Pour toute réponse nouvelle, récupère les faits du bon fonds, de la bonne part et de la bonne date. Ne copie jamais une valeur historique ou un paragraphe spécifique à un autre fonds.
-
-Conserve les coordonnées et la provenance. Distingue réponse, commentaire, liste de choix et case à cocher. Examine les blocs verticaux et options conditionnelles avant de les associer à une question. Ne transforme pas un commentaire vide en NON ou Non applicable.
-
-Propose des modèles narratifs paramétrés uniquement après décomposition des faits et des conditions. Marque les éléments inconnus ou ambigus comme à revoir. Ne corrige pas silencieusement les ISIN, les taux, les dates ou les formulations sources. L'anomalie ISIN signalée doit bloquer la réutilisation automatique du contexte concerné.
-
-Commence par un inventaire des exemples utilisables, des associations à revoir et des concepts non couverts. Ne prétends pas que les 4 007 entrées sont toutes validées ni que le corpus couvre tous les RFI 2026. Respecte le dossier stable et les principes SOLID de l'application existante.
