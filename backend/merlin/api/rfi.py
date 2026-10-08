@@ -12,6 +12,7 @@ from ..data.access import DataError
 from ..db import now_iso
 from ..rfi.demo import demo_docx, demo_xlsx
 from ..rfi.ontology import load_ontology
+from ..rfi.precedents import get_index
 from ..rfi.service import ALLOWED, RfiStore, _library, analyze, document_text, generate, load_layout, search_funds, suggest_funds
 from ..state import AppState
 from .deps import bad_request, current_user, not_found, state
@@ -114,7 +115,8 @@ def answers(doc_id: str, body: AnswerRequest, s: AppState = Depends(state)):
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     try:
-        result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides)
+        result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides,
+                         get_index(store.root))
         for row in result["questions"]:
             row.pop("_value", None)
         return result
@@ -128,7 +130,8 @@ def generate_version(doc_id: str, body: AnswerRequest, s: AppState = Depends(sta
     try:
         meta = store.meta(doc_id)
         result = generate(s.data, store, doc_id, body.pid, body.isin, body.as_of, body.language, body.overrides, body.overwrite,
-                          body.accept, user, remember=body.remember, reusable=body.reusable)
+                          body.accept, user, remember=body.remember, reusable=body.reusable,
+                          precedents=get_index(store.root))
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     except DataError as error:

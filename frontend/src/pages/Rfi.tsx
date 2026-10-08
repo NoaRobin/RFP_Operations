@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, Check, Download, FileQuestion, FileSpreadsheet, FileText, RotateCcw, Search, Sparkles, Wand2 } from 'lucide-react'
 import { Dropzone } from '../components/atelier/Dropzone'
+import { DecisionBadge, DecisionDetail } from '../components/rfi/Decision'
+import { PrecedentsPanel } from '../components/rfi/PrecedentsPanel'
 import { Button } from '../components/ui/Button'
 import { Field, Select, Switch, TextInput } from '../components/ui/Field'
 import { EmptyState, ErrorState, Loading } from '../components/ui/States'
@@ -147,6 +149,7 @@ function QuestionRow({ q, facts, override, onOverride, accepted, onAccept, reusa
         {q.issues.length > 0 && (
           <ul className="mt-1 space-y-0.5 text-xs font-semibold text-warning">{q.issues.slice(0, 3).map((i) => <li key={i}>⚠ {i}</li>)}</ul>
         )}
+        {q.precedent && (q.precedent.precedents.length > 0 || q.precedent.kind !== 'ontologie') && <DecisionDetail decision={q.precedent} />}
         {q.status === 'review' && q.answer && (
           <button onClick={() => onAccept(!accepted)} aria-pressed={accepted}
             className={`mt-2 inline-flex items-center gap-1 rounded-full border-2 border-fg px-3 py-0.5 text-xs font-bold transition-[transform,box-shadow] hover:-translate-y-0.5 ${accepted ? 'bg-mint-400 shadow-[2px_2px_0_0_var(--color-fg)]' : 'bg-card'}`}>
@@ -201,6 +204,7 @@ function QuestionRow({ q, facts, override, onOverride, accepted, onAccept, reusa
           {texts.rfi.status[q.status]}
         </span>
         <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-fg-3">{q.source}</p>
+        {q.precedent && <div className="mt-1.5"><DecisionBadge decision={q.precedent} /></div>}
       </td>
     </tr>
   )
@@ -361,6 +365,8 @@ export default function Rfi() {
         </div>
       )}
 
+      {!doc && <PrecedentsPanel />}
+
       {doc && (
         <>
           <section data-enter className="glass mt-10 rounded-[var(--radius-card)] p-6 sm:p-8">
@@ -436,6 +442,16 @@ export default function Rfi() {
                   <Button size="sm" className="ml-auto" icon={<Check size={14} />} onClick={() => setAccepted(new Set(reviewIds))}>{texts.rfi.acceptAll(reviewIds.length)}</Button>
                 )}
                 <p className="w-full text-xs font-semibold text-fg-3">{texts.rfi.sentence}</p>
+                {analysis.decisions && Object.keys(analysis.decisions).length > 0 ? (
+                  <p className="flex w-full flex-wrap items-center gap-1.5 text-xs font-bold">
+                    <span className="text-fg-2">{texts.rfi.decisionsTitle} :</span>
+                    {Object.entries(analysis.decisions).map(([k, n]) => (
+                      <span key={k} className="rounded-full border-2 border-fg bg-card px-2 py-0.5">{n} · {texts.rfi.decision[k] ?? k}</span>
+                    ))}
+                  </p>
+                ) : (
+                  <p className="w-full text-xs font-semibold text-fg-3">{texts.rfi.noPrecedent}</p>
+                )}
               </div>
               {filter === 'none' && <p className="mt-4 text-sm font-semibold text-fg-2">{texts.rfi.unmatchedHint}</p>}
               <div className={`mt-4 overflow-x-auto transition-opacity ${analyzing ? 'opacity-60' : ''}`}>

@@ -2,7 +2,8 @@ import { getUserName } from './storage'
 import { texts } from '../content/texts'
 import type {
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
-  RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
+  DueDiligenceList, FinalListing, SharePointImport, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -91,6 +92,25 @@ export const api = {
     answers: (id: string, body: RfiRequest) => request<RfiAnalysis>(`/rfi/documents/${id}/answers`, json(body)),
     generate: (id: string, body: RfiRequest) => request<RfiGenerated>(`/rfi/documents/${id}/generate`, json(body)),
     originalUrl: (id: string) => `/api/rfi/documents/${id}/original`,
+    precedents: () => request<PrecedentStats>('/rfi/precedents'),
+    inventory: () => request<PrecedentInventory>('/rfi/precedents/inventory'),
+    importWording: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<{ imported: number; files: number; blocked: number; note: string }>('/rfi/precedents/wording', { method: 'POST', body: form })
+    },
+    importPrecedent: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<{ file: string; imported: number; identity_problem: string }>('/rfi/precedents/document', { method: 'POST', body: form })
+    },
+    sharepoint: {
+      status: () => request<SharePointStatus>('/rfi/sharepoint/status'),
+      dueDiligences: (year?: number | null, q = '') =>
+        request<DueDiligenceList>(`/rfi/sharepoint/due-diligences?${year ? `year=${year}&` : ''}q=${encodeURIComponent(q)}`),
+      final: (path: string) => request<FinalListing>(`/rfi/sharepoint/final?path=${encodeURIComponent(path)}`),
+      importFinal: (path: string) => request<SharePointImport>('/rfi/sharepoint/import', json({ path })),
+    },
   },
 
   merge: {

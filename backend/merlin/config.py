@@ -52,6 +52,21 @@ class FabricSettings:
 
 
 @dataclass(frozen=True)
+class SharePointSettings:
+    """Bibliothèque SharePoint des RFI déjà répondus (AM RFP CONF DOC)."""
+    site_url: str = "https://reachbcp1.sharepoint.com/sites/S001314"
+    library: str = "Shared Documents"
+    root: str = "1 - Appels d'offres - Due diligence"
+    local_dir: str = ""  # dossier synchronisé OneDrive (alternative sans inscription d'application)
+    client_id: str = ""  # application Entra ID (client public, droits délégués Sites.Read.All)
+    tenant_id: str = "organizations"
+
+    @property
+    def graph_configured(self) -> bool:
+        return bool(self.client_id and self.site_url)
+
+
+@dataclass(frozen=True)
 class Settings:
     data_mode: str  # auto | mock | fabric
     data_dir: Path
@@ -66,6 +81,7 @@ class Settings:
     seed_demo_history: bool
     cors_origins: list[str] = field(default_factory=list)
     fabric: FabricSettings = field(default_factory=FabricSettings)
+    sharepoint: SharePointSettings = field(default_factory=SharePointSettings)
 
     @property
     def db_path(self) -> Path:
@@ -115,6 +131,14 @@ def get_settings() -> Settings:
             tenant_id=_env("FABRIC_TENANT_ID"),
             odbc_driver=_env("FABRIC_ODBC_DRIVER", "ODBC Driver 18 for SQL Server"),
             timeout=int(_env("FABRIC_TIMEOUT", "30")),
+        ),
+        sharepoint=SharePointSettings(
+            site_url=_env("SHAREPOINT_SITE_URL", SharePointSettings.site_url),
+            library=_env("SHAREPOINT_LIBRARY", SharePointSettings.library),
+            root=_env("SHAREPOINT_ROOT", SharePointSettings.root),
+            local_dir=_env("SHAREPOINT_LOCAL_DIR"),
+            client_id=_env("SHAREPOINT_CLIENT_ID"),
+            tenant_id=_env("SHAREPOINT_TENANT_ID") or _env("FABRIC_TENANT_ID") or "organizations",
         ),
     )
     settings.ensure_dirs()

@@ -278,6 +278,44 @@ export interface RfiQuestion {
   understanding: string[]
   suggestion?: string | null
   alternatives: { concept: string; label: string; score: number; answer: string | null }[]
+  precedent?: RfiDecision
+}
+
+export type RfiDecisionKind = 'precedent_confirme' | 'precedent_liaison' | 'precedent_constant' | 'precedent_habituel'
+  | 'precedent_meme_fonds' | 'modele_redaction' | 'incoherence' | 'ontologie' | 'aucun'
+
+export interface RfiPrecedent {
+  id: string
+  origin: string
+  file: string
+  url: string
+  sheet: string
+  answer_cell: string
+  question: string
+  answer: string
+  kind: string
+  shape: string
+  fund: string
+  isin: string
+  date: string
+  comments: string[]
+  blocked: boolean
+  block_reason: string
+  provenance: string
+  similarity: number
+  check?: 'match' | 'mismatch' | 'unknown' | null
+  fabric?: string | null
+  evidence?: string
+}
+
+export interface RfiDecision {
+  kind: RfiDecisionKind
+  label: string
+  justification: string
+  answer: string | null
+  concept: string | null
+  precedents: RfiPrecedent[]
+  template: string | null
 }
 
 export interface RfiAnalysis {
@@ -288,7 +326,42 @@ export interface RfiAnalysis {
   questions: RfiQuestion[]
   coverage: { total: number; auto: number; review: number; rate: number }
   notes: string[]
+  decisions?: Partial<Record<RfiDecisionKind, number>>
+  precedents?: number
 }
+
+export interface PrecedentStats {
+  total: number
+  by_origin: Record<string, number>
+  by_kind: Record<string, number>
+  by_shape: Record<string, number>
+  blocked: number
+  sources: number
+  sources_list: { source_file: string; origin: string; url: string; imported_at: string; entries: number; identity_problem: string }[]
+  embedder: string | null
+}
+
+export interface PrecedentInventory {
+  total: number
+  unique_questions: number
+  files: number
+  usable: { total: number; by_shape: Record<string, number>; by_origin: Record<string, number> }
+  to_review: Record<string, number>
+  blocked_sources: { source_file: string; identity_problem: string }[]
+  ontology_coverage: { auto: number; review: number; none: number }
+  top_concepts: { concept: string; label: string; entries: number }[]
+  uncovered: { question: string; occurrences: number; funds: number; files: number }[]
+  uncovered_total: number
+  repeated_with_variants_total: number
+  limits: string[]
+}
+
+export interface SourceStatus { source: string; ready: boolean; signed_in?: boolean; root?: string | null; site?: string; hint: string }
+export interface SharePointStatus { site: string; root: string; graph: SourceStatus | null; local: SourceStatus; active: 'graph' | 'local' | null }
+export interface RemoteItem { id: string; name: string; path: string; is_folder: boolean; url: string; modified: string; size: number }
+export interface DueDiligenceList { year: number | null; folders: RemoteItem[]; years: number[]; tried?: number[] }
+export interface FinalListing { final_path: string | null; documents: RemoteItem[]; hint: string }
+export interface SharePointImport { final_path: string | null; imported: number; hint: string; documents: { file: string; imported: number; identity_problem?: string; error?: string }[] }
 
 export interface RfiGenerated extends RfiAnalysis { version: number; written: number; file: string; download: string }
 

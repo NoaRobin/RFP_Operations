@@ -15,6 +15,8 @@ from .layout import Layout, Slot, all_text, detect
 from .library import Library
 from .match import Candidate, match
 from .ontology import Concept, load_ontology, norm
+from .precedents import PrecedentIndex
+from .precedents.advisor import Decision, Entity, FundResolver, PrecedentAdvisor
 from .render import Rendered, render
 from .understand import Understanding, understand
 from .values import PRODUCT, SHARE, Values
@@ -144,8 +146,12 @@ def _share_fund(data: DataAccess, isin: str) -> str | None:
 
 
 def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: str | None, isin: str | None,
-            as_of: str | None, lang: str | None = None, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Propose une réponse par case. overrides[id] = id de concept | None (ne pas remplir) | {"text": …}."""
+            as_of: str | None, lang: str | None = None, overrides: dict[str, Any] | None = None,
+            precedents: PrecedentIndex | None = None) -> dict[str, Any]:
+    """Propose une réponse par case. overrides[id] = id de concept | None (ne pas remplir) | {"text": …}.
+
+    Avec des précédents, chaque case reçoit aussi une décision justifiée (repris de l'ancien, modèle d'ontologie,
+    incohérence…), après contrôle des réponses historiques dans Fabric."""
     ontology = load_ontology(data.catalog)
     lang = lang or layout.language
     as_of_d = date.fromisoformat(as_of) if as_of else date.today()
@@ -162,6 +168,8 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
             values_by_entity[key] = Values(data, ontology, e_pid, e_isin, as_of_d)
         return values_by_entity[key]
 
+    advisor = _advisor(data, ontology, precedents, pid, isin, as_of_d, lang)
+    decisions: dict[str, int] = {}
     rows: list[dict[str, Any]] = []
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}
     for slot in layout.slots:
@@ -170,6 +178,9 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
                        parent=slot.parent)
         vals = values_for(slot)
         row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, overrides.get(slot.id, "__none__"))
+        if advisor is not None and row["status"] not in {"skipped", "existing"} and row["source"] in {"ontologie", "bibliothèque"}:
+            row = _apply_decision(row, advisor.advise(slot, u, row))
+            decisions[row["precedent"]["kind"]] = decisions.get(row["precedent"]["kind"], 0) + 1
         stats[row["status"]] += 1
         rows.append(row)
     for v in values_by_entity.values():
@@ -179,7 +190,40 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
     return {"questions": rows, "stats": stats, "language": lang, "as_of": as_of_d.isoformat(), "errors": errors,
             "coverage": {"total": total, "auto": stats["auto"], "review": stats["review"],
                          "rate": round(answerable / total, 3) if total else 0.0},
-            "notes": layout.notes, "library": library.stats()}
+            "notes": layout.notes, "library": library.stats(), "decisions": decisions,
+            "precedents": precedents.store.count() if precedents is not None else 0}
+
+
+def _advisor(data: DataAccess, ontology, precedents: PrecedentIndex | None, pid: str | None, isin: str | None, as_of: date,
+             lang: str) -> PrecedentAdvisor | None:
+    if precedents is None or precedents.store.count() == 0:
+        return None
+    try:
+        directory = fund_directory(data)
+    except DataError:
+        directory = []
+    name = next((i["name"] for i in directory if i["pid"] == pid), pid or "")
+    current = Entity(pid, isin, name) if (pid or isin) else None
+    return PrecedentAdvisor(ontology, precedents, FundResolver(directory), lambda p, i, d: Values(data, ontology, p, i, d),
+                            as_of, lang, current)
+
+
+def _apply_decision(row: dict[str, Any], decision: Decision) -> dict[str, Any]:
+    """Fusion : la décision complète la case (justification) et peut en changer le statut, jamais en silence."""
+    row = {**row, "precedent": decision.to_public()}
+    if decision.kind == "incoherence":
+        row["issues"] = row["issues"] + ["incohérence avec un ancien RFI (voir la justification)"]
+        if row["status"] == "auto":
+            row["status"] = "review"
+    elif decision.status == "auto" and row["status"] == "review":
+        row["reasons"] = row["reasons"] + [f"réserves levées par les précédents vérifiés : {'; '.join(row['issues'])}"]
+        row["issues"], row["status"] = [], "auto"
+    elif decision.answer is not None and row.get("answer") is None:
+        row.update({"answer": decision.answer, "value": _jsonable(decision.value), "_value": decision.value, "option": decision.option,
+                    "status": "review", "source": "précédent", "concept": decision.concept or row.get("concept"),
+                    "reasons": [decision.justification], "confidence": max(row.get("confidence") or 0.0, 0.6)})
+        row.pop("suggestion", None)
+    return row
 
 
 def _candidate_answer(ontology, cand: Candidate, u: Understanding, vals: Values, lang: str, slot: Slot, as_of: date) -> tuple[Rendered, Any]:
@@ -279,11 +323,11 @@ def _jsonable(value: Any) -> Any:
 
 def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, isin: str | None, as_of: str | None,
              lang: str | None, overrides: dict[str, Any], overwrite: bool, accept: list[str] | None, user: str,
-             remember: bool = True, reusable: list[str] | None = None) -> dict[str, Any]:
+             remember: bool = True, reusable: list[str] | None = None, precedents: PrecedentIndex | None = None) -> dict[str, Any]:
     """Écrit les réponses « auto » + celles acceptées par l'utilisateur dans une nouvelle version du fichier."""
     path = store.original(doc_id)
     layout = detect(path)
-    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides)
+    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents)
     accepted = set(accept or [])
     slots = {s.id: s for s in layout.slots}
     answers = []
@@ -316,7 +360,9 @@ def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, is
         for row in written_rows:
             if row["source"] == "réponse saisie":
                 library.remember(row["question"], "text", text=row["answer"], scope="all" if row["id"] in reusable_ids else scope_default, by=user)
-            elif row["concept"] and (row["status"] == "review" or row["source"] == "utilisateur"):
+            elif row["source"] == "précédent" and not row["concept"]:
+                library.remember(row["question"], "text", text=row["answer"], scope=scope_default, by=user)
+            elif row["concept"] and (row["status"] == "review" or row["source"] in {"utilisateur", "précédent"}):
                 library.remember(row["question"], "concept", concept=row["concept"], by=user)
         for qid, ov in (overrides or {}).items():
             if ov is None and qid in by_id:
