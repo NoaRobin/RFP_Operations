@@ -177,14 +177,14 @@ Quelques-uns, discrets. Indices : ↑↑↓↓←→←→BA, une constellation 
 `JUMP_OMNI.py` et `OMNI_MENSUEL.py` (pilotage d'Excel, de JUMP et d'Outlook sous Windows) sont conservés tels quels. Ce sont de bons candidats pour de futures automatisations `python`, une fois le navigateur ou le pilotage desktop branché sur `ctx`.
 
 
+Intègre ce lot comme bibliothèque d'exemples de wording dans mon projet RFI existant, sans remplacer la base Product Info ni écraser les versions précédentes.
 
-L’application ne démarre pas :
-ModuleNotFoundError: No module named 'merlin.data'
+Lis le guide puis le JSON. Les réponses sont historiques et non approuvées pour copie automatique. Le corpus contient des répétitions par fonds et des blocs candidats, pas uniquement des questions uniques. Les correspondances exactes de libellés ne sont pas des bindings SQL validés.
 
-Dans le ZIP téléchargé, backend/merlin/data est absent, alors que backend/merlin/atelier/extractions.py importe DataAccess depuis ..data.access.
+Sépare la donnée, le concept métier et la rédaction. Utilise les exemples pour comprendre le ton, la longueur, la langue et la structure des réponses. Pour toute réponse nouvelle, récupère les faits du bon fonds, de la bonne part et de la bonne date. Ne copie jamais une valeur historique ou un paragraphe spécifique à un autre fonds.
 
-Vérifie si les fichiers du module existent mais ont été exclus par une règle .gitignore comme data/. Si oui, corrige cette règle pour ignorer uniquement les données générées à la racine, sans exclure backend/merlin/data, puis ajoute les fichiers sources au dépôt.
+Conserve les coordonnées et la provenance. Distingue réponse, commentaire, liste de choix et case à cocher. Examine les blocs verticaux et options conditionnelles avant de les associer à une question. Ne transforme pas un commentaire vide en NON ou Non applicable.
 
-Si le module n’existe pas, restaure son implémentation réelle et compatible avec les imports existants. Ne crée pas de fichiers vides ni de faux correctif.
+Propose des modèles narratifs paramétrés uniquement après décomposition des faits et des conditions. Marque les éléments inconnus ou ambigus comme à revoir. Ne corrige pas silencieusement les ISIN, les taux, les dates ou les formulations sources. L'anomalie ISIN signalée doit bloquer la réutilisation automatique du contexte concerné.
 
-Vérifie le démarrage en mode démo et committe la correction sur cette branche. Ne modifie pas les autres modules inutilement.
+Commence par un inventaire des exemples utilisables, des associations à revoir et des concepts non couverts. Ne prétends pas que les 4 007 entrées sont toutes validées ni que le corpus couvre tous les RFI 2026. Respecte le dossier stable et les principes SOLID de l'application existante.
