@@ -3,7 +3,7 @@
 # Termes en texte normalisé (minuscules, sans accents). Ordre indifférent ; FR et EN mélangés.
 facets:
   timing:
-    ex_ante: [ex ante, ex-ante, previsionnel, previsionnels, previsionnelle, prevus, estime, estimes, estimated, expected, anticipated, forward looking, prospective, priips]
+    ex_ante: [ex ante, ex-ante, previsionnel, previsionnels, previsionnelle, prevus, estime, estimes, estimated, expected, anticipated, forward looking, prospective, priips, dic, kid, document d'informations cles]
     ex_post: [ex post, ex-post, realise, realises, realisee, constate, constates, constatee, realised, realized, historical, historique, dernier exercice, last financial year, previous year, annee precedente, rapport annuel, annual report, kiid]
   level:
     max: [maximum, maximal, maximale, maximaux, max, plafond, plafonne, cap, capped, up to, at most, jusqu'a, prospectus]
@@ -39,4 +39,5 @@ generic_terms: [veuillez, merci, de, du, des, la, le, les, l, d, un, une, et, ou
   details, detail, montant, amount, valeur, value, nombre, number, taux, rate, niveau, level, type, nom, name, code, date,
   pourcentage, percentage, "%", en %, in %, (%), eur, euro, euros, usd, million, millions, m, mn, mio, k, md, bn, milliard, milliards,
   "?", ":", q, question, reponse, answer, fonds, fund, part, share, classe, class, portefeuille, portfolio, il, elle, ils, elles, t,
-  dispose, disposer, have, has, apply, applies, applique, use, uses, utilise, considered, consider, prend, compte]
+  dispose, disposer, have, has, apply, applies, applique, use, uses, utilise, considered, consider, prend, compte,
+  pouvez, pouvez-vous, vous, nous, can, you, could, would, agit, s'agit, support, format, jj, mm, aaaa, dd, yyyy, connu, connue, known]

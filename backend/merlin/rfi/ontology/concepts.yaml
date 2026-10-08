@@ -33,7 +33,7 @@ concepts:
     type: text
     source: pi_out_product_active.Product_Name
     terms: [nom du fonds, denomination & fonds, nom complet & fonds, full name & fund, legal name & fund, nom de l'opc, nom de l'opcvm, nom du compartiment, nom du produit, denomination du fonds, denomination de l'opc, libelle du fonds, nom de la strategie, fund name, name of the fund, fund's name, product name, sub-fund name, name of sub-fund, strategy name, fund legal name, fund full name, nom complet du fonds]
-    exclude: [gerant, manager, benchmark, indice, ombrelle, umbrella, sicav, maitre, master, societe de gestion, management company, part, share class]
+    exclude: [gerant, manager, benchmark, indice, ombrelle, umbrella, sicav, maitre, master, societe de gestion, management company, part, share class, strategie, strategy]
 
   - id: fonds.ombrelle
     label: SICAV / fonds ombrelle | Umbrella fund
@@ -75,7 +75,7 @@ concepts:
     type: enum
     vocab: country
     source: pi_out_product_active.Domiciliation
-    terms: [domicile, domiciliation, pays de domiciliation, pays de domicile, domicilie, country of domicile, fund domicile, domiciled, jurisdiction, country of incorporation, juridiction, pays d'immatriculation, legal domicile]
+    terms: [domicile, domiciliation, pays de domiciliation, pays de domicile, domicilie, country of domicile, fund domicile, domiciled, jurisdiction, country of incorporation, juridiction, pays d'immatriculation, legal domicile, de quel droit, droit du fonds, droit applicable, governing law, fund law, law of the fund]
     exclude: [enregistr, registration, registered, commercialis, distribution, investisseur, investor]
 
   - id: fonds.date_creation
@@ -84,7 +84,7 @@ concepts:
     type: date
     source: pi_out_product_active.Creation_Date
     terms: [date de creation, date de lancement, creation du fonds, lancement du fonds, date d'agrement, date de constitution, inception date, launch date, fund inception, fund launch, creation date, inception, date of inception, date of launch, launched, cree le, lance le]
-    exclude: [premiere vl, first nav, gerant, manager, track record]
+    exclude: [premiere vl, first nav, gerant, manager, track record, strategie, strategy, equipe, team]
     facets: {}
     default: []
 
@@ -150,7 +150,7 @@ concepts:
     vocab: asset_class
     source: pi_out_product_active.Asset_Class
     terms: [classe d'actifs, classe d actifs, categorie d'actifs, asset class, asset category, type d'actifs, main asset class, classe d'actif principale]
-    exclude: [repartition, allocation, breakdown, ventilation, exposition, exposure, "%", poids, weight]
+    exclude: [repartition, allocation, breakdown, ventilation, exposition, exposure, "%", poids, weight, quantalys, morningstar, bce, ecb]
 
   - id: fonds.zone
     label: Zone d'investissement | Investment zone
@@ -206,7 +206,7 @@ concepts:
     qualitative_ok: true
     source: {fr: pi_out_product_active.Strategic_allocation_FR, en: pi_out_product_active.Strategic_allocation_EN}
     terms: [allocation strategique, strategie d'investissement, politique d'investissement, strategic allocation, investment policy, investment strategy]
-    exclude: [esg, durable, sustainab, actuelle, current, repartition, breakdown, "%"]
+    exclude: [esg, durable, sustainab, actuelle, current, repartition, breakdown, "%", changement, change, modification, evolution, declarer, report]
 
   - id: fonds.profil_investisseur
     label: Profil de l'investisseur type | Typical investor profile
@@ -254,7 +254,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Investment_Manager
-    terms: [societe de gestion, gestionnaire financier, management company, investment manager, asset manager, manco, aifm, investment management company]
+    terms: [societe de gestion, gestionnaire financier, management company, investment manager, asset manager, manco, aifm, investment management company, nom societe de gestion, quelle est la societe de gestion, name of the management company]
     exclude: [lei, adresse, address, encours, aum, assets under management, effectif, employees, regulateur, regulator, agrement, licence, depuis, since, created, creation, delegat, delegue, sub, conseiller, advisor, pays, country, actionnaire, shareholder, rating, notation]
 
   - id: fonds.delegation_gestion
@@ -301,6 +301,7 @@ concepts:
     type: text
     source: pi_out_product_active.External_master_fund_name
     terms: [fonds maitre, nom du fonds maitre, master fund, master fund name, name of the master fund]
+    exclude: [isin, code]
 
   - id: fonds.etf
     label: ETF ? | ETF?
@@ -407,7 +408,7 @@ concepts:
     vocab: sfdr
     source: pi_out_product_active.ESG_SFDR_Article
     terms: [sfdr, classification sfdr, article sfdr, article 6, article 8, article 9, art. 8, art. 9, categorie sfdr, reglement sfdr, sfdr classification, sfdr article, sfdr category, sustainable finance disclosure regulation, article 8 or 9, article 6/8/9, art. 6/8/9]
-    exclude: [part minimale, minimum proportion, "%", pai, principales incidences, principal adverse, date, depuis, since, annexe, annex, precontractuel, pre-contractual, document, lien, link, url, raisons, reasons, pourquoi, why, decrivez, describe, explain, expliquez]
+    exclude: [part minimale, minimum proportion, "%", pai, principales incidences, principal adverse, date, depuis, since, annexe, annex, precontractuel, pre-contractual, document, lien, link, url, raisons, reasons, pourquoi, why, decrivez, describe, explain, expliquez, min, minimum, funds, fonds sous-jacents, underlying]
 
   - id: fonds.categorie_amf_esg
     label: Catégorie AMF (doctrine extra-financière) | AMF ESG category
@@ -415,7 +416,7 @@ concepts:
     type: enum
     vocab: amf_esg_category
     source: pi_out_product_active.ESG_AMF_Category
-    terms: [categorie amf, doctrine amf, position-recommandation amf 2020-03, doctrine 2020-03, communication extra-financiere & amf, amf category, amf doctrine, amf esg category, amf position 2020-03, amf esg classification]
+    terms: [doctrine amf, position-recommandation amf 2020-03, doctrine 2020-03, communication extra-financiere & amf, amf doctrine, amf esg category, amf position 2020-03, amf esg classification]
     exclude: [classification amf, amf classification]
 
   - id: fonds.label_isr
@@ -689,6 +690,7 @@ concepts:
     range: [-5, 10]
     source: pi_out_product_active.Explicit_Transaction_costs_ex_ante_3_years_mean
     terms: [couts de transaction explicites, explicit transaction costs]
+    exclude: [kid, dic, kiid]
     facets: {timing: ex_ante}
     default: [timing]
 
@@ -699,6 +701,7 @@ concepts:
     range: [-5, 10]
     source: pi_out_product_active.Implicit_trans_costs_ex_ante3Y_mean
     terms: [couts de transaction implicites, implicit transaction costs]
+    exclude: [kid, dic, kiid]
     facets: {timing: ex_ante}
     default: [timing]
 
@@ -845,7 +848,7 @@ concepts:
     scope: share
     type: text
     source: PI_OUT_Share.Share_Name
-    terms: [nom de la part, libelle de la part, denomination de la part, nom de la classe de parts, nom de la classe, share class name, name of the share class, class name, share name, unit class name]
+    terms: [nom de la part, libelle de la part, denomination de la part, nom de la classe de parts, nom de la classe, share class name, name of the share class, class name, share name, unit class name, nom du support, libelle du support, nom du support & part, quel est son nom, nom de la part du support]
 
   - id: part.isin
     label: Code ISIN | ISIN code
@@ -871,8 +874,8 @@ concepts:
     vocab: currency
     validate: currency
     source: PI_OUT_Share.Subscription_Currency
-    terms: [devise de la part, devise de cotation, devise de souscription, devise de libelle, devise de la classe, share class currency, currency of the share class, share currency, denomination currency, dealing currency, subscription currency, nav currency, currency of denomination, devise de la vl, devise]
-    exclude: [fonds & reference, base currency, fund currency, couverture, hedg, exposition, exposure, repartition, breakdown, reference, comptabil, accounting, benchmark, indice]
+    terms: [devise de la part, devise de cotation, devise de souscription, devise de libelle, devise de la classe, share class currency, currency of the share class, share currency, denomination currency, dealing currency, subscription currency, nav currency, currency of denomination, devise de la vl, devise, vl en devise, devise de la vl, devise de cotation de la vl, units and currency, currency]
+    exclude: [fonds & reference, base currency, fund currency, couverture, hedg, exposition, exposure, repartition, breakdown, reference, comptabil, accounting, benchmark, indice, vl & montant]
 
   - id: part.couverte
     label: Part couverte contre le risque de change ? | Currency-hedged share class?
@@ -888,7 +891,7 @@ concepts:
     type: enum
     vocab: distribution_policy
     source: PI_OUT_Share.Income_Distribution
-    terms: [affectation des resultats, affectation des revenus, affectation des sommes distribuables, politique de distribution, capitalisation ou distribution, capitalisation/distribution, capitalisante ou distribuante, distribution policy, income treatment, income allocation, accumulation or distribution, accumulating or distributing, acc/dis, dividend policy, income policy, distribution or capitalisation, use of income]
+    terms: [affectation des resultats, affectation des revenus, affectation des sommes distribuables, politique de distribution, capitalisation ou distribution, capitalisation/distribution, capitalisante ou distribuante, distribution policy, income treatment, income allocation, accumulation or distribution, accumulating or distributing, acc/dis, dividend policy, income policy, distribution or capitalisation, use of income, capi & distri, capi/distri, type de part & capitalisation, type de part & distribution, accumulating & distributing]
     exclude: [frequence, frequency, montant, amount, date, dernier, last, rendement, yield, historique, history]
 
   - id: part.frequence_distribution
@@ -897,7 +900,7 @@ concepts:
     type: enum
     vocab: frequency
     source: PI_OUT_Share.Distribution_Frequency
-    terms: [frequence de distribution, periodicite de distribution, frequence des dividendes, frequence de versement, distribution frequency, dividend frequency, frequency of distribution, payment frequency]
+    terms: [frequence de distribution, periodicite de distribution, frequence des dividendes, frequence de versement, distribution frequency, dividend frequency, frequency of distribution, payment frequency, periodicite du revenu, periodicite des revenus, periodicite de distribution, frequence de versement des revenus, frequence des coupons, periodicite des coupons]
 
   - id: part.type_investisseurs
     label: Souscripteurs concernés | Target investors
@@ -913,7 +916,7 @@ concepts:
     type: date
     source: PI_OUT_Share.Creation_Date
     terms: [date de creation, date de lancement, creation de la part, lancement de la part, share class launch, share class inception, inception date, launch date, creation date, inception, date of inception, date of launch]
-    exclude: [premiere vl, first nav, gerant, manager, track record]
+    exclude: [premiere vl, first nav, gerant, manager, track record, strategie, strategy]
     facets: {}
 
   - id: part.premiere_vl
@@ -938,7 +941,7 @@ concepts:
     type: amount
     range: [0, 1000000000]
     source: PI_OUT_Share.Initial_Subscription_Minimum_Amount
-    terms: [minimum de souscription initiale, montant minimum de souscription, souscription minimale, souscription initiale minimale, montant minimum d'investissement, investissement minimum, minimum initial subscription, minimum subscription, minimum investment, minimum initial investment, minimum subscription amount, minimum holding, minimum investment amount, min. subscription, souscription initiale & minim, souscription & minim, investissement & minim, subscription & minim, investment & minim, initial investment & minim]
+    terms: [minimum de souscription initiale, montant minimum de souscription, souscription minimale, souscription initiale minimale, montant minimum d'investissement, investissement minimum, minimum initial subscription, minimum subscription, minimum investment, minimum initial investment, minimum subscription amount, minimum holding, minimum investment amount, min. subscription, souscription initiale & minim, souscription & minim, investissement & minim, subscription & minim, investment & minim, initial investment & minim, minimum d'investissement, min. investment, min investment, minimum de souscription initial]
     exclude: [ulterieure, subsequent, additionnelle, additional, nombre de parts, number of shares, number of units, nombre, durable, sustainab, esg, isr, taxonomi, "%", pourcentage, percentage, proportion]
 
   - id: part.minimum_souscription_parts
@@ -955,7 +958,7 @@ concepts:
     scope: share
     type: code
     source: PI_OUT_Share.Bloomberg_Ticker
-    terms: [ticker bloomberg, code bloomberg, bloomberg ticker, bloomberg code, bloomberg id, bloomberg, ticker]
+    terms: [ticker bloomberg, code bloomberg, bloomberg ticker, bloomberg code, bloomberg id, bloomberg, ticker, ticker bloomberg & etf]
     exclude: [indice, index, benchmark, instrument, holding]
 
   - id: part.ric
@@ -1018,7 +1021,7 @@ concepts:
     range: [0, 10]
     source: PI_OUT_Share.Ongoing_Charges_ex_post
     asof: PI_OUT_Share.Ongoing_Charges_ex_postCalculation_Date
-    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais de fonctionnement et de gestion]
+    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais de fonctionnement et de gestion, oc, frais courants dic]
     exclude: [date, calcul au, calculated as of, methode, method, transaction, entree, sortie, entry, exit, souscription, rachat, subscription, redemption, surperformance, performance fee, retrocession, trailer]
     facets: {timing: ex_post}
     default: [timing]
@@ -1030,7 +1033,7 @@ concepts:
     range: [0, 10]
     source: PI_OUT_Share.Ongoing_Charges_ex_ante
     asof: PI_OUT_Share.Ongoing_Charges_ex_ante_Calculation_Date
-    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs]
+    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais courants dic]
     exclude: [date, calcul au, calculated as of, methode, method, transaction, entree, sortie, entry, exit, souscription, rachat, subscription, redemption, surperformance, performance fee, retrocession, trailer]
     facets: {timing: ex_ante}
 
@@ -1126,7 +1129,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: PI_OUT_Share.Maximum_Subscription_Fee_Rate_Not_Retained
-    terms: [droits d'entree, droit d'entree, frais d'entree, commission de souscription, commissions de souscription, frais de souscription, entry fee, entry fees, entry charge, entry charges, entry load, subscription fee, subscription fees, subscription charge, initial charge, front-end load, front end load, sales charge, sales load, entry costs]
+    terms: [droits d'entree, droit d'entree, frais d'entree, commission de souscription, commissions de souscription, frais de souscription, entry fee, entry fees, entry charge, entry charges, entry load, subscription fee, subscription fees, subscription charge, initial charge, front-end load, front end load, sales charge, sales load, entry costs, subs fee, subscription fees, droit d'entree]
     exclude: [rachat, redemption, sortie, exit, back-end, retrocession, trailer]
     facets: {retention: not_retained, level: max}
     default: [retention, level]
@@ -1147,7 +1150,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: PI_OUT_Share.Maximum_Redemption_Fee_Rate_Not_Retained
-    terms: [droits de sortie, droit de sortie, frais de sortie, commission de rachat, commissions de rachat, frais de rachat, exit fee, exit fees, exit charge, exit charges, exit load, redemption fee, redemption fees, redemption charge, back-end load, back end load, deferred sales charge, exit costs]
+    terms: [droits de sortie, droit de sortie, frais de sortie, commission de rachat, commissions de rachat, frais de rachat, exit fee, exit fees, exit charge, exit charges, exit load, redemption fee, redemption fees, redemption charge, back-end load, back end load, deferred sales charge, exit costs, redemption fee, droit de sortie]
     exclude: [souscription, subscription, entree, entry, front-end, retrocession, trailer]
     facets: {retention: not_retained, level: max}
     default: [retention, level]
@@ -1179,7 +1182,7 @@ concepts:
     type: enum
     vocab: frequency
     source: PI_OUT_Share.NAV_Frequency
-    terms: [frequence de valorisation, frequence de calcul de la vl, frequence de la vl, periodicite de la vl, periodicite de valorisation, frequence de publication de la vl, liquidite du fonds, frequence de liquidite, nav frequency, valuation frequency, dealing frequency, frequency of nav calculation, frequency of valuation, pricing frequency, liquidity frequency, frequency of dealing, liquidity, liquidite, subscriptions and redemptions frequency, dealing]
+    terms: [frequence de valorisation, frequence de calcul de la vl, frequence de la vl, periodicite de la vl, periodicite de valorisation, frequence de publication de la vl, liquidite du fonds, frequence de liquidite, nav frequency, valuation frequency, dealing frequency, frequency of nav calculation, frequency of valuation, pricing frequency, liquidity frequency, frequency of dealing, liquidity, liquidite, subscriptions and redemptions frequency, dealing, periodicite de la vl, periodicite de calcul, periodicite & vl, periodicite & valeur liquidative, frequence & vl, frequence & valeur liquidative, publication de la valeur liquidative, periodicite de valorisation]
     exclude: [jour, day, heure, time, cut-off, cutoff, delai, settlement, reglement, preavis, notice, gate, swing, ratio, "%", portefeuille & liquidite, portfolio liquidity, risque, risk, stress, horizon, jours pour liquider, days to liquidate]
 
   - id: part.cut_off_souscription
@@ -1267,7 +1270,7 @@ concepts:
     type: int
     range: [0, 400]
     source: PI_OUT_Share.Redemption_Notice
-    terms: [preavis de rachat, preavis, delai de preavis, notice period, redemption notice, notice for redemption, notice period for redemptions, prior notice]
+    terms: [preavis de rachat, preavis, delai de preavis, notice period, redemption notice, notice for redemption, notice period for redemptions, prior notice, preavis en cas de rachat, preavis & rachat]
     exclude: [souscription, subscription]
 
   - id: part.clients_non_professionnels
@@ -1293,7 +1296,7 @@ concepts:
     scope: share
     type: bool
     source: PI_OUT_Share.Euroclear_France_Admission
-    terms: [euroclear france, euroclear, admis en euroclear, admission euroclear, euroclear eligible, euroclear eligibility, settled through euroclear]
+    terms: [euroclear france, euroclear, admis en euroclear, admission euroclear, euroclear eligible, euroclear eligibility, settled through euroclear, enregistre sur euroclear]
     exclude: [plateforme, platform, code, numero, number, compte, account]
 
   - id: part.clearstream
@@ -1407,8 +1410,8 @@ concepts:
     type: amount
     range: [0, 1000000000000]
     source: jump:fund_aum
-    terms: [encours du fonds, encours, actif net du fonds, actif net, actifs nets, actifs sous gestion du fonds, taille du fonds, aum du fonds, fund aum, aum, assets under management, fund size, size of the fund, net assets, total net assets, fund assets, tna, total assets of the fund, encours total, total aum]
-    exclude: [strategie, strategy, strategies, vehicules, vehicles, tous vehicules, all vehicles, mandats & fonds, mandates & funds, part, share class, classe de parts, societe de gestion, management company, firm, groupe, group, strategie, strategy & total, composite, maison, house, equipe, team, gerant & total, evolution, historique, history, collecte, flows, flux, souscriptions nettes, net inflows, client, investisseur, investor, plus grand, largest, concentration, "%", minimum, seuil, threshold, mandat, mandates, dedie, dedicated, capacite, capacity]
+    terms: [encours du fonds, encours, actif net du fonds, actif net, actifs nets, actifs sous gestion du fonds, taille du fonds, aum du fonds, fund aum, aum, assets under management, fund size, size of the fund, net assets, total net assets, fund assets, tna, total assets of the fund, encours total, total aum, actif & millions, actif du fonds, quel est l'actif, encours du support & toutes parts, encours du support, encours fonds]
+    exclude: [strategie, strategy, strategies, vehicules, vehicles, tous vehicules, all vehicles, mandats & fonds, mandates & funds, part, share class, classe de parts, societe de gestion, management company, firm, groupe, group, strategie, strategy & total, composite, maison, house, equipe, team, gerant & total, evolution, historique, history, collecte, flows, flux, souscriptions nettes, net inflows, client, investisseur, investor, plus grand, largest, concentration, "%", minimum, seuil, threshold, mandat, mandates, dedie, dedicated, capacite, capacity, provenant, origine, from france, de france, part retail, part clean, sdg, societe de gestion, groupement]
     facets: {}
 
   - id: jump.encours_part
@@ -1427,7 +1430,7 @@ concepts:
     type: date
     source: jump:fund_aum_date
     terms: [date de l'encours, encours au, date de la derniere vl, date de vl, date de valorisation, derniere date de valorisation, aum date, aum as of, as of date, date of the latest nav, nav date, latest nav date, valuation date, reporting date]
-    exclude: [premiere, first, frequence, frequency, jour de calcul, calculation day]
+    exclude: [premiere, first, frequence, frequency, jour de calcul, calculation day, withdrawal, retrait, rachat, redemption]
 
   - id: jump.vl
     label: Dernière valeur liquidative | Latest NAV per share
@@ -1435,7 +1438,7 @@ concepts:
     type: number
     range: [0.0001, 100000000]
     source: jump:nav
-    terms: [valeur liquidative, derniere vl, vl de la part, vl actuelle, vl, nav, net asset value per share, nav per share, nav per unit, latest nav, current nav, unit price, share price, prix de la part]
+    terms: [valeur liquidative, derniere vl, vl de la part, vl actuelle, vl, nav, net asset value per share, nav per share, nav per unit, latest nav, current nav, unit price, share price, prix de la part, montant de la derniere vl, derniere vl connue, prix de la part]
     exclude: [frequence, frequency, premiere, first, initial, origine, d'origine, launch, lancement, date, jour, day, calcul, calculation, publication, published, methode, method, swing, ajustement, adjustment, encours, aum, total, actif net du fonds, net assets of the fund, devise, currency, plus haut, highest, plus bas, lowest]
 
   - id: jump.nombre_parts
@@ -1551,3 +1554,181 @@ concepts:
     source: perf:tracking_error
     terms: [tracking error, ecart de suivi, erreur de suivi, tracking-error, ex post tracking error, te ex post]
     exclude: [ex ante, ex-ante, previsionnel, cible, target, maximum, budget, limite, limit, attendue, expected]
+
+  # =================================================================== AJOUTS LOT 02 (vocabulaire réel des RFI 2026)
+  - id: meta.date_arrete
+    label: Date des données (date d'arrêté) | Data as of date
+    scope: fund
+    type: date
+    source: meta:as_of
+    terms: [date des donnees, date des donnees renseignees, donnees au, donnees arretees au, date d'arrete, date de reference des donnees, as of, data as of, as at, reference date, statistiques en date du, date of the data]
+    exclude: [creation, lancement, launch, inception, vl, nav, cloture, closing, echeance, maturity, premiere, first, gerant, manager, dic, kid, encours & au]
+
+  - id: meta.date_formulaire
+    label: Date de rédaction du formulaire | Form completion date
+    scope: fund
+    type: date
+    source: meta:today
+    terms: [date de redaction du formulaire, date de redaction, date du formulaire, date de remplissage, date of completion, completion date, date of signature, date de signature]
+
+  - id: jump.position_nom
+    label: Nom de la Nième position du portefeuille | Name of the Nth holding
+    scope: fund
+    type: text
+    source: jump:position_name
+    terms: [intitule & position, nom & position, libelle & position, name & holding, name & position]
+    require: [premiere, deuxieme, troisieme, quatrieme, cinquieme, sixieme, septieme, huitieme, neuvieme, dixieme, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, "1ere", "1er", "n°", rank, rang]
+    exclude: [poids, weight, "%", secteur, sector, pays, country, emetteur & liste]
+
+  - id: jump.position_poids
+    label: Poids de la Nième position du portefeuille (%) | Weight of the Nth holding (%)
+    scope: fund
+    type: percent
+    range: [-100, 100]
+    source: jump:position_weight
+    terms: [poids & position, weight & holding, weight & position, poids & ligne]
+    require: [premiere, deuxieme, troisieme, quatrieme, cinquieme, sixieme, septieme, huitieme, neuvieme, dixieme, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, "1ere", "1er", "n°", rank, rang]
+    exclude: [10 premieres, top 10, dix premieres, total, cumul]
+
+  - id: fonds.code_cic
+    label: Code CIC | CIC code
+    scope: fund
+    type: code
+    source: pi_out_product_active.Code_CIC
+    terms: [code cic, cic code, complementary identification code, cic]
+
+  - id: fonds.categorie_bce
+    label: Catégorie BCE | ECB classification
+    scope: fund
+    type: text
+    source: pi_out_product_active.ECB_Classification
+    terms: [categorie bce, classification bce, ecb classification, ecb category, categorie banque centrale europeenne, bce]
+    exclude: [code bce]
+
+  - id: fonds.code_bce
+    label: Code BCE (lu dans la classification BCE) | ECB code
+    scope: fund
+    type: text
+    source: pi_out_product_active.ECB_Classification
+    ambiguous_always: true
+    terms: [code bce, ecb code]
+
+  - id: fonds.reserve_20_porteurs
+    label: Fonds réservé à 20 porteurs au plus ? | Fund reserved to 20 unitholders at most?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Fund_reserved_to_20_unit_shareholders
+    terms: [20 porteurs, vingt porteurs, 20 unitholders, 20 shareholders, 20 investors]
+
+  - id: fonds.dedie
+    label: Fonds dédié ? (lu comme « réservé à 20 porteurs ») | Dedicated fund?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Fund_reserved_to_20_unit_shareholders
+    ambiguous_always: true
+    terms: [fonds dedie, dedicated fund, dedie a, dedicated to]
+    exclude: [20 porteurs, vingt porteurs, quel, quels, which, cabinet, cgp, nom, name]
+
+  - id: fonds.a_maturite
+    label: Fonds à échéance ? | Fund with a maturity date?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Maturity_date
+    transform: present
+    ask_bool: true
+    terms: [fonds a maturite, fonds a echeance, fonds datee, maturity fund, target maturity fund, term fund, dated fund]
+
+  - id: fonds.agree_amf
+    label: Agréé AMF ? (déduit du code AMF) | AMF approved? (from AMF code)
+    scope: fund
+    type: bool
+    source: pi_out_product_active.AMF_Code
+    transform: present
+    ask_bool: true
+    ambiguous_always: true
+    terms: [agree amf, agree par l'amf, agrement amf, amf approved, approved by the amf, authorised by the amf]
+
+  - id: fonds.dic_genere
+    label: DIC produit ? (génération du DIC) | KID produced?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.KID_Generation
+    ask_bool: true
+    ambiguous_always: true
+    terms: [dic en francais, kid en francais, dic disponible, kid available, existe-t-il un dic, dic & existe, kid & exist, document d'informations cles & disponible]
+
+  - id: fonds.eet
+    label: Reporting EET produit ? | EET produced?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.EET_Fund
+    ask_bool: true
+    ambiguous_always: true
+    terms: [reporting eet, eet, european esg template, fichier eet]
+    exclude: [ept, emt]
+
+  - id: part.export_quantalys
+    label: Données transmises à Quantalys ? | Data sent to Quantalys?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Quantalys
+    terms: [quantalys]
+    exclude: [morningstar, categorie, category, classe d'actif, etoiles, stars, notation, rating]
+
+  - id: part.export_morningstar
+    label: Données transmises à Morningstar ? | Data sent to Morningstar?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Morningstar
+    terms: [morningstar]
+    require: [donnees, data, fournissez, provide, transmis, sent, present, available, disponible, diffus, export, referenc]
+    exclude: [quantalys, rating, note, notation, etoiles, stars, categorie, category, medal]
+
+  - id: part.export_six
+    label: Données transmises à Six Financial ? | Data sent to SIX Financial?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Six_Financial_Information
+    terms: [six financial, six telekurs]
+
+  - id: part.export_bloomberg
+    label: Données transmises à Bloomberg ? | Data sent to Bloomberg?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Bloomberg
+    terms: [bloomberg]
+    require: [donnees, data, fournissez, provide, transmis, sent, diffus, export]
+    exclude: [ticker, code, id]
+
+  - id: part.decimalisable
+    label: Part décimalisable ? | Fractional shares?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Share_Class_Decimalisation
+    transform: present
+    ask_bool: true
+    terms: [decimalisable, decimalisee, fractionnable, fractions de parts, fractional shares, fractional units]
+
+  - id: part.adl
+    label: Anti-dilution levy (ADL) ? | Anti-dilution levy?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.ADL
+    terms: [anti dilution levy, anti-dilution levy, adl, droits ajustables]
+
+  - id: part.ouverte_tous
+    label: Part ouverte à tout souscripteur ? | Open to all investors?
+    scope: share
+    type: enum
+    vocab: investor_type
+    source: PI_OUT_Share.Investor_Type
+    terms: [ouverte a tout souscripteur, ouverte a tous les souscripteurs, tout souscripteur, tous souscripteurs, open to all investors, all investors]
+
+  - id: fonds.sri_precedent
+    label: SRI du mois précédent | Previous month SRI
+    scope: fund
+    type: enum
+    vocab: sri
+    range: [1, 7]
+    source: pi_out_product_active.Previous_month_SRI
+    terms: [sri & mois precedent, sri & previous month, sri du mois precedent, previous month sri, sri le mois precedent]

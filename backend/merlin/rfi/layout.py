@@ -46,14 +46,15 @@ _PH_EXACT = re.compile(
     r"a completer|a renseigner|a remplir|a preciser|a indiquer|a fournir|a confirmer|completer|renseigner|remplir|"
     r"reponse|reponses|answer|response|your answer|votre reponse|to be completed|to be filled|to be provided|to complete|"
     r"fill in|select|selectionner|choisir|choose|please select|veuillez selectionner|liste deroulante|dropdown|"
-    r"choisir dans la liste|select from list|select from the list|select one|choisir une valeur|insert|enter|texte|text|"
+    r"choisir dans la liste|choisir parmi la liste deroulante|choisir parmi la liste|reponse binaire|reponse libre|reponse numerique|"
+    r"select from list|select from the list|select one|choisir une valeur|insert|enter|texte|text|information non disponible|"
     r"montant|amount|date|valeur|value|commentaire|comment|comments|commentaires)$")
 _PH_BRACKET = re.compile(r"^[\[<({«].{0,120}[\]>)}»]$")
 _PH_INSTRUCTION = re.compile(
     r"^(?:merci d[e']\s*|veuillez\s+|priere de\s+|svp\s+|please\s+|kindly\s+)?"
     r"(?:indiquer|indiquez|preciser|precisez|renseigner|renseignez|inserer|inserez|saisir|saisissez|mentionner|mentionnez|"
     r"donner|donnez|fournir|fournissez|completer|completez|selectionner|selectionnez|choisir|choisissez|cocher|cochez|"
-    r"indicate|insert|specify|provide|state|enter|fill in|fill|complete|select|choose|tick|confirm|list|give|input|type)\b")
+    r"indicate|insert|specify|provide|state|enter|fill in|fill|complete|select|choose|tick|confirm|list|give|input|type|inscrire|inscrivez)\b")
 _PH_MASK = re.compile(r"\b(?:xxx+|xx[,.]xx|\[\s*\.\.\.\s*\]|\.{3,}|_{3,}|<\s*\w+\s*>)")
 
 
@@ -115,6 +116,9 @@ class Slot:
     number_format: str | None = None
     entity: dict[str, str] = field(default_factory=dict)  # {"isin": …} dans une grille par part
     layout: str = "list"  # list | row-grid | column-grid | paragraph
+    comment: str = ""  # commentaire existant (colonne « Commentaires »), jamais écrit par l'app
+    comment_cell: str = ""
+    parent: str = ""  # question dont dépend une sous-question conditionnelle (« Si oui… »)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -244,6 +248,12 @@ ANSWER_HEADER = re.compile(r"^(?:reponses?|answers?|responses?|valeurs?|values?|
                            r"reponse de la societe de gestion|manager response|manager's response|asset manager response|"
                            r"donnees|data|information|informations|input|saisie|a completer|to be completed|fund response|"
                            r"reponse fonds|reponse gestionnaire|your response|response from the manager)$")
+COMMENT_HEADER = re.compile(r"commentaire|comments?|precisions?|remarques?|observations?|notes?")
+INSTRUCTION_ROW = re.compile(r"^(?:-\s*)?(?:tous les champs|le fichier ne doit|si besoin|merci de|veuillez|please (?:complete|fill|note|answer)|"
+                             r"all (?:fields|questions)|instructions?|important|nb|n\.b|note)\b")
+CONDITIONAL = re.compile(r"^(?:si oui|si non|sinon|dans l'affirmative|dans ce cas|le cas echeant|if yes|if no|if so|if not|otherwise|"
+                         r"in that case|ce minimum|cette|lequel|laquelle|lesquels|lesquelles|which one|preciser|precisez|please specify|"
+                         r"details?|detaillez|si applicable|if applicable)\b")
 QUESTION_HEADER = re.compile(r"^(?:questions?|items?|criteres?|criteria|champs?|fields?|libelles?|labels?|intitules?|"
                              r"rubriques?|sujets?|topics?|description|designation|information requested|information demandee|data point|datapoint)$")
 
@@ -359,35 +369,63 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
         return
 
     # ---------------------------------------------------- liste de questions
-    answer_col, question_col, header_row = None, None, 0
-    for r in range(min(len(grid), 25)):
+    answer_col, comment_col, question_col, header_row = None, None, None, 0
+    for r in range(min(len(grid), 30)):
+        found = False
         for c, v in enumerate(grid[r]):
             n = norm(v)
-            if n and ANSWER_HEADER.match(n):
-                answer_col, header_row = c, r + 1
-            elif n and QUESTION_HEADER.match(n):
-                question_col, header_row = c, r + 1
-        if answer_col is not None or question_col is not None:
+            if not n or len(n) > 70:
+                continue
+            if ANSWER_HEADER.match(n) or (re.search(r"(?<![a-z])(?:reponses?|answers?|responses?)(?![a-z])", n) and not n.endswith("?")
+                                          and not re.search(r"commentaire|comment|precision", n)):
+                answer_col, header_row, found = c, r + 1, True
+            elif COMMENT_HEADER.search(n) and answer_col is not None:
+                comment_col = c
+            elif QUESTION_HEADER.match(n):
+                question_col, header_row, found = c, r + 1, True
+        if found:
+            if answer_col is not None:
+                comment_col = next((c for c, v in enumerate(grid[r]) if c > answer_col and COMMENT_HEADER.search(norm(v))), comment_col)
             if answer_col is None and question_col is not None:
                 # « Question | <nom du fonds> » : la colonne voisine reçoit les réponses
-                nxt = next((c for c in range(question_col + 1, max_col) if grid[r][c] is not None), None)
-                answer_col = nxt
+                answer_col = next((c for c in range(question_col + 1, max_col) if grid[r][c] is not None), None)
             break
+    body = grid[header_row:]
+    if question_col is None:
+        # Colonne des questions : celle qui porte le plus de libellés (avant la colonne réponse)
+        counts: dict[int, int] = {}
+        for row in body:
+            for c, v in enumerate(row):
+                if (answer_col is None or c < answer_col) and is_question_text(v):
+                    counts[c] = counts.get(c, 0) + 1
+        if counts:
+            question_col = max(counts, key=lambda c: (counts[c], -c))
+            if answer_col is not None:
+                # la question est la colonne de texte la plus proche à gauche de la réponse
+                near = [c for c in counts if c < answer_col and counts[c] >= max(2, counts[question_col] // 3)]
+                question_col = max(near) if near else question_col
     section = ws.title
+    previous_question = ""
     for r in range(header_row, len(grid)):
         row = grid[r]
-        texts = [(c, v) for c, v in enumerate(row) if is_question_text(v) and f"{get_column_letter(c + 1)}{r + 1}" not in merged_tl
-                 and (answer_col is None or c < answer_col)]
+        cells = {c: v for c, v in enumerate(row) if f"{get_column_letter(c + 1)}{r + 1}" not in merged_tl}
+        # Libellé de section dans une colonne à gauche des questions (« Demande », « Contacts SdG »…)
         if question_col is not None:
-            texts = [(c, v) for c, v in texts if c >= question_col] or texts
-        if not texts:
+            left = [str(cells[c]).strip() for c in range(question_col) if isinstance(cells.get(c), str) and cells[c].strip()]
+            if left:
+                section = left[-1]
+        q_candidates = [(c, v) for c, v in cells.items() if is_question_text(v) and (answer_col is None or c < answer_col)
+                        and (question_col is None or c >= question_col)]
+        if not q_candidates:
             continue
-        q_col, q_text = texts[0]
+        q_col, q_text = q_candidates[0]
         rest = row[q_col + 1:]
-        if len(texts) == 1 and all(classify_cell(v)[0] != "answered" for v in rest) and _looks_like_title(str(q_text)) and \
+        if len(q_candidates) == 1 and all(classify_cell(v)[0] != "answered" for v in rest) and _looks_like_title(str(q_text)) and \
                 not any(f"{get_column_letter(c + 1)}{r + 1}" in dvs for c in range(q_col + 1, max_col)):
             section = str(q_text).strip()
             continue
+        if INSTRUCTION_ROW.match(norm(q_text)) and answer_col is None:
+            continue  # consigne générale du questionnaire, pas une question
         target_col = None
         if answer_col is not None and answer_col > q_col:
             target_col = answer_col
@@ -409,7 +447,15 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
             continue
         ref = f"{get_column_letter(target_col + 1)}{r + 1}"
         ref = merged_tl.get(ref, ref)
-        layout.slots.append(_make_slot(layout, ws, ref, str(q_text), section, dvs, "list"))
+        slot = _make_slot(layout, ws, ref, str(q_text), section, dvs, "list")
+        if comment_col is not None and comment_col != target_col and comment_col < len(row) and row[comment_col] is not None:
+            slot.comment = str(row[comment_col]).strip()
+            slot.comment_cell = f"{get_column_letter(comment_col + 1)}{r + 1}"
+        if CONDITIONAL.match(norm(q_text)) and previous_question:
+            slot.parent = previous_question  # « Si oui, de quel montant ? » dépend de la question précédente
+        else:
+            previous_question = str(q_text).strip()
+        layout.slots.append(slot)
 
 
 def _looks_like_title(text: str) -> bool:

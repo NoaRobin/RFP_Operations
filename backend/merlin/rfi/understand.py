@@ -35,8 +35,17 @@ MONTHS = {"janvier": 1, "fevrier": 2, "mars": 3, "avril": 4, "mai": 5, "juin": 6
           "june": 6, "july": 7, "august": 8, "september": 9, "october": 10, "november": 11, "december": 12}
 WORD_NUMBERS = {"un": 1, "une": 1, "one": 1, "deux": 2, "two": 2, "trois": 3, "three": 3, "cinq": 5, "five": 5, "dix": 10, "ten": 10,
                 "six": 6, "douze": 12, "twelve": 12}
+EXISTENCE = re.compile(r"(?:^|\b)(?:y a-t-il|y-a-t-il|existe-t-il|exist-il|existe t il|is there|are there|does the (?:fund|share class) have|"
+                       r"le fonds a-t-il|la part a-t-elle|a-t-il|a-t-elle|presence d'un|presence de)\b")
+EXCLUSION = re.compile(r"\(?(?<![a-z0-9])(?:hors|excluding|excluant|excl\.?|sans compter|non compris|not including)\s[^()]*\)?")
+ORDINALS = {"premiere": 1, "premier": 1, "1ere": 1, "1er": 1, "first": 1, "deuxieme": 2, "second": 2, "seconde": 2,
+            "troisieme": 3, "third": 3, "quatrieme": 4, "fourth": 4, "cinquieme": 5, "fifth": 5, "sixieme": 6, "sixth": 6,
+            "septieme": 7, "seventh": 7, "huitieme": 8, "eighth": 8, "neuvieme": 9, "ninth": 9, "dixieme": 10, "tenth": 10}
+RANK = re.compile(r"(?<![a-z0-9])(?:(\d{1,2})\s*(?:e|eme|er|ere|st|nd|rd|th)|(?:n°|no\.?|rang|rank|#)\s*(\d{1,2})|(" +
+                  "|".join(ORDINALS) + r"))(?![a-z0-9])")
+SHARE_QUALIFIER = re.compile(r"\b(?:part|share class|classe|share)\s+(retail|clean(?:share)?|institutionnelle|institutional|i|r|c|d|p|f|z|n)\b")
 HINT_DATE = re.compile(r"\b(?:jj/mm/aaaa|jj/mm/aa|dd/mm/yyyy|mm/dd/yyyy|yyyy-mm-dd|aaaa-mm-jj|dd/mm/yy|date)\b")
-HINT_BOOL = re.compile(r"\b(?:oui\s*/\s*non|yes\s*/\s*no|y\s*/\s*n|o\s*/\s*n|oui ou non|yes or no)\b")
+HINT_BOOL = re.compile(r"\b(?:oui\s*/\s*non|yes\s*/\s*no|y\s*/\s*n|o\s*/\s*n|oui ou non|yes or no|reponse binaire|binary answer)\b")
 
 
 @dataclass
@@ -72,6 +81,10 @@ class Understanding:
     context_scopes: set[str] = field(default_factory=set)  # portée déduite de la section ou d'une grille par part
     entity_scope: str | None = None
     asks_date: bool = False
+    existence: bool = False  # « Y a-t-il… », « Existe-t-il… », « Is there… »
+    parent: str = ""
+    rank: int | None = None  # « 3ème position », « first holding »
+    share_qualifier: str | None = None  # « part Clean », « part I »… : la question vise peut-être une autre part
     qualitative: bool = False
     yes_no: bool = False
     period: Period | None = None
@@ -252,9 +265,12 @@ def detect_countries(ontology: Ontology, q: str) -> list[str]:
 
 
 def understand(ontology: Ontology, text: str, *, hint: str = "", context: str = "", options: list[str] | None = None,
-               number_format: str | None = None, as_of: date | None = None, entity_scope: str | None = None) -> Understanding:
+               number_format: str | None = None, as_of: date | None = None, entity_scope: str | None = None,
+               parent: str = "") -> Understanding:
     as_of = as_of or date.today()
-    q = norm(text)
+    own = EXCLUSION.sub(" ", norm(text))  # « (hors frais de transactions) » : ce qui est exclu n'est pas le sujet
+    # Sous-question conditionnelle (« Si oui, de quel montant ? ») : le sujet vient de la question parente
+    q = (norm(parent) + " " + own).strip() if parent else own
     seq = tokens(q)
     u = Understanding(text=text, q=q, q_tokens=seq, hint=hint, context=context, options=list(options or []))
     hint_n = norm(hint)
@@ -272,7 +288,9 @@ def understand(ontology: Ontology, text: str, *, hint: str = "", context: str = 
         u.context_scopes = {entity_scope}
         u.entity_scope = entity_scope
     u.qualitative = bool(QUALITATIVE.search(q))
-    u.yes_no = bool(BOOL_QUESTION.search(q)) or bool(HINT_BOOL.search(hint_n))
+    u.yes_no = bool(BOOL_QUESTION.search(own)) or bool(HINT_BOOL.search(hint_n))
+    u.existence = bool(EXISTENCE.search(own))
+    u.parent = parent
     u.explicit_date = parse_explicit_date(q)
     u.asks_date = bool(re.search(r"(?<![a-z0-9])(?:date|dates|depuis quand|depuis le|since when|since|depuis|when|quand|obtenu le|obtained on|obtained)(?![a-z0-9])", q)) \
         and not re.search(r"(?<![a-z0-9])(?:depuis (?:la )?(?:creation|lancement|l'origine|le debut)|since (?:inception|launch|the beginning))(?![a-z0-9])", q)
@@ -289,6 +307,12 @@ def understand(ontology: Ontology, text: str, *, hint: str = "", context: str = 
         raw_ccy = next(g for g in m.groups() if g)
         u.currency = {"euro": "EUR", "euros": "EUR", "€": "EUR", "$": "USD"}.get(raw_ccy, raw_ccy.upper())
     u.countries = detect_countries(ontology, q)
+    m = RANK.search(own)
+    if m:
+        u.rank = int(m.group(1) or m.group(2)) if (m.group(1) or m.group(2)) else ORDINALS[m.group(3)]
+    m = SHARE_QUALIFIER.search(own)
+    if m:
+        u.share_qualifier = m.group(1)
 
     # Type attendu : liste déroulante > format de cellule > consigne > forme de la question
     kind = expected_from_options(ontology, u.options)

@@ -149,6 +149,9 @@ class Values:
         if transform == "not_null":
             d = to_date(value)
             value = "yes" if (d is not None and d <= self.as_of) else ("no" if d is None else "no")
+        elif transform == "present":
+            # renseigné → oui ; vide → inconnu (jamais « non » : vide, non et non applicable sont des états différents)
+            value = None if is_empty(value) else "yes"
         elif transform == "negate":
             v = self.ontology.vocab_value("yes_no", value)
             value = None if v is None else ("no" if v.id == "yes" else "yes")
@@ -230,6 +233,10 @@ class Values:
                 return Raw(None, "Product Info · PI_OUT_CountryOfRegistration.Country", note="aucun pays reconnu dans la question")
             ids = {(self.ontology.vocab_value("country", c).id if self.ontology.vocab_value("country", c) else c) for c in countries}
             return Raw("yes" if all(c in ids for c in u.countries) else "no", "Product Info · PI_OUT_CountryOfRegistration.Country")
+        if kind == "meta":
+            if measure == "today":
+                return Raw(date.today(), "date du jour (rédaction)")
+            return Raw(self.as_of, "date d'arrêté choisie pour ce RFI", data_date=self.as_of)
         if kind == "jump":
             return self._jump_measure(measure, u)
         return self._perf_measure(measure, u)
@@ -288,6 +295,12 @@ class Values:
         top = securities.sort_values("poids", ascending=False).head(10)
         if measure == "top10_weight":
             return Raw(round(float(top["poids"].sum()), 2), evidence, data_date=d, stale=self._stale(d, 40, ref=at))
+        if measure in {"position_name", "position_weight"}:
+            if not u.rank or u.rank > len(securities):
+                return Raw(None, evidence, note="rang de la position non lu dans la question")
+            row = securities.sort_values("poids", ascending=False).iloc[u.rank - 1]
+            value = str(row["NOM_INSTRUMENT"]) if measure == "position_name" else round(float(row["poids"]), 2)
+            return Raw(value, f"{evidence} · rang {u.rank}", data_date=d, stale=self._stale(d, 40, ref=at))
         if measure == "top10_list":
             return Raw([(str(r.NOM_INSTRUMENT), float(r.poids)) for r in top.itertuples()], evidence, data_date=d, stale=self._stale(d, 40, ref=at))
         column = {"allocation_asset": "CLASSE_ACTIF", "allocation_currency": "DEVISE_INSTRUMENT"}[measure]

@@ -166,7 +166,8 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}
     for slot in layout.slots:
         u = understand(ontology, slot.question, hint=slot.hint, context=slot.context, options=slot.options,
-                       number_format=slot.number_format, as_of=as_of_d, entity_scope="share" if slot.entity.get("isin") else None)
+                       number_format=slot.number_format, as_of=as_of_d, entity_scope="share" if slot.entity.get("isin") else None,
+                       parent=slot.parent)
         vals = values_for(slot)
         row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, overrides.get(slot.id, "__none__"))
         stats[row["status"]] += 1

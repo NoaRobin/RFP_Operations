@@ -56,7 +56,7 @@ vocabularies:
     - {id: private, fr: Non coté, en: Private assets, synonyms: [non cote, private equity, private debt, private assets, capital investissement, dette privee, infrastructure]}
 
   investor_type:
-    - {id: all, fr: Tous souscripteurs, en: All investors, synonyms: [tous souscripteurs, tous investisseurs, all investors, all subscribers, retail and professional, grand public]}
+    - {id: all, fr: Tous souscripteurs, en: All investors, synonyms: [tous souscripteurs, tout souscripteur, ouverte a tout souscripteur, tous investisseurs, all investors, all subscribers, retail and professional, grand public]}
     - {id: retail, fr: Clients non professionnels, en: Retail investors, synonyms: [non professionnels, clients non professionnels, retail, retail investors, particuliers, investisseurs particuliers]}
     - {id: professional, fr: Clients professionnels, en: Professional investors, synonyms: [professionnels, clients professionnels, professional, professional investors, institutional, institutionnels, investisseurs institutionnels, institutional investors]}
     - {id: eligible, fr: Contreparties éligibles, en: Eligible counterparties, synonyms: [contreparties eligibles, eligible counterparties, eligible counterparty]}

@@ -179,3 +179,37 @@ cases:
   - {q: "Performance", concept: null}
   - {q: "Objectif de performance", concept: null}
   - {q: "Capacité maximale de la stratégie", concept: null}
+  # ------------------------------------------------------------- lot 02 : vocabulaire réel des RFI 2026 (formulations, pas de valeurs)
+  - {q: "Date des données renseignées", concept: meta.date_arrete}
+  - {q: "Intitulé de la troisième position dans le portefeuille", concept: jump.position_nom}
+  - {q: "Poids de la première position dans le portefeuille", concept: jump.position_poids}
+  - {q: "Nombre de positions dans l'indice de référence", concept: null}
+  - {q: "Changement à déclarer dans la politique d'investissement ?", concept: null}
+  - {q: "Changement à déclarer dans les frais de gestion ?", concept: null}
+  - {q: "% of AUM as of the withdrawal date:", concept: null}
+  - {q: "Date de création de la Stratégie", concept: null}
+  - {q: "Classe d'actif Quantalys", concept: null}
+  - {q: "Min. SFDR Art. 8 funds", concept: null}
+  - {q: "Si oui, indiquer le code ISIN du fonds Maître", concept: null}
+  - {q: "Pouvez-vous nous indiquer le code CIC ?", concept: fonds.code_cic}
+  - {q: "Pouvez-vous nous indiquer la catégorie BCE ?", concept: fonds.categorie_bce}
+  - {q: "La part est-elle ouverte à tout souscripteur ?", concept: part.ouverte_tous}
+  - {q: "Le fonds applique-t-il un mécanisme d'anti dilution levy ?", concept: part.adl}
+  - {q: "Fournissez-vous les données du fonds à Six Financial ?", concept: part.export_six}
+  - {q: "Périodicité du revenu", concept: part.frequence_distribution}
+  - {q: "VL en devise €", concept: part.devise}
+  - {q: "Quel est le taux de rétrocession ?", concept: part.retrocession_standard}
+  # ------------------------------------------------------------- tests proposés par l'ontologie Copilot (T01–T20)
+  - {q: "Quel est le SRI actuel ?", concept: fonds.sri}
+  - {q: "Quel était le SRI le mois précédent ?", concept: fonds.sri_precedent}
+  - {q: "Quel est le SRRI ?", concept: fonds.srri}
+  - {q: "Quelle est la devise de la part USD ?", concept: part.devise}
+  - {q: "Quel est le ticker Bloomberg de la part ?", concept: part.ticker_bloomberg}
+  - {q: "Quel est le ticker Bloomberg de l'indice ?", concept: null}
+  - {q: "Quelle est la date de création de la part ?", concept: part.date_creation}
+  - {q: "Le fonds applique-t-il des gates ?", concept: part.gates}
+  - {q: "Le fonds est-il un ETF ?", concept: fonds.etf}
+  - {q: "Combien de positions contient l'indice ?", concept: null}
+  - {q: "Le fonds a-t-il un incident de conformité ?", concept: null}
+  - {q: "Quand le gérant a-t-il commencé cette stratégie ?", concept: null}
+  - {q: "Quelles sont les émissions scope 1 en 2025 ?", concept: null}

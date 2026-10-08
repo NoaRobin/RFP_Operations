@@ -27,6 +27,8 @@ PERIOD_WORDS = {"an", "ans", "annee", "year", "yr", "y", "moi", "mois", "month",
                 "annualised", "annualized", "cumule", "cumulee", "cumulative", "depui", "since", "creation", "inception",
                 "lancement", "launch", "origine", "debut", "beginning", "pa", "p.a", "per", "annum", "1er", "janvier",
                 "glissant", "rolling", "derniere", "dernier", "last", "past", "calendaire", "calendar", "civile"}
+SHARE_WORDS = {"retail", "clean", "cleanshare", "institutionnelle", "institutionnel", "institutional", "capitalisante",
+               "distribuante", "capi", "distri", "accumulation", "accumulating", "distributing", "couverte", "hedged"}
 
 
 @dataclass
@@ -57,7 +59,7 @@ def _vocab_mentions(ontology: Ontology, vocab: str, q: str) -> list[str]:
     hits = []
     for v in ontology.vocabularies.get(vocab, []):
         for s in v.synonyms:
-            if len(s) < 3 and not s.isdigit():
+            if len(s) < 3 and not s.isdigit() and s not in {"€", "$", "£"}:
                 continue
             if s.isdigit() and vocab not in {"sri", "sfdr"}:
                 continue
@@ -140,7 +142,10 @@ def score_concept(ontology: Ontology, concept: Concept, u: Understanding) -> Can
     assert_value = None
     if expected == "bool" and concept.type != "bool":
         mentions = _vocab_mentions(ontology, concept.vocab, u.q) if concept.vocab and concept.type == "enum" else []
-        if len(mentions) == 1:
+        if concept.type in {"amount", "percent"} or (u.existence and concept.type in {"number", "int"}):
+            assert_value = "__positive__"  # « Y a-t-il un minimum ? » : oui si la valeur est strictement positive
+            reasons.append("question oui / non sur un montant ou un taux : oui si la valeur est > 0")
+        elif len(mentions) == 1:
             assert_value = mentions[0]
             reasons.append(f"question fermée sur la valeur « {mentions[0]} »")
         elif hard:
@@ -163,6 +168,10 @@ def score_concept(ontology: Ontology, concept: Concept, u: Understanding) -> Can
         score += 0.04
     if u.wants_percent and concept.type not in {"percent", "list"} and not u.options:
         score -= 0.12
+    if concept.ambiguous_always:
+        flags.append("lecture indirecte de la donnée : à confirmer")
+    if u.share_qualifier and concept.scope == "share":
+        flags.append(f"la question vise la part « {u.share_qualifier} » : vérifier que c'est la part choisie")
     if u.asks_date and concept.type != "date" and not ({"date", "dates"} & best.words):
         score -= 0.3  # « depuis quand », « date d'obtention » : jamais un oui / non ni un montant
         flags.append("la question demande une date")
@@ -190,6 +199,8 @@ def score_concept(ontology: Ontology, concept: Concept, u: Understanding) -> Can
                 if has_term(t, seq):
                     explained |= t.words
         explained |= PERIOD_WORDS
+        if concept.scope == "share":
+            explained |= SHARE_WORDS  # « part Retail Capitalisante » : qualifie la part (signalé à part)
         covered = sum(1 for t in content if t in explained or any(t.startswith(e) for e in explained if len(e) >= 5))
         coverage = covered / len(content)
         factor = 0.4 + 0.6 * min(1.0, coverage / 0.7)

@@ -18,7 +18,7 @@ from ..data.catalog import Catalog
 
 ONTOLOGY_DIR = Path(__file__).with_name("ontology")
 TYPES = {"text", "long", "enum", "bool", "percent", "number", "int", "amount", "date", "time", "code", "list"}
-COMPUTED = {"jump", "perf", "registration"}
+COMPUTED = {"jump", "perf", "registration", "meta"}
 PSEUDO_TERMS = {"period_mention", "country_mention"}
 
 
@@ -86,6 +86,7 @@ class Concept:
     validate: str | None = None
     transform: Any = None
     qualitative_ok: bool = False
+    ambiguous_always: bool = False  # lecture indirecte de la colonne : toujours « à vérifier »
     ask_bool: bool = False  # concept oui / non utilisable seulement si la question attend oui / non
     asof: str | None = None
     problems: list[str] = field(default_factory=list)
@@ -190,6 +191,7 @@ def load_ontology(catalog: Catalog) -> Ontology:
             default=list(spec.get("default") or []), ambiguous=bool(spec.get("ambiguous")), vocab=spec.get("vocab"),
             range=_range(spec.get("range")), validate=spec.get("validate"), transform=spec.get("transform"),
             qualitative_ok=bool(spec.get("qualitative_ok")), asof=spec.get("asof"), ask_bool=bool(spec.get("ask_bool")),
+            ambiguous_always=bool(spec.get("ambiguous_always")),
         )
         concept.pseudo_require = [t for t in spec.get("require", []) if t in PSEUDO_TERMS]  # type: ignore[attr-defined]
         if concept.id in concepts:

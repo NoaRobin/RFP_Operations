@@ -173,6 +173,11 @@ def render(ontology: Ontology, concept: Concept, raw: Raw, u: Understanding, lan
     t = concept.type
 
     # ---------------------------------------------------------------- question fermée sur une valeur
+    if assert_value == "__positive__":
+        number = _num(value[0] if isinstance(value, tuple) else value)
+        if number is None:
+            return Rendered(None, issues=[f"valeur non numérique : {value}"], blocking=True)
+        return _bool_out(ontology.vocab_value("yes_no", "yes" if number > 0 else "no"), u, lang, issues, ontology)
     if assert_value is not None:
         actual = ontology.vocab_value(concept.vocab, value)
         if actual is None:
