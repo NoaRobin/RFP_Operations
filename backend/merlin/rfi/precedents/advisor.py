@@ -30,7 +30,9 @@ from .templates import FACT_CONCEPTS, Template, decompose, fill
 FIRM = re.compile(r"(?<![a-z])(sdg|societe de gestion|management company|asset manager|groupe|group|actionnaire|shareholder|capital|"
                   r"signataire|signatory|pri|unpri|sanction|resultat|contact|formulaire|questionnaire|effectif|collaborateurs|"
                   r"employees|siege|firm|company|entreprise|politique de vote|voting policy|engagement policy)(?![a-z])")
-SAME_QUESTION = 0.84  # au-dessus : « même question »
+NEGATIVE = re.compile(r"^(il n'y a pas|il n'y a aucun|aucun|aucune|neant|pas de|no |none|there is no|there are no|nothing)")
+SAME_QUESTION = 0.84
+SAME_WORDING = 0.9  # même question à la formulation près (majorité des autres fonds)  # au-dessus : « même question »
 MAX_CHECKED = 6  # précédents contrôlés dans Fabric par case
 SOFT_FLAGS = ("non précisé", "autre lecture", "lecture indirecte")
 LABELS = {
@@ -256,35 +258,10 @@ class PrecedentAdvisor:
                 return self._proposal("precedent_meme_fonds", slot, h.precedent.answer_text,
                                       f"Repris de l'ancien (même fonds) : {h.precedent.provenance()} répondait « {h.precedent.answer_text[:120]} ». "
                                       "Aucune donnée Fabric ne le confirme : à valider.", public)
-        # 3. Réponse identique pour plusieurs fonds : niveau société, ou pratique habituelle (jamais un chiffre, une date,
-        #    un « non applicable » : propres au fonds et à la date)
-        short = [h for h in close if h.precedent.shape not in {"NUMERIQUE", "DATE", "NARRATIF", "NON_APPLICABLE"}
-                 and len(h.precedent.answer_text) <= 160]
-        if short:
-            answers: dict[str, list[Hit]] = {}
-            for h in short:
-                answers.setdefault(self._answer_key(h.precedent.answer_text), []).append(h)
-            if len(answers) == 1:
-                group = next(iter(answers.values()))
-                funds = {_fund_key(h) for h in group}
-                text = group[0].precedent.answer_text
-                files = ", ".join(sorted({h.precedent.source_file for h in group})[:3])
-                reusable = not _fund_specific(text, group) and not re.search(r"\d", text) and \
-                    not norm(text).startswith(("non applicable", "not applicable", "sans objet"))
-                if len(funds) >= 2 and reusable:
-                    qn = norm(question_of(slot))
-                    if FIRM.search(qn) and not re.search(r"commission|frais|fee|droit d", qn):
-                        return self._proposal("precedent_constant", slot, text,
-                                              f"Repris de l'ancien : réponse identique « {text[:80]} » pour {len(funds)} fonds ({files}). "
-                                              "Question de niveau société, sans donnée Fabric associée : à valider.", public)
-                    return self._proposal("precedent_habituel", slot, text,
-                                          f"Repris de l'ancien : « {text[:80]} » a été répondu pour {len(funds)} autres fonds ({files}). "
-                                          "Question propre au fonds et aucune donnée Fabric pour la confirmer : à vérifier pour ce fonds.",
-                                          public)
-            elif len(answers) > 1:
-                variants = ", ".join(f"« {v[0].precedent.answer_text[:40]} » ×{len(v)}" for v in list(answers.values())[:4])
-                return Decision("aucun", f"Les anciens RFI divergent sur cette question ({variants}) : réponse propre à chaque "
-                                         "fonds, aucune donnée Fabric reconnue. À compléter.", precedents=public)
+        # 3. Ce que les autres fonds ont répondu à la même question : majorité calibrée, chiffrée dans la justification
+        decision = self._majority(slot, question_of(slot), public)
+        if decision is not None:
+            return decision
         # 4. Paragraphe : modèle de rédaction paramétré
         narrative = [h for h in usable if h.precedent.shape == "NARRATIF" or len(h.precedent.answer_text) > 160]
         if narrative:
@@ -294,6 +271,63 @@ class PrecedentAdvisor:
             return Decision("aucun", f"Précédents trouvés mais réutilisation bloquée : {reason}.", precedents=public)
         return Decision("aucun", "Précédents trouvés mais inutilisables tels quels (fonds différents, réponse propre au fonds, "
                                  "bloc ou option à revoir). À compléter.", precedents=public)
+
+    def _same_wording(self, a: str, b: str) -> bool:
+        return norm(a) == norm(b) or any(h.precedent.question == b for h in self.index.search(a, k=20, min_similarity=SAME_WORDING))
+
+    def _majority(self, slot: Slot, question: str, public: list[dict[str, Any]]) -> Decision | None:
+        """Réponses des autres fonds à la même question (libellé quasi identique), regroupées par fonds.
+
+        Règles (une proposition reste toujours « à vérifier ») :
+          - majorité ≥ 75 % des fonds et ≥ 2 fonds ; un seul fonds : seulement pour un oui / non ou un libellé court ;
+          - chiffre ou date : seulement pour une question société, réponse unanime et précédents datés de moins de 4 mois ;
+          - « non applicable » : seulement s'il est unanime sur ≥ 3 fonds ;
+          - jamais de texte qui cite le fonds d'origine (nom, ISIN).
+        """
+        same = [h for h in self._usable(self.index.search(question, k=60, min_similarity=SAME_WORDING))
+                if len(h.precedent.answer_text) <= 160 and h.precedent.shape != "NARRATIF"]
+        if self.current is not None and self.current.isin:
+            same = [h for h in same if h.precedent.isin.upper() != self.current.isin.upper()] or same
+        if not same:
+            return None
+        by_fund: dict[str, Hit] = {}
+        for h in sorted(same, key=lambda h: h.precedent.ref_date, reverse=True):  # la réponse la plus récente de chaque fonds
+            by_fund.setdefault(_fund_key(h), h)
+        groups: dict[str, list[Hit]] = {}
+        for h in by_fund.values():
+            groups.setdefault(self._answer_key(h.precedent.answer_text), []).append(h)
+        ranked = sorted(groups.values(), key=len, reverse=True)
+        top, total = ranked[0], len(by_fund)
+        share = len(top) / total
+        text = top[0].precedent.answer_text
+        qn = norm(question)
+        firm = bool(FIRM.search(qn)) and not re.search(r"commission|frais|fee|droit d", qn)
+        na = norm(text).startswith(("non applicable", "not applicable", "sans objet", "n/a"))
+        numeric = bool(re.search(r"\d", text))
+        others = ", ".join(f"« {g[0].precedent.answer_text[:30]} » ×{len(g)}" for g in ranked[1:4])
+        files = ", ".join(sorted({h.precedent.source_file for h in top})[:2])
+        if _fund_specific(text, top):
+            return None
+        if total > 1 and (len(top) < 2 or share < 0.75):
+            return Decision("aucun", f"Les autres fonds divergent sur cette question (« {text[:30]} » ×{len(top)}, {others}) : "
+                                     "réponse propre à chaque fonds, aucune donnée Fabric reconnue. À compléter.", precedents=public)
+        if numeric:
+            recent = all((d := to_date(h.precedent.ref_date)) is not None and abs((self.as_of - d).days) <= 122 for h in top)
+            if not (firm and len(ranked) == 1 and len(top) >= 2 and recent):
+                return None
+        if na and not (len(ranked) == 1 and len(top) >= 3):
+            return None
+        if total == 1 and self.ontology.vocab_value("yes_no", text) is None:
+            return None  # un seul autre fonds : preuve trop faible, sauf pour un oui / non (signalé)
+        stats = f"{len(top)} fonds sur {total}" + (f" ({share:.0%}) ; autres réponses : {others}" if len(ranked) > 1 else "")
+        if firm:
+            return self._proposal("precedent_constant", slot, text,
+                                  f"Repris de l'ancien : « {text[:80]} » répondu pour {stats} ({files}). Question de niveau société"
+                                  + (f", donnée datée du {top[0].precedent.ref_date[:10]}" if numeric else "") + " : à valider.", public)
+        caution = " Un seul précédent : à vérifier avec soin." if total == 1 else ""
+        return self._proposal("precedent_habituel", slot, text,
+                              f"Repris de l'ancien : « {text[:80]} » répondu pour {stats} ({files}). Question propre au fonds, "
+                              f"aucune donnée Fabric pour la confirmer : à vérifier pour ce fonds.{caution}", public)
 
     def _firm(self, slot: Slot, concept: Concept) -> Decision:
         """Question de niveau société : on regroupe les anciens RFI par concept (toutes formulations, FR/EN)."""
@@ -310,7 +344,8 @@ class PrecedentAdvisor:
         for p in members:
             if concept.type == "bool":
                 lead = re.split(r"[\s/,.;:()\-]+", norm(p.answer_text).strip())[0] if p.answer_text.strip() else ""
-                v = self.ontology.vocab_value("yes_no", p.answer_text) or self.ontology.vocab_value("yes_no", lead)
+                v = self.ontology.vocab_value("yes_no", p.answer_text) or self.ontology.vocab_value("yes_no", lead) \
+                    or (self.ontology.vocab_value("yes_no", "no") if NEGATIVE.match(norm(p.answer_text)) else None)
                 if v is None:
                     continue  # paragraphe sans oui / non explicite : ni pour ni contre
                 votes.setdefault(v.id, []).append(p)
@@ -329,6 +364,10 @@ class PrecedentAdvisor:
             text = (vocab.fr if self.lang == "fr" else vocab.en) if vocab else group[0].answer_text
         else:
             text = group[0].answer_text
+        # Formulation maison : si les autres fonds ont reçu une réponse rédigée à cette même question, on la reprend
+        house = [p for p in group if self._same_wording(question_of(slot), p.question)]
+        if house and not slot.options and len({norm(p.answer_text) for p in house}) == 1 and not re.search(r"\d", house[0].answer_text):
+            text = house[0].answer_text
         if slot.options:
             texts = [text, group[0].answer_text] + ([vocab.fr, vocab.en] if concept.type == "bool" and vocab else [])
             option, _ = choose_option(slot.options, texts=texts, vocab=vocab if concept.type == "bool" else None,
