@@ -21,6 +21,10 @@ from . import perf as P
 from .ontology import Concept, Ontology
 from .understand import Period, Understanding
 
+# Labels présents dans Product Info (liste incomplète : un « non » ne peut pas être affirmé à partir d'elle)
+LABEL_COLUMNS = {"RSI_french_label": "ISR", "Belgium_Towards_Sustainability_label": "Towards Sustainability", "Finansol_Label": "Finansol"}
+# Coûts de transaction du DIC (PRIIPs) = explicites + implicites, moyennes 3 ans ex ante — À CONFIRMER avec l'équipe Data
+KID_TRANSACTION_COLUMNS = ("Explicit_Transaction_costs_ex_ante_3_years_mean", "Implicit_trans_costs_ex_ante3Y_mean")
 PRODUCT, SHARE, REGISTRATION = "pi_out_product_active", "PI_OUT_Share", "PI_OUT_CountryOfRegistration"
 
 
@@ -93,6 +97,8 @@ class Values:
         cols |= {concept.asof.split(".", 1)[1] for concept in self.ontology.usable() if concept.asof and concept.asof.startswith(table + ".")}
         if table == SHARE:
             cols |= {"pi_shareid", "ProductID", "ISIN_Code", "Subscription_Currency"}
+        if table == PRODUCT:
+            cols |= set(LABEL_COLUMNS) | set(KID_TRANSACTION_COLUMNS)
         return sorted(cols)
 
     def load(self) -> None:
@@ -265,6 +271,8 @@ class Values:
                 return Raw(None, "Product Info · PI_OUT_CountryOfRegistration.Country", note="aucun pays reconnu dans la question")
             ids = {(self.ontology.vocab_value("country", c).id if self.ontology.vocab_value("country", c) else c) for c in countries}
             return Raw("yes" if all(c in ids for c in u.countries) else "no", "Product Info · PI_OUT_CountryOfRegistration.Country")
+        if kind == "fund":
+            return self._fund_measure(measure)
         if kind == "precedent":
             return Raw(None, "anciens RFI", note="réponse de niveau société : tirée des anciens RFI, pas de Fabric")
         if kind == "meta":
@@ -274,6 +282,29 @@ class Values:
         if kind == "jump":
             return self._jump_measure(measure, u)
         return self._perf_measure(measure, u)
+
+    def _fund_measure(self, measure: str) -> Raw:
+        self.load()
+        row = self._product
+        if row is None:
+            return Raw(None, PRODUCT, note="fiche Product Info du fonds introuvable")
+        if measure in {"labels", "labelled"}:
+            held = []
+            for column, name in LABEL_COLUMNS.items():
+                v = self.ontology.vocab_value("yes_no", row.get(column))
+                raw = row.get(column)
+                if (v is not None and v.id == "yes") or (v is None and not is_empty(raw) and str(raw).strip().lower() not in {"0", "false", "non", "no"}):
+                    held.append(name)
+            evidence = "Product Info · " + ", ".join(f"{PRODUCT}.{c}" for c in LABEL_COLUMNS)
+            if not held:
+                return Raw(None, evidence, note="aucun label dans Product Info (ISR, Towards, Finansol) : un autre label reste possible")
+            return Raw("yes" if measure == "labelled" else ", ".join(held), evidence)
+        if measure == "transaction_costs_kid":
+            parts = [_num(row.get(c)) for c in KID_TRANSACTION_COLUMNS]
+            if any(p is None for p in parts):
+                return Raw(None, "Product Info · coûts de transaction ex ante", note="coût explicite ou implicite manquant")
+            return Raw(round(sum(parts), 4), "Product Info · " + " + ".join(f"{PRODUCT}.{c}" for c in KID_TRANSACTION_COLUMNS))
+        return Raw(None, measure, note="mesure inconnue")
 
     def _jump_measure(self, measure: str, u: Understanding) -> Raw:
         at = self.date_for(u)

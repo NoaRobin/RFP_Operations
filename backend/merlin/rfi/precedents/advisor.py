@@ -31,6 +31,16 @@ FIRM = re.compile(r"(?<![a-z])(sdg|societe de gestion|management company|asset m
                   r"signataire|signatory|pri|unpri|sanction|resultat|contact|formulaire|questionnaire|effectif|collaborateurs|"
                   r"employees|siege|firm|company|entreprise|politique de vote|voting policy|engagement policy)(?![a-z])")
 NEGATIVE = re.compile(r"^(il n'y a pas|il n'y a aucun|aucun|aucune|neant|pas de|no |none|there is no|there are no|nothing)")
+# Questions sur la société de gestion (organisation, conformité, risques, négociation…) : réponse rédigée réutilisable
+FIRM_TOPIC = re.compile(r"(?<![a-z])(organisation|organization|la societe|votre societe|your firm|the firm|the company|the organisation|"
+                        r"the group|le groupe|staff|employees|collaborateurs|effectifs?|compliance|conformite|deontolog|code of ethics|"
+                        r"code of conduct|blanchiment|money laundering|anti-corruption|personal account|transactions personnelles|"
+                        r"best execution|meilleure execution|brokers?|courtiers?|counterpart|contreparties|soft dollar|soft commission|"
+                        r"trading desk|table de negociation|transmission des ordres|order transmission|disaster recovery|"
+                        r"plan de continuite|business continuity|cyber|auditeur|external auditor|commissaire aux comptes de la societe|"
+                        r"remuneration policy|politique de remuneration|cio|directeur des investissements|comite d'investissement|"
+                        r"investment committee|risk management function|departement de gestion des risques|gestion des risques independant|"
+                        r"controle interne|internal control|historique de la societe|history of the firm|actionnariat|shareholding)(?![a-z])")
 SAME_QUESTION = 0.84
 SAME_WORDING = 0.9  # même question à la formulation près (majorité des autres fonds)  # au-dessus : « même question »
 MAX_CHECKED = 6  # précédents contrôlés dans Fabric par case
@@ -89,6 +99,7 @@ class FundResolver:
     """Retrouve dans Product Info le fonds d'un précédent (ISIN, sinon nom exact du fonds ou de la part)."""
 
     def __init__(self, directory: list[dict[str, Any]]):
+        self.names: set[str] = set()  # tous les noms de fonds et de parts connus (texte propre à un fonds)
         self.by_isin: dict[str, Entity] = {}
         self.by_name: dict[str, Entity] = {}
         for item in directory:
@@ -96,7 +107,9 @@ class FundResolver:
                 ent = Entity(item["pid"], s["isin"], s["name"] or item["name"])
                 self.by_isin[s["isin"].upper()] = ent
                 self.by_name.setdefault(norm(s["name"]), ent)
+                self.names.add(norm(s["name"]))
             self.by_name.setdefault(norm(item["name"]), Entity(item["pid"], None, item["name"]))
+            self.names.add(norm(item["name"]))
 
     def resolve(self, isin: str, fund_name: str, share_name: str) -> Entity | None:
         if isin and isin.upper() in self.by_isin:
@@ -116,8 +129,10 @@ def _fund_key(h: Hit) -> str:
     return (p.isin or norm(p.fund_name) or norm(p.share_name) or p.source_file).upper()
 
 
-def _fund_specific(text: str, hits: list[Hit]) -> bool:
+def _fund_specific(text: str, hits: list[Hit], names: set[str] | None = None) -> bool:
     t = norm(text)
+    if names and any(len(n) >= 8 and n in t for n in names):
+        return True
     for h in hits:
         for name in (h.precedent.fund_name, h.precedent.share_name):
             if name and len(name) >= 4 and norm(name) in t:
@@ -262,7 +277,17 @@ class PrecedentAdvisor:
         decision = self._majority(slot, question_of(slot), public)
         if decision is not None:
             return decision
-        # 4. Paragraphe : modèle de rédaction paramétré
+        # 4. Réponse société rédigée (organisation, conformité, négociation…) : reprise de la plus récente, à relire
+        firm_text = [h for h in close if FIRM_TOPIC.search(norm(question_of(slot))) and not _fund_specific(h.precedent.answer_text, [h], self._names())
+                     and len(h.precedent.answer_text) > 3]
+        if firm_text:
+            h = max(firm_text, key=lambda x: (x.similarity, x.precedent.ref_date))
+            dated = " Le texte contient des chiffres ou des dates : à mettre à jour." if re.search(r"\d", h.precedent.answer_text) else ""
+            return self._proposal("precedent_constant", slot, h.precedent.answer_text,
+                                  f"Repris de l'ancien : réponse société rédigée dans {h.precedent.provenance()} "
+                                  f"(question {h.similarity:.0%} semblable). Texte de niveau société, reprise tel quel : à relire.{dated}",
+                                  public)
+        # 5. Paragraphe : modèle de rédaction paramétré
         narrative = [h for h in usable if h.precedent.shape == "NARRATIF" or len(h.precedent.answer_text) > 160]
         if narrative:
             return self._narrative(slot, u, narrative[0], public)
@@ -271,6 +296,14 @@ class PrecedentAdvisor:
             return Decision("aucun", f"Précédents trouvés mais réutilisation bloquée : {reason}.", precedents=public)
         return Decision("aucun", "Précédents trouvés mais inutilisables tels quels (fonds différents, réponse propre au fonds, "
                                  "bloc ou option à revoir). À compléter.", precedents=public)
+
+    def _names(self) -> set[str]:
+        if not hasattr(self, "_names_cache"):
+            names = set(self.resolver.names)
+            names |= {norm(p.fund_name) for p in self.index.store.all() if p.fund_name} if self.index.store.count() < 50000 else set()
+            names |= {norm(p.share_name) for p in self.index.store.all() if p.share_name} if self.index.store.count() < 50000 else set()
+            self._names_cache = {n for n in names if n}
+        return self._names_cache
 
     def _same_wording(self, a: str, b: str) -> bool:
         return norm(a) == norm(b) or any(h.precedent.question == b for h in self.index.search(a, k=20, min_similarity=SAME_WORDING))
@@ -306,7 +339,7 @@ class PrecedentAdvisor:
         numeric = bool(re.search(r"\d", text))
         others = ", ".join(f"« {g[0].precedent.answer_text[:30]} » ×{len(g)}" for g in ranked[1:4])
         files = ", ".join(sorted({h.precedent.source_file for h in top})[:2])
-        if _fund_specific(text, top):
+        if _fund_specific(text, top, self._names()):
             return None
         if total > 1 and (len(top) < 2 or share < 0.75):
             return Decision("aucun", f"Les autres fonds divergent sur cette question (« {text[:30]} » ×{len(top)}, {others}) : "

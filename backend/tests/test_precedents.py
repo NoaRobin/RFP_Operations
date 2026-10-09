@@ -227,3 +227,34 @@ def test_sharepoint_due_diligence_with_one_folder_per_fund(tmp_path):
     assert all("Original" not in d["path"] for d in listing["documents"])
     beta = nav.final_documents(path, "beta")
     assert [d["fund"] for d in beta["documents"]] == ["Fonds Imaginaire Beta"]
+
+
+def test_firm_narrative_reused_unless_it_names_a_fund(tmp_path, client):
+    from datetime import date
+
+    from merlin.rfi.layout import detect
+    from merlin.rfi.precedents import PrecedentIndex, PrecedentStore
+    from merlin.rfi.precedents.importers import import_lot02
+    from merlin.rfi.service import RfiStore, analyze
+    from merlin.state import get_state
+
+    _bind_funds(client)
+    text = "La société dispose d'une politique de meilleure exécution revue chaque année par la Conformité (texte fictif)."
+    corpus = {"answer_examples": [
+        {**_example(1, "Quelle politique mettez-vous en œuvre pour assurer la meilleure exécution des ordres ?", text, B, ref="r1", shape="NARRATIF")},
+        {**_example(2, "Décrivez votre plan de continuité d'activité", f"Le plan couvre notamment {B[2]}.", B, ref="r2", shape="NARRATIF")},
+    ], "identity_issues": []}
+    index = PrecedentIndex(PrecedentStore(tmp_path / "p.sqlite"))
+    import_lot02(index.store, corpus)
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["Question", "Réponse"])
+    ws.append(["Quelle politique mettez vous en œuvre pour assurer la meilleure exécution des ordres ?", None])
+    ws.append(["Décrivez votre plan de continuité d'activité.", None])
+    path = tmp_path / "ddq.xlsx"
+    wb.save(path)
+    r = analyze(get_state().data, RfiStore(tmp_path / "rfi"), path, detect(path), A[0], A[1], date.today().isoformat(), None, None, index)
+    best, bcp = r["questions"]
+    assert best["answer"] == text and best["status"] == "review" and "à relire" in best["precedent"]["justification"]
+    # le texte cite un fonds : jamais repris tel quel ; au mieux modèle paramétré avec le nom du fonds courant
+    assert bcp["precedent"]["kind"] == "modele_redaction" and B[2] not in (bcp["answer"] or "")

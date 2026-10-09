@@ -213,3 +213,18 @@ cases:
   - {q: "Le fonds a-t-il un incident de conformité ?", concept: null}
   - {q: "Quand le gérant a-t-il commencé cette stratégie ?", concept: null}
   - {q: "Quelles sont les émissions scope 1 en 2025 ?", concept: null}
+  # ------------------------------------------------------------- campagne complétion (banc de rejeu lot 02)
+  - {q: "Jour d'établissement de la valeur liquidative", concept: fonds.jour_calcul_vl}
+  - {q: "Délai de règlement-livraison (J+?)", concept: part.reglement_souscription}
+  - {q: "Nature du fonds", concept: fonds.forme_juridique}
+  - {q: "Commissions de sur-Performance?", concept: part.commission_surperformance}
+  - {q: "Towards Sustainable Label", concept: fonds.label_towards}
+  - {q: "Le support est-il labélisé ?", concept: fonds.est_labellise}
+  - {q: "Si oui, quel label ?", concept: fonds.labels}
+  - {q: "Coûts de transaction", concept: fonds.couts_transaction_dic}
+  - {q: "Frais Courants DIC (hors frais de transactions)", concept: part.frais_courants_ex_ante}
+  - {q: "Coûts de transaction explicites ex post", concept: fonds.couts_transaction_explicites_ex_post}
+  - {q: "Autre Label (plusieurs réponses possibles)", concept: null}
+  - {q: "Date d'obtention du label ISR", concept: null}
+  - {q: "Signataire PRI", concept: societe.signataire_pri}
+  - {q: "PRI transparency score", concept: null}

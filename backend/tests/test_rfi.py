@@ -186,3 +186,24 @@ def test_library_learns_validated_answers(client):
     doc2, body2, analysis2 = _analyze(client, "xlsx")
     learned = next(x for x in analysis2["questions"] if x["question"] == question["question"])
     assert learned["source"] == "bibliothèque" and learned["answer"].startswith("Réponse type")
+
+
+def test_question_named_like_a_header_does_not_hide_rows_above(tmp_path):
+    """« Label » au milieu d'une liste n'est pas un en-tête de colonne (cas réel : questionnaire DATA_OPC)."""
+    wb = Workbook()
+    ws = wb.active
+    for q in ["ISIN", "Nom du fonds", "Date de lancement", "SRI", "SFDR", "Label", "Catégorie de fonds"]:
+        ws.append([None, q, None])
+    path = tmp_path / "data.xlsx"
+    wb.save(path)
+    assert [s.question for s in detect(path).slots][:2] == ["ISIN", "Nom du fonds"]
+
+
+def test_computed_sources_use_catalog_columns_only():
+    from merlin.rfi.values import KID_TRANSACTION_COLUMNS, LABEL_COLUMNS, PRODUCT
+    from merlin.config import get_settings
+    from merlin.data.catalog import load_catalog
+
+    table = load_catalog(str(get_settings().catalog_csv)).table(PRODUCT)
+    for column in [*LABEL_COLUMNS, *KID_TRANSACTION_COLUMNS]:
+        assert table.column(column) is not None, column

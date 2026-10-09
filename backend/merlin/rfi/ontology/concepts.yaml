@@ -48,7 +48,7 @@ concepts:
     type: enum
     vocab: legal_form
     source: pi_out_product_active.Legal_Form
-    terms: [forme juridique, structure juridique, type de vehicule, forme de l'opc, nature juridique, vehicule juridique, legal form, legal structure, vehicle type, type of vehicle, fund structure, legal vehicle, legal type, fund type, type of fund, legal status]
+    terms: [forme juridique, structure juridique, type de vehicule, forme de l'opc, nature juridique, vehicule juridique, legal form, legal structure, vehicle type, type of vehicle, fund structure, legal vehicle, legal type, fund type, type of fund, legal status, nature du fonds, nature de l'opc]
     exclude: [ucits, opcvm, aif, fia, sfdr]
 
   - id: fonds.reglementation
@@ -262,7 +262,7 @@ concepts:
     scope: fund
     type: bool
     source: pi_out_product_active.Investment_Management_Delegation
-    terms: [delegation de gestion, delegation de la gestion financiere, gestion deleguee, delegated investment management, investment management delegated, is the management delegated, delegation of portfolio management]
+    terms: [delegation de gestion, delegation de la gestion financiere, gestion deleguee, delegated investment management, investment management delegated, is the management delegated, delegation of portfolio management, gere par un delegataire, geree par un delegataire, managed by a delegate]
     exclude: [nom, name, delegataire, qui, who]
 
   - id: fonds.delegataire_gestion
@@ -270,7 +270,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Delegation_investment_manager
-    terms: [delegataire de gestion, delegataire de la gestion financiere, gestionnaire delegue, sub-investment manager, sub investment manager, delegated investment manager, sub-advisor, sub-adviser, sub-manager]
+    terms: [delegataire de gestion, delegataire de la gestion financiere, gestionnaire delegue, sub-investment manager, sub investment manager, delegated investment manager, sub-advisor, sub-adviser, sub-manager, delegated fund manager, gestionnaire financier par delegation]
 
   - id: fonds.conseiller
     label: Conseiller en investissement | Investment advisor
@@ -432,7 +432,7 @@ concepts:
     scope: fund
     type: bool
     source: pi_out_product_active.Belgium_Towards_Sustainability_label
-    terms: [towards sustainability, febelfin, label belge, belgian label]
+    terms: [towards sustainability, febelfin, label belge, belgian label, towards sustainable, towards sustainable label]
 
   - id: fonds.label_finansol
     label: Label Finansol ? | Finansol label?
@@ -463,7 +463,7 @@ concepts:
     type: percent
     range: [0, 100]
     source: pi_out_product_active.PerCent_Min_SI_EET_20420
-    terms: [part minimale d'investissements durables, part minimum d'investissements durables, proportion minimale d'investissements durables, pourcentage minimum d'investissements durables, minimum proportion of sustainable investments, minimum share of sustainable investments, minimum percentage of sustainable investments, minimum sustainable investment, investissements durables & minim, sustainable investments & minim]
+    terms: [part minimale d'investissements durables, part minimum d'investissements durables, proportion minimale d'investissements durables, pourcentage minimum d'investissements durables, minimum proportion of sustainable investments, minimum share of sustainable investments, minimum percentage of sustainable investments, minimum sustainable investment, investissements durables & minim, sustainable investments & minim, min. sustainable investment, min sustainable investment, minimum sustainable investment %]
     exclude: [environnemental, environmental, social, taxonomie, taxonomy]
 
   - id: fonds.part_min_id_environnemental
@@ -745,7 +745,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.NAV_Calculation_Day
-    terms: [jour de calcul de la vl, jour d'etablissement de la vl, jour de valorisation, date de calcul de la vl, nav calculation day, valuation day, dealing day, valuation point, jour de centralisation & vl]
+    terms: [jour de calcul de la vl, jour d'etablissement de la vl, jour de valorisation, date de calcul de la vl, nav calculation day, valuation day, dealing day, valuation point, jour de centralisation & vl, jour d'etablissement de la valeur liquidative, jour d'etablissement & valeur liquidative, jour de calcul de la valeur liquidative]
 
   - id: fonds.depositaire
     label: Dépositaire | Depositary
@@ -891,7 +891,7 @@ concepts:
     type: enum
     vocab: distribution_policy
     source: PI_OUT_Share.Income_Distribution
-    terms: [affectation des resultats, affectation des revenus, affectation des sommes distribuables, politique de distribution, capitalisation ou distribution, capitalisation/distribution, capitalisante ou distribuante, distribution policy, income treatment, income allocation, accumulation or distribution, accumulating or distributing, acc/dis, dividend policy, income policy, distribution or capitalisation, use of income, capi & distri, capi/distri, type de part & capitalisation, type de part & distribution, accumulating & distributing]
+    terms: [affectation des resultats, affectation des revenus, affectation des sommes distribuables, politique de distribution, capitalisation ou distribution, capitalisation/distribution, capitalisante ou distribuante, distribution policy, income treatment, income allocation, accumulation or distribution, accumulating or distributing, acc/dis, dividend policy, income policy, distribution or capitalisation, use of income, capi & distri, capi/distri, type de part & capitalisation, type de part & distribution, accumulating & distributing, capitalisation des revenus, distribution des revenus]
     exclude: [frequence, frequency, montant, amount, date, dernier, last, rendement, yield, historique, history]
 
   - id: part.frequence_distribution
@@ -1033,7 +1033,7 @@ concepts:
     range: [0, 10]
     source: PI_OUT_Share.Ongoing_Charges_ex_ante
     asof: PI_OUT_Share.Ongoing_Charges_ex_ante_Calculation_Date
-    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais courants dic]
+    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais courants dic, frais de gestion & kid, frais de gestion & dic, frais de gestion et autres frais administratifs et d'exploitation]
     exclude: [date, calcul au, calculated as of, methode, method, transaction, entree, sortie, entry, exit, souscription, rachat, subscription, redemption, surperformance, performance fee, retrocession, trailer]
     facets: {timing: ex_ante}
 
@@ -1104,7 +1104,7 @@ concepts:
     scope: share
     type: bool
     source: PI_OUT_Share.Performance_fees
-    terms: [commission de surperformance, commissions de surperformance, frais de surperformance, commission de performance, frais variables de gestion, performance fee, performance fees, incentive fee, outperformance fee, carried interest]
+    terms: [commission de surperformance, commissions de surperformance, frais de surperformance, commission de performance, frais variables de gestion, performance fee, performance fees, incentive fee, outperformance fee, carried interest, commissions de sur-performance, commission de sur-performance, sur-performance]
     exclude: [taux, rate, "%", pourcentage, percentage, montant, amount, preleve, charged, dernier exercice, last financial year, moyenne, average, formule, formula, methode, method, mode de calcul, calculation, hurdle, seuil, indice, benchmark, high water mark, hwm, periode, period, cristallisation, crystallisation, plafond, cap]
 
   - id: part.commission_surperformance_formule
@@ -1210,7 +1210,7 @@ concepts:
     scope: share
     type: text
     source: PI_OUT_Share.Subscription_Settlement_Date
-    terms: [date de reglement, delai de reglement, reglement livraison, date de valeur, reglement des souscriptions, settlement date, settlement period, settlement cycle, settlement, settlement delay, payment date, value date, reglement]
+    terms: [date de reglement, delai de reglement, reglement livraison, date de valeur, reglement des souscriptions, settlement date, settlement period, settlement cycle, settlement, settlement delay, payment date, value date, reglement, reglement-livraison, delai de reglement-livraison, reglement / livraison, delai de reglement livraison]
     exclude: [heure, time, cut-off, cutoff, devise, currency, monnaie, mode de reglement, method of payment, compte, account, plateforme, platform, euroclear, clearstream]
     facets: {direction: subscription}
     default: [direction]
@@ -1399,7 +1399,7 @@ concepts:
     scope: share
     type: bool
     source: registration:in_country
-    terms: [enregistre, enregistree, enregistres, autorise, autorisee, commercialisable, registered, authorised, authorized, approved for sale, passported, notified]
+    terms: [enregistre, enregistree, enregistres, autorise, autorisee, commercialisable, registered, authorised, authorized, approved for sale, passported, notified, disponible a la vente, disponible a la commercialisation, eligible a la vente, available for sale, distributed in]
     require: [country_mention]
     exclude: [pays d'enregistrement, countries of registration, liste, list, lesquels, which countries]
 
@@ -1779,3 +1779,30 @@ concepts:
     type: bool
     source: precedent:firm
     terms: [net zero asset manager, net zero asset managers, nzam]
+
+  # =================================================================== DONNÉES CALCULÉES À PARTIR DE COLONNES EXISTANTES
+  - id: fonds.est_labellise
+    label: Fonds labellisé ? (ISR, Towards Sustainability, Finansol) | Labelled fund?
+    scope: fund
+    type: bool
+    source: fund:labelled
+    terms: [labellise, labelise, labelises, fonds labellise, support labellise, labelled, labeled, has a label, holds a label, label de durabilite, sustainability label, labels de durabilite]
+    exclude: [quel label, quels labels, which label, which labels, isr, finansol, towards, greenfin, relance, depuis, since, date, obtention, organisme, autre label, other label]
+
+  - id: fonds.labels
+    label: Labels du fonds (parmi ISR, Towards Sustainability, Finansol) | Fund labels
+    scope: fund
+    type: text
+    source: fund:labels
+    terms: [quel label, quels labels, labels obtenus, label du fonds, labels du fonds, which label, which labels, label esg, labels esg, fund labels, responsible investment labels]
+    exclude: [depuis, since, date, obtenu le, renouvel, audit, organisme, certification body, autre label, other label, other responsible]
+
+  - id: fonds.couts_transaction_dic
+    label: Coûts de transaction du DIC (explicites + implicites, ex ante — À CONFIRMER) | KID transaction costs
+    scope: fund
+    type: percent
+    range: [-5, 10]
+    source: fund:transaction_costs_kid
+    ambiguous_always: true
+    terms: [couts de transaction, frais de transaction, frais de transactions, transaction costs, couts de transaction & kid, couts de transaction & dic, frais de transactions dic, transaction costs & kid, portfolio transaction costs]
+    exclude: [explicite, explicit, implicite, implicit, ex post, ex-post, realise, realised, actual, hors frais de transaction, excluding transaction, methode, method, calcul, calculation]

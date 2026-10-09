@@ -376,6 +376,9 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
             n = norm(v)
             if not n or len(n) > 70:
                 continue
+            above = sum(1 for rr in range(r) if is_question_text(grid[rr][c]))
+            if above >= 2:
+                continue  # une ligne précédée de questions dans la même colonne n'est pas un en-tête (« Label », « Valeur »…)
             if ANSWER_HEADER.match(n) or (re.search(r"(?<![a-z])(?:reponses?|answers?|responses?)(?![a-z])", n) and not n.endswith("?")
                                           and not re.search(r"commentaire|comment|precision", n)):
                 answer_col, header_row, found = c, r + 1, True
@@ -462,6 +465,8 @@ def _looks_like_title(text: str) -> bool:
     t = text.strip()
     # Titre de section : MAJUSCULES, ou numérotation romaine / lettre (« II. Frais », « B) Gestion »).
     # Un libellé court (« Forme juridique ») suivi d'une case vide est une question, pas un titre.
+    if re.fullmatch(r"[A-Z0-9/&.\-]{2,8}", t):
+        return False  # sigle seul (ISIN, SRI, SFDR, LEI, NAV, TER…) : c'est une donnée demandée, pas un titre
     return len(t) < 70 and not t.endswith(("?", ":")) and (t.isupper() or bool(re.match(r"^(?:[IVX]{1,4}|[A-H])[.)]\s", t)))
 
 
