@@ -83,6 +83,7 @@ class PrecedentIndex:
         self._vecs: dict[str, tuple[dict[str, float], float]] = {}
         self._emb: dict[str, np.ndarray] = {}
         self._words: dict[str, set[str]] = {}
+        self._members: dict[tuple, list[str]] = {}
 
     def _refresh(self) -> None:
         if self._version == self.store.version and self._vecs:
@@ -121,6 +122,25 @@ class PrecedentIndex:
         if qemb is not None and pid in self._emb:
             return 0.5 * lexical + 0.5 * float(np.dot(qemb, self._emb[pid]))
         return lexical
+
+    def concept_members(self, ontology, concept) -> list[Precedent]:
+        """Précédents dont la question désigne ce concept (quelle que soit la formulation) : regroupement par le sens."""
+        from ..match import score_concept
+        from ..understand import understand
+
+        self._refresh()
+        key = ("members", self.store.version, concept.id)
+        if key not in self._members:
+            questions: dict[str, list[str]] = {}
+            for pid, q in self.store.questions():
+                questions.setdefault(q, []).append(pid)
+            ids = []
+            for q, pids in questions.items():
+                cand = score_concept(ontology, concept, understand(ontology, q))
+                if cand is not None and cand.score >= 0.45:
+                    ids.extend(pids)
+            self._members[key] = ids
+        return self.store.get(self._members[key])
 
     def search(self, question: str, k: int = 8, min_similarity: float = 0.72) -> list[Hit]:
         self._refresh()

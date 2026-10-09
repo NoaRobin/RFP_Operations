@@ -181,6 +181,9 @@ class PrecedentAdvisor:
     # ------------------------------------------------------------------ décision
     def advise(self, slot: Slot, u: Understanding, row: dict[str, Any]) -> Decision:
         question = f"{slot.parent} — {slot.question}" if slot.parent else slot.question
+        firm = self.ontology.concepts.get(row.get("concept") or "")
+        if firm is not None and str(firm.source).startswith("precedent:"):
+            return self._firm(slot, firm)
         hits = self.index.search(question, k=8)
         usable = self._usable(hits)
         concept = self.ontology.concepts.get(row.get("concept") or "")
@@ -291,6 +294,55 @@ class PrecedentAdvisor:
             return Decision("aucun", f"Précédents trouvés mais réutilisation bloquée : {reason}.", precedents=public)
         return Decision("aucun", "Précédents trouvés mais inutilisables tels quels (fonds différents, réponse propre au fonds, "
                                  "bloc ou option à revoir). À compléter.", precedents=public)
+
+    def _firm(self, slot: Slot, concept: Concept) -> Decision:
+        """Question de niveau société : on regroupe les anciens RFI par concept (toutes formulations, FR/EN)."""
+        members = [p for p in self.index.concept_members(self.ontology, concept)
+                   if p.kind in {"answer", "checkbox"} and not p.empty and classify_cell(p.answer_text)[0] == "answered"]
+        blocked = [p for p in members if p.blocked]
+        members = [p for p in members if not p.blocked]
+        public = [{**p.to_public(), "similarity": 1.0, "check": None} for p in (members + blocked)[:8]]
+        if not members:
+            why = " (seuls des précédents à identité bloquée)" if blocked else ""
+            return Decision("aucun", f"Question société ({concept.label(self.lang)}) : aucun ancien RFI exploitable{why}. À compléter.",
+                            concept=concept.id, precedents=public)
+        votes: dict[str, list] = {}
+        for p in members:
+            if concept.type == "bool":
+                lead = re.split(r"[\s/,.;:()\-]+", norm(p.answer_text).strip())[0] if p.answer_text.strip() else ""
+                v = self.ontology.vocab_value("yes_no", p.answer_text) or self.ontology.vocab_value("yes_no", lead)
+                if v is None:
+                    continue  # paragraphe sans oui / non explicite : ni pour ni contre
+                votes.setdefault(v.id, []).append(p)
+            else:
+                if len(p.answer_text) <= 120 and not re.search(r"\d", p.answer_text):
+                    votes.setdefault(norm(p.answer_text), []).append(p)
+        sources = lambda ps: len({p.source_file for p in ps})
+        if len(votes) != 1:
+            detail = ", ".join(f"« {ps[0].answer_text[:30]} » ×{sources(ps)}" for ps in votes.values()) or "réponses non interprétables"
+            return Decision("aucun", f"Question société ({concept.label(self.lang)}) : les anciens RFI ne concordent pas ({detail}). À trancher.",
+                            concept=concept.id, precedents=public)
+        value, group = next(iter(votes.items()))
+        files = sorted({p.source_file for p in group})
+        if concept.type == "bool":
+            vocab = self.ontology.vocab_value("yes_no", value)
+            text = (vocab.fr if self.lang == "fr" else vocab.en) if vocab else group[0].answer_text
+        else:
+            text = group[0].answer_text
+        if slot.options:
+            texts = [text, group[0].answer_text] + ([vocab.fr, vocab.en] if concept.type == "bool" and vocab else [])
+            option, _ = choose_option(slot.options, texts=texts, vocab=vocab if concept.type == "bool" else None,
+                                      ontology=self.ontology, vocab_name="yes_no" if concept.type == "bool" else None)
+            if option is None:
+                return Decision("aucun", f"Anciens RFI : « {text} », mais cette réponse n'est pas dans la liste déroulante.",
+                                concept=concept.id, precedents=public)
+            text = option
+        return Decision("precedent_constant",
+                        f"Repris de l'ancien : « {text} » répondu dans {len(files)} questionnaire(s) ({', '.join(files[:3])}"
+                        f"{'…' if len(files) > 3 else ''}), formulations différentes regroupées par le sens "
+                        f"({concept.label(self.lang)}). Question société, aucune donnée Fabric : à vérifier.",
+                        answer=text, value=text, option=text if slot.options else None, status="review", concept=concept.id,
+                        precedents=public)
 
     def _proposal(self, kind: str, slot: Slot, text: str, justification: str, public: list[dict[str, Any]]) -> Decision:
         option = None

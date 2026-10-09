@@ -88,6 +88,16 @@ anciens RFI ──► importers.py   bibliothèque de wording (json/zip) · RFI 
 | Incohérence | l'ancienne réponse ≠ donnée Fabric du fonds d'alors | les deux sont montrées, jamais d'écriture automatique |
 | Modèle d'ontologie | aucun précédent comparable ou vérifiable | inchangé |
 
+**Questions société** (PRI, sanction AMF, actionnaire, politiques de vote / d'engagement, NZAM) : concepts
+`societe.*` sans donnée Fabric (`source: precedent:firm`). Les anciens RFI sont regroupés **par le sens** (le même
+moteur d'ontologie lit chaque ancienne question), pas par ressemblance de libellé : « Signataire PRI », « Est-ce que
+l'Asset Manager est signataire des PRI ? » et « UNPRI signatory? » comptent ensemble. Oui / Yes / OUI sont unifiés ;
+un paragraphe sans oui / non explicite ne compte ni pour ni contre ; un désaccord bloque la proposition.
+
+**JUMP** : la part est retrouvée dans `JUMP_portfolio_aum` par son ISIN (puis `ID_PI_PART`, `ID_PI_FONDS`) ; encours,
+inventaire et performances utilisent ensuite `ID_JUMP_FONDS` / `ID_JUMP_PART`, avec repli sur les identifiants PI.
+Si rien n'est trouvé, la raison est affichée dans les alertes de l'analyse.
+
 Garde-fous : `auto_copy_allowed` toujours faux ; un commentaire vide n'est jamais un « NON » ; une consigne restée dans
 l'ancien document (« réponse binaire ») n'est pas une réponse ; anomalie d'identité (ISIN du nom de fichier ≠ ISIN de la
 cellule, clé invalide) → **réutilisation bloquée** (cas AXA du lot 02 : 63 entrées) ; aucune valeur source corrigée.

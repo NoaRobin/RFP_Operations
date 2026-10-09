@@ -1732,3 +1732,50 @@ concepts:
     range: [1, 7]
     source: pi_out_product_active.Previous_month_SRI
     terms: [sri & mois precedent, sri & previous month, sri du mois precedent, previous month sri, sri le mois precedent]
+
+  # =================================================================== SOCIÉTÉ DE GESTION (aucune donnée Fabric : réponses tirées des anciens RFI)
+  - id: societe.signataire_pri
+    label: Société de gestion signataire des PRI ? | Management company PRI signatory?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [signataire & pri, signataire & unpri, signataire pri, signatory & pri, signatory & unpri, unpri signatory, pri signatory, principes pour l'investissement responsable, principles for responsible investment, principes & investissement responsable & nations unies]
+    exclude: [score, transparency, transparence, notation, rating, note, depuis, since, date, annee, year, rapport, report, evaluation, assessment]
+
+  - id: societe.sanction_amf
+    label: Sanction du régulateur (AMF) récente ? | Regulatory sanction (AMF)?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [sanction amf, sanction & amf, sanction & regulateur, sanctions & regulateur, regulatory sanction, sanctioned & regulator, sanction & autorite des marches financiers]
+
+  - id: societe.actionnaire_majoritaire
+    label: Actionnaire majoritaire de la société de gestion | Majority shareholder of the management company
+    scope: fund
+    type: text
+    source: precedent:firm
+    terms: [actionnaire majoritaire, actionnaire & plus de 50, actionnaire principal, majority shareholder, main shareholder, actionnaire & capital]
+    exclude: [fonds, fund, porteur, unitholder, structure, evolution, changement, change]
+
+  - id: societe.politique_vote
+    label: Politique de vote publiée ? | Published voting policy?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [politique de vote, voting policy, politique de vote & publi, voting policy & publicly]
+    exclude: [rapport, report, exercice des droits & taux, statistiques, statistics, pourcentage, percentage, "%", lien, link, url]
+
+  - id: societe.politique_engagement
+    label: Politique d'engagement publiée ? | Published engagement policy?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [politique d'engagement, engagement policy, politique d'engagement actionnarial]
+    exclude: [rapport, report, exemples, examples, nombre, number, "%", lien, link, url]
+
+  - id: societe.net_zero_am
+    label: Membre de Net Zero Asset Managers ? | Net Zero Asset Managers member?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [net zero asset manager, net zero asset managers, nzam]

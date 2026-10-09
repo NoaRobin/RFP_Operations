@@ -69,7 +69,15 @@ def test_narrative_template_only_when_every_fact_is_explained():
     assert not unsafe.safe and unsafe.residual  # chiffre et date propres au fonds d'origine : simple référence de style
 
 
+def _bind_funds(client):
+    """ISIN fictifs du jeu de démonstration (ils dépendent de la date de génération du mock)."""
+    global A, B, C
+    funds = {f["pid"]: f for f in client.get("/api/rfi/funds").json()}
+    A, B, C = [(pid, funds[pid]["shares"][0]["isin"], funds[pid]["name"]) for pid in ("PI-700", "PI-701", "PI-702")]
+
+
 def test_precedents_drive_justified_decisions(client):
+    _bind_funds(client)
     imported = client.post("/api/rfi/precedents/wording", files={"file": ("lib.json", json.dumps(_corpus()).encode(), "application/json")}).json()
     assert imported["imported"] == 11 and imported["blocked"] == 2
     found = client.get("/api/rfi/precedents/search", params={"q": "frais courants part"}).json()
@@ -148,3 +156,54 @@ def test_sharepoint_navigation_year_rfi_final(tmp_path):
     assert result["imported"] >= 1 and not result["identity_problem"]
     p = store.all()[0]
     assert p.origin == "sharepoint" and p.answer_cell and p.isin == B[1] and not p.auto_copy_allowed
+
+
+def test_firm_question_groups_precedents_by_meaning_not_wording(tmp_path, client):
+    from datetime import date
+
+    from merlin.rfi.layout import detect
+    from merlin.rfi.precedents import PrecedentIndex, PrecedentStore
+    from merlin.rfi.precedents.importers import import_lot02
+    from merlin.rfi.service import RfiStore, analyze
+
+    _bind_funds(client)
+    corpus = {"answer_examples": [
+        _example(1, "Signataire PRI", "OUI", B, ref="r1"),
+        _example(2, "Est-ce que l'Asset Manager est signataire des PRI ?", "Oui", C, ref="r2"),
+        _example(3, "Is the fund management company a UNPRI signatory?", "Yes", B, ref="r3"),
+        _example(4, "La société de gestion est-elle signataire des PRI ?", "La société est signataire depuis longtemps.", C, ref="r4"),
+    ], "identity_issues": []}
+    index = PrecedentIndex(PrecedentStore(tmp_path / "p.sqlite"))
+    import_lot02(index.store, corpus)
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["Question", "Réponse"])
+    ws.append(["Êtes-vous signataire des Principes pour l'Investissement Responsable (PRI) ?", None])
+    dv = DataValidation(type="list", formula1='"OUI,NON"')
+    ws.add_data_validation(dv)
+    dv.add("B2")
+    path = tmp_path / "rfi.xlsx"
+    wb.save(path)
+    from merlin.state import get_state
+
+    data = get_state().data
+    r = analyze(data, RfiStore(tmp_path / "rfi"), path, detect(path), A[0], A[1], date.today().isoformat(), None, None, index)
+    q = r["questions"][0]
+    assert q["status"] == "review" and q["answer"] == "OUI" and q["precedent"]["kind"] == "precedent_constant"
+    assert "3 questionnaire" in q["precedent"]["justification"]  # le paragraphe sans oui/non ne compte ni pour ni contre
+
+
+def test_jump_found_by_isin_when_pi_fund_id_differs(client):
+    from datetime import date
+
+    from merlin.rfi.ontology import load_ontology
+    from merlin.rfi.understand import understand
+    from merlin.rfi.values import Values
+    from merlin.state import get_state
+
+    _bind_funds(client)
+    data = get_state().data
+    o = load_ontology(data.catalog)
+    v = Values(data, o, "ID-PI-INCONNU", A[1], date.today())
+    raw = v.get(o.concepts["jump.encours_fonds"], understand(o, "Encours du fonds"), "fr")
+    assert raw.value is not None, (raw, v.errors)

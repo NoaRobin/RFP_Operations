@@ -169,32 +169,64 @@ class Values:
         if key in self._cache:
             return self._cache[key]
         sid = self.share_id
-        part_filter = "a.ID_PI_PART = :sid" if sid else "a.CODE_ISIN_PART = :isin"
+        jf, jp = self._jump_ids()
+        # Clés robustes : identifiants JUMP retrouvés par l'ISIN (référence des questionnaires), puis identifiants PI.
+        part_filter = "(a.ID_JUMP_PART = :jp OR UPPER(LTRIM(RTRIM(a.CODE_ISIN_PART))) = :isin OR a.ID_PI_PART = :sid)"
+        fund_a = "(a.ID_JUMP_FONDS = :jf OR a.ID_PI_FONDS = :pid)"
+        fund_b = "(b.ID_JUMP_FONDS = :jf OR b.ID_PI_FONDS = :pid)"
+        fund_h = "(h.ID_JUMP_FONDS = :jf OR h.ID_PI_FONDS = :pid)"
+        fund_i = "(i.ID_JUMP_FONDS = :jf OR i.ID_PI_FONDS = :pid)"
         queries = {
-            "fund_aum": """SELECT TOP 1 a.ACTIF_NET_TOTAL_EURO, a.ACTIF_NET_TOTAL_DEVISE_FONDS, a.DEVISE_FONDS, a.DATE_VL
-                FROM dbo.JUMP_portfolio_aum a WHERE a.ID_PI_FONDS = :pid AND a.DATE_VL <= :as_of ORDER BY a.DATE_VL DESC""",
+            "fund_aum": f"""SELECT TOP 1 a.ACTIF_NET_TOTAL_EURO, a.ACTIF_NET_TOTAL_DEVISE_FONDS, a.DEVISE_FONDS, a.DATE_VL
+                FROM dbo.JUMP_portfolio_aum a WHERE {fund_a} AND a.DATE_VL <= :as_of ORDER BY a.DATE_VL DESC""",
             "share_aum": f"""SELECT TOP 1 a.ACTIF_NET_DEVISE_PART, a.ACTIF_NET_PART_EURO, a.VL_UNITAIRE, a.NOMBRE_PARTS, a.DEVISE_VL, a.DATE_VL
                 FROM dbo.JUMP_portfolio_aum a WHERE {part_filter} AND a.DATE_VL <= :as_of ORDER BY a.DATE_VL DESC""",
-            "share_classes": """SELECT COUNT(DISTINCT a.CODE_ISIN_PART) AS valeur FROM dbo.JUMP_portfolio_aum a
-                WHERE a.ID_PI_FONDS = :pid AND a.DATE_VL = (SELECT MAX(b.DATE_VL) FROM dbo.JUMP_portfolio_aum b
-                WHERE b.ID_PI_FONDS = :pid AND b.DATE_VL <= :as_of)""",
-            "holdings": """SELECT h.NOM_INSTRUMENT, h.CLASSE_ACTIF, h.DEVISE_INSTRUMENT, h.TYPE_HOLDING, h.POIDS_LIGNE_EXPO, h.DATE_INVENTAIRE
-                FROM dbo.JUMP_portfolio_holdings h WHERE h.ID_PI_FONDS = :pid AND h.DATE_INVENTAIRE = (
-                SELECT MAX(i.DATE_INVENTAIRE) FROM dbo.JUMP_portfolio_holdings i WHERE i.ID_PI_FONDS = :pid AND i.DATE_INVENTAIRE <= :as_of)""",
+            "share_classes": f"""SELECT COUNT(DISTINCT a.CODE_ISIN_PART) AS valeur FROM dbo.JUMP_portfolio_aum a
+                WHERE {fund_a} AND a.DATE_VL = (SELECT MAX(b.DATE_VL) FROM dbo.JUMP_portfolio_aum b
+                WHERE {fund_b} AND b.DATE_VL <= :as_of)""",
+            "holdings": f"""SELECT h.NOM_INSTRUMENT, h.CLASSE_ACTIF, h.DEVISE_INSTRUMENT, h.TYPE_HOLDING, h.POIDS_LIGNE_EXPO, h.DATE_INVENTAIRE
+                FROM dbo.JUMP_portfolio_holdings h WHERE {fund_h} AND h.DATE_INVENTAIRE = (
+                SELECT MAX(i.DATE_INVENTAIRE) FROM dbo.JUMP_portfolio_holdings i WHERE {fund_i} AND i.DATE_INVENTAIRE <= :as_of)""",
             "nav": f"""SELECT a.DATE_VL, a.VL_UNITAIRE, a.DIVIDEND_AMOUNT, a.COEFFICIENT_OST, a.VL_BENCH, a.NOM_BENCH
                 FROM dbo.JUMP_portfolio_aum a WHERE {part_filter} AND a.DATE_VL <= :as_of ORDER BY a.DATE_VL""",
         }
-        needs_pid = name in {"fund_aum", "share_classes", "holdings"}
-        if (needs_pid and not self.pid) or (not needs_pid and not (sid or self.isin)):
+        needs_fund = name in {"fund_aum", "share_classes", "holdings"}
+        if (needs_fund and not (self.pid or jf)) or (not needs_fund and not (sid or self.isin or jp)):
             self._cache[key] = None
             return None
+        params = {"pid": self.pid or "", "isin": (self.isin or "").strip().upper(), "sid": sid or "", "jf": jf or "", "jp": jp or "",
+                  "as_of": as_of.isoformat()}
         try:
-            frame = self.data.query(queries[name], {"pid": self.pid, "isin": self.isin, "sid": sid, "as_of": as_of.isoformat()})
+            frame = self.data.query(queries[name], params)
         except DataError as error:
             self.errors.append(f"JUMP ({name}) : {error}")
             frame = None
         self._cache[key] = frame
         return frame
+
+    def _jump_ids(self) -> tuple[str | None, str | None]:
+        """(ID_JUMP_FONDS, ID_JUMP_PART) de la part choisie, retrouvés par l'ISIN, sinon par les identifiants PI."""
+        if "jump_ids" in self._cache:
+            return self._cache["jump_ids"]
+        sid = self.share_id
+        ids: tuple[str | None, str | None] = (None, None)
+        try:
+            frame = self.data.query(
+                """SELECT TOP 1 a.ID_JUMP_FONDS, a.ID_JUMP_PART FROM dbo.JUMP_portfolio_aum a
+                WHERE UPPER(LTRIM(RTRIM(a.CODE_ISIN_PART))) = :isin OR a.ID_PI_PART = :sid OR a.ID_PI_FONDS = :pid
+                ORDER BY CASE WHEN UPPER(LTRIM(RTRIM(a.CODE_ISIN_PART))) = :isin THEN 0 ELSE 1 END, a.DATE_VL DESC""",
+                {"isin": (self.isin or "").strip().upper(), "sid": sid or "", "pid": self.pid or ""})
+            if len(frame):
+                row = frame.iloc[0]
+                ids = (None if is_empty(row["ID_JUMP_FONDS"]) else str(row["ID_JUMP_FONDS"]),
+                       None if is_empty(row["ID_JUMP_PART"]) else str(row["ID_JUMP_PART"]))
+            else:
+                self.errors.append(f"JUMP : aucune ligne pour l'ISIN {self.isin or '—'} ni le fonds {self.pid or '—'} "
+                                   "(JUMP_portfolio_aum) : encours, VL, performances et inventaire indisponibles.")
+        except DataError as error:
+            self.errors.append(f"JUMP (identifiants) : {error}")
+        self._cache["jump_ids"] = ids
+        return ids
 
     def date_for(self, u: Understanding) -> date:
         """Date de la mesure : la date citée dans la question si elle précède la date d'arrêté, sinon la date d'arrêté."""
@@ -233,6 +265,8 @@ class Values:
                 return Raw(None, "Product Info · PI_OUT_CountryOfRegistration.Country", note="aucun pays reconnu dans la question")
             ids = {(self.ontology.vocab_value("country", c).id if self.ontology.vocab_value("country", c) else c) for c in countries}
             return Raw("yes" if all(c in ids for c in u.countries) else "no", "Product Info · PI_OUT_CountryOfRegistration.Country")
+        if kind == "precedent":
+            return Raw(None, "anciens RFI", note="réponse de niveau société : tirée des anciens RFI, pas de Fabric")
         if kind == "meta":
             if measure == "today":
                 return Raw(date.today(), "date du jour (rédaction)")
