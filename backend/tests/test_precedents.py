@@ -258,3 +258,35 @@ def test_firm_narrative_reused_unless_it_names_a_fund(tmp_path, client):
     assert best["answer"] == text and best["status"] == "review" and "à relire" in best["precedent"]["justification"]
     # le texte cite un fonds : jamais repris tel quel ; au mieux modèle paramétré avec le nom du fonds courant
     assert bcp["precedent"]["kind"] == "modele_redaction" and B[2] not in (bcp["answer"] or "")
+
+
+def test_replay_bench_measures_coverage_and_agreement(client):
+    from merlin.rfi.replay import replay
+
+    _bind_funds(client)
+    report = replay(_corpus(), verbose=False)
+    total = report["total"]
+    assert total["questions"] >= 8 and 0 < total["coverage"] <= 1
+    assert total["precedent_agreement"] is None or 0 <= total["precedent_agreement"] <= 1
+    assert "answer" not in json.dumps(report["families"])  # agrégats uniquement
+
+
+def test_computed_seniority_and_anti_dilution(client):
+    from datetime import date
+
+    from merlin.rfi.ontology import load_ontology
+    from merlin.rfi.understand import understand
+    from merlin.rfi.values import Values, years_threshold
+    from merlin.state import get_state
+
+    assert years_threshold("A-t-il un track record de plus d'1 an ?") == 1
+    assert years_threshold("Ancienneté du gérant principal > 3 ans") == 3
+    assert years_threshold("Track record") is None
+    _bind_funds(client)
+    data = get_state().data
+    o = load_ontology(data.catalog)
+    v = Values(data, o, A[0], A[1], date.today())
+    q = "A-t-il un track record de plus d'1 an ?"
+    assert v.get(o.concepts["fonds.track_record"], understand(o, q), "fr").value in {"yes", "no"}
+    raw = v.get(o.concepts["part.mecanisme_anti_dilution"], understand(o, "Mécanisme anti-dilution ?"), "fr")
+    assert raw.value in {"yes", "no", None} and "Swing_Pricing" in raw.evidence

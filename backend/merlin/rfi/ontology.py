@@ -18,7 +18,7 @@ from ..data.catalog import Catalog
 
 ONTOLOGY_DIR = Path(__file__).with_name("ontology")
 TYPES = {"text", "long", "enum", "bool", "percent", "number", "int", "amount", "date", "time", "code", "list"}
-COMPUTED = {"jump", "perf", "registration", "meta", "precedent", "fund"}
+COMPUTED = {"jump", "perf", "registration", "meta", "precedent", "fund", "share"}
 PSEUDO_TERMS = {"period_mention", "country_mention"}
 
 

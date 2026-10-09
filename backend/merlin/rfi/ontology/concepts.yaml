@@ -238,8 +238,8 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Portfolio_Manager_backup_1
-    terms: [gerant suppleant, co-gerant, cogerant, gerant adjoint, gerant secondaire, second gerant, deputy portfolio manager, deputy manager, co-manager, co-portfolio manager, back-up manager, backup manager, backup portfolio manager, alternate portfolio manager, second portfolio manager]
-    exclude: [depuis, since, tenure, experience, annees, years, biographie, biography]
+    terms: [gerant suppleant, co-gerant, cogerant, gerant adjoint, gerant secondaire, second gerant, deputy portfolio manager, deputy manager, co-manager, co-portfolio manager, back-up manager, backup manager, backup portfolio manager, alternate portfolio manager, second portfolio manager, back up, gerant back up, gerants back up, backup pm]
+    exclude: [depuis, since, tenure, experience, annees, years, biographie, biography, anciennete, seniority]
 
   - id: fonds.gerant_depuis
     label: Date de prise de fonction du gérant | Portfolio manager start date
@@ -463,7 +463,7 @@ concepts:
     type: percent
     range: [0, 100]
     source: pi_out_product_active.PerCent_Min_SI_EET_20420
-    terms: [part minimale d'investissements durables, part minimum d'investissements durables, proportion minimale d'investissements durables, pourcentage minimum d'investissements durables, minimum proportion of sustainable investments, minimum share of sustainable investments, minimum percentage of sustainable investments, minimum sustainable investment, investissements durables & minim, sustainable investments & minim, min. sustainable investment, min sustainable investment, minimum sustainable investment %]
+    terms: [part minimale d'investissements durables, part minimum d'investissements durables, proportion minimale d'investissements durables, pourcentage minimum d'investissements durables, minimum proportion of sustainable investments, minimum share of sustainable investments, minimum percentage of sustainable investments, minimum sustainable investment, investissements durables & minim, sustainable investments & minim, min. sustainable investment, min sustainable investment, minimum sustainable investment %, part d'investissement durable, investissement durable & engagement]
     exclude: [environnemental, environmental, social, taxonomie, taxonomy]
 
   - id: fonds.part_min_id_environnemental
@@ -498,7 +498,7 @@ concepts:
     type: percent
     range: [0, 100]
     source: pi_out_product_active.PerCent_Min_Aligned_Taxonomy_Incl_Sovereing_EET_20600
-    terms: [alignement taxonomie, aligne sur la taxonomie, alignes sur la taxonomie, alignement a la taxonomie, taxonomie europeenne & minim, taxonomy alignment, taxonomy-aligned, taxonomy aligned, eu taxonomy & minim]
+    terms: [alignement taxonomie, aligne sur la taxonomie, alignes sur la taxonomie, alignement a la taxonomie, taxonomie europeenne & minim, taxonomy alignment, taxonomy-aligned, taxonomy aligned, eu taxonomy & minim, aligne a la taxonomie, investissement aligne a la taxonomie, taxonomie & engagement]
     exclude: [hors souverains, excluding sovereign, excl. sovereign, transition, enabling, habilitant, actuel, current, reel, actual]
 
   - id: fonds.accord_paris
@@ -1246,7 +1246,7 @@ concepts:
     scope: share
     type: bool
     source: PI_OUT_Share.Swing_Pricing
-    terms: [swing pricing, swing price, mecanisme d'ajustement de la vl, ajustement de la valeur liquidative, swing factor, dilution adjustment, anti-dilution mechanism, mecanisme anti-dilution]
+    terms: [swing pricing, swing price, mecanisme d'ajustement de la vl, ajustement de la valeur liquidative, swing factor, dilution adjustment]
     exclude: [seuil, threshold, facteur maximal, maximum factor, "%", niveau, level, frequence, frequency, combien, how many, nombre, number, applique & fois]
 
   - id: part.gates
@@ -1764,7 +1764,7 @@ concepts:
     type: bool
     source: precedent:firm
     terms: [politique de vote, voting policy, politique de vote & publi, voting policy & publicly]
-    exclude: [rapport, report, exercice des droits & taux, statistiques, statistics, pourcentage, percentage, "%", lien, link, url]
+    exclude: [rapport, report, exercice des droits & taux, statistiques, statistics, pourcentage, percentage, "%", lien, link, url, isr, esg, criteres, criteria, durabilite, sustainability, extra-financ]
 
   - id: societe.politique_engagement
     label: Politique d'engagement publiée ? | Published engagement policy?
@@ -1807,3 +1807,155 @@ concepts:
     ambiguous_always: true
     terms: [couts de transaction, frais de transaction, frais de transactions, transaction costs, couts de transaction & kid, couts de transaction & dic, frais de transactions dic, transaction costs & kid, portfolio transaction costs]
     exclude: [explicite, explicit, implicite, implicit, ex post, ex-post, realise, realised, actual, hors frais de transaction, excluding transaction, methode, method, calcul, calculation]
+
+  # =================================================================== EET : PAI détaillés, ODD, fonds Article 8 (colonnes Product Info)
+  - id: fonds.pai_ges
+    label: "PAI pris en compte — émissions de GES ? | PAI considered — GHG emissions?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.GHG_Emissions_Scope123_Considered_EET_30190
+    terms: [emissions de ges, emissions de gaz a effet de serre, ghg emissions, greenhouse gas emissions, emissions & scope]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_empreinte_carbone
+    label: "PAI pris en compte — empreinte carbone ? | PAI considered — carbon footprint?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Carbon_Footprint_Scope_123_Considered_EET_30270
+    terms: [empreinte carbone, carbon footprint]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_intensite_carbone
+    label: "PAI pris en compte — intensité GES des entreprises ? | PAI considered — GHG intensity?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.GHG_Intensity_Scope_123_Considered_EET_30350
+    terms: [intensite carbone, intensite ges, intensite de ges, ghg intensity, carbon intensity]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_fossiles
+    label: "PAI pris en compte — exposition aux combustibles fossiles ? | PAI considered — fossil fuel exposure?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Exposure_to_Fossil_Fuel_Considered_EET_30390
+    terms: [combustibles fossiles, energies fossiles, fossil fuel, fossil fuels]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_biodiversite
+    label: "PAI pris en compte — biodiversité ? | PAI considered — biodiversity?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Biodiversity_Considered_EET_30870
+    terms: [biodiversite, biodiversity]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_eau
+    label: "PAI pris en compte — rejets dans l'eau ? | PAI considered — emissions to water?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Water_Emissions_Considered_EET_30910
+    terms: [rejets dans l'eau, emissions dans l'eau, emissions to water, water emissions]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_dechets
+    label: "PAI pris en compte — déchets dangereux ? | PAI considered — hazardous waste?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Hazardous_Waste_Considered_EET_30950
+    terms: [dechets dangereux, dechets radioactifs, hazardous waste, radioactive waste]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_ungc
+    label: "PAI pris en compte — violations du Pacte mondial / OCDE ? | PAI considered — UNGC / OECD violations?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Violation_UNGC_OECD_Considered_EET_30990
+    terms: [pacte mondial, global compact, ungc, principes directeurs de l'ocde, oecd guidelines]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_ecart_remuneration
+    label: "PAI pris en compte — écart de rémunération femmes-hommes ? | PAI considered — gender pay gap?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Gender_Pay_Gap_Considered_EET_31060
+    terms: [ecart de remuneration, gender pay gap, egalite salariale]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_mixite
+    label: "PAI pris en compte — mixité des conseils ? | PAI considered — board gender diversity?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Board_Gender_Diversity_Considered_EET_31100
+    terms: [mixite au sein des organes de gouvernance, mixite des conseils, board gender diversity, diversite des genres au conseil]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_armes_controversees
+    label: "PAI pris en compte — armes controversées ? | PAI considered — controversial weapons?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Controversial_Weapons_Considered_EET_31140
+    terms: [armes controversees, controversial weapons]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.alignement_odd
+    label: Alignement sur les objectifs de développement durable (ODD) ? | Alignment with the UN SDGs?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Alignment_With_SDG_EET_20300
+    terms: [objectifs de developpement durable, odd, sdg, sdgs, sustainable development goals, un sdg]
+    require: [alignement, aligne, alignes, aligned, alignment, s'engage, engage, commits, committed, contribue, contribution, contribute, poursuit, pursue]
+    exclude: [lesquels, lesquelles, which, liste, list, pas de pauvrete, no poverty, faim, hunger, sante, health, education, egalite entre les sexes, eau propre, clean water, energie propre, clean energy, travail decent, decent work, industrie, industry, inegalites, inequalities, villes, cities, consommation, consumption, climat, climate, vie aquatique, life below water, vie terrestre, life on land, paix, peace, partenariats, partnerships]
+
+  - id: fonds.part_min_fonds_article8
+    label: Part minimale de fonds Article 8 (fonds de fonds) | Minimum share of SFDR Article 8 funds
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Of_Min_SFDR_Art_8_Funds_EET_20070
+    terms: [min. sfdr art. 8 funds, minimum sfdr article 8 funds, fonds article 8 & minim, part minimale de fonds article 8, article 8 funds & minimum, art. 8 funds]
+
+  - id: fonds.track_record
+    label: Historique (track record) supérieur au seuil cité ? (d'après la première VL) | Track record longer than the threshold?
+    scope: fund
+    type: bool
+    source: fund:track_record
+    ask_bool: true
+    terms: [track record, historique de performance, anciennete du fonds, existence depuis, performance history]
+    exclude: [gerant, manager, equipe, team, strategie, strategy, description, decrire, describe]
+
+  - id: fonds.anciennete_gerant
+    label: Ancienneté du gérant principal sur le fonds supérieure au seuil cité ? | Lead PM tenure above the threshold?
+    scope: fund
+    type: bool
+    source: fund:pm_tenure
+    ask_bool: true
+    terms: [anciennete du gerant, anciennete & gerant principal, anciennete du gerant principal, tenure & portfolio manager, pm tenure, manager tenure]
+    exclude: [back up, backup, suppleant, adjoint, deputy, co-gerant, equipe, team, moyenne, average]
+
+  - id: part.mecanisme_anti_dilution
+    label: Mécanisme anti-dilution (swing pricing ou ADL) ? | Anti-dilution mechanism (swing pricing or ADL)?
+    scope: share
+    type: bool
+    source: share:anti_dilution
+    terms: [limiter la dilution, mecanisme anti-dilution, mecanisme d'anti-dilution, politique d'anti-dilution, anti-dilution mechanism, anti-dilution, anti dilution, swing pricing or an anti-dilution levy, swing pricing ou adl]
+    exclude: [levy & seuil, seuil, threshold, declenchement, trigger, facteur, factor]
+
+  - id: part.statut_commercialisation
+    label: Statut de la part (ouverte / fermée) — valeurs Product Info À CONFIRMER | Share status (open / closed)
+    scope: share
+    type: text
+    source: PI_OUT_Share.Investment_status
+    ambiguous_always: true
+    terms: [statut du fonds, statut de la part, soft closed, hard closed, soft close, hard close, ouvert & ferme, open & closed, fund status, share class status]
+    exclude: [ordre du jour, envisage, planned, prevu, limite de capacite, capacity]

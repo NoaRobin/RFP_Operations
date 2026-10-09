@@ -147,7 +147,7 @@ def _share_fund(data: DataAccess, isin: str) -> str | None:
 
 def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: str | None, isin: str | None,
             as_of: str | None, lang: str | None = None, overrides: dict[str, Any] | None = None,
-            precedents: PrecedentIndex | None = None) -> dict[str, Any]:
+            precedents: PrecedentIndex | None = None, precedent_isin: str | None = None) -> dict[str, Any]:
     """Propose une réponse par case. overrides[id] = id de concept | None (ne pas remplir) | {"text": …}.
 
     Avec des précédents, chaque case reçoit aussi une décision justifiée (repris de l'ancien, modèle d'ontologie,
@@ -168,7 +168,7 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
             values_by_entity[key] = Values(data, ontology, e_pid, e_isin, as_of_d)
         return values_by_entity[key]
 
-    advisor = _advisor(data, ontology, precedents, pid, isin, as_of_d, lang)
+    advisor = _advisor(data, ontology, precedents, pid, precedent_isin or isin, as_of_d, lang)
     decisions: dict[str, int] = {}
     rows: list[dict[str, Any]] = []
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}

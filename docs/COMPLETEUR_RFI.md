@@ -111,6 +111,8 @@ droits délégués `Sites.Read.All`, aucun secret). Lecture seule.
 
 ## 5. Mesurer et faire progresser
 
+- `python -m merlin.rfi.replay <bibliothèque>` : couverture et concordance sur de vrais questionnaires (voir plus haut).
+
 - `cd backend && python -m merlin.rfi.evaluate` : précision et couverture sur `tests/rfi_gold.yaml`.
 - Après chaque RFI validé, un fichier `…_rempli_vN.gold.json` est écrit : `python -m merlin.rfi.evaluate <fichier>`
   rejoue le moteur dessus (non-régression sur de vrais questionnaires).
@@ -118,13 +120,29 @@ droits délégués `Sites.Read.All`, aucun secret). Lecture seule.
   `tests/rfi_gold.yaml`). Ajouter une donnée : un concept dont la source existe dans `catalog/fabric_schema.csv`.
 - La bibliothèque (`data/rfi/library.json`) apprend de chaque validation ; elle reste sur le poste.
 
-Résultats actuels : banc d'essai 201 formulations (dont les tests Copilot T01–T20 et les pièges des RFI 2026) —
-**précision automatique 100 %**, couverture automatique 93,5 %, 100 % avec les propositions « à vérifier ».
-Vrais RFI 2026 (lecture + ontologie, sans précédents) : formulaire Abeille 15 → 34 cases reconnues automatiquement
-sur 107, AXA 16 → 57 sur 131. Avec le corpus lot 02 en mode démo, le formulaire Abeille passe à 85 propositions sur 107
-(automatiques + à vérifier) ; les contrôles Fabric des précédents n'ont pas pu être exécutés hors du poste. RFI de démonstration réalistes : 96 % (Excel, 47
-cases dont 10 listes et 11 consignes) et 89 % (Word) — le reste étant qualitatif ou déjà renseigné.
-Ce banc a été construit en même temps que le moteur : la vraie mesure viendra des RFI réels de l'équipe.
+Résultats actuels (octobre 2026) :
+
+| Mesure | Résultat |
+|---|---|
+| Banc d'essai (`tests/rfi_gold.yaml`, 239 formulations dont les tests Copilot T01–T20 et 80+ pièges) | précision automatique **100 %**, couverture automatique 91 % |
+| Ontologie sur les 770 questions uniques du lot 02 | 275 reconnues (165 automatiques, 110 à vérifier) contre 188 au départ |
+| **Banc de rejeu** lot 02 (3 754 questions réellement répondues, chaque fonds rejoué sans ses propres réponses) | couverture **74 %** (ontologie 47 %, précédents 27 %) ; concordance des propositions issues des précédents avec ce qui avait été répondu : **96,4 %** |
+| Par famille (rejeu) | Suivi qualitatif 82 % · AXA 85 % · formulaires de référencement 75 % · fiches DATA 63 % · DDQ / ESG / due diligence société 14–30 % (questions rédigées uniques dans le corpus) |
+
+En mode démo les valeurs Fabric sont fictives : la justesse des réponses de l'ontologie ne se mesure qu'avec Fabric.
+
+### Banc de rejeu (à lancer sur le poste, avec Fabric)
+
+```
+cd backend && python -m merlin.rfi.replay chemin/Bibliotheque_Wording_RFI_Lot02.json
+```
+
+Chaque (fichier, fonds) est rejoué sans ses propres réponses ; les propositions sont comparées à ce qui avait été
+répondu. Avec Fabric, le fonds est retrouvé par son ISIN et la concordance de l'ontologie devient une mesure de
+justesse sur données réelles. Rapport agrégé (aucune valeur) : `data/rfi/replay_report.json`.
+
+Règles des précédents calibrées sur ce banc : majorité ≥ 75 % des autres fonds ; un libellé repris d'un seul fonds
+n'est jamais proposé (≈ 50 % juste), un oui / non l'est (≈ 93 %) ; deux fonds concordants ≈ 89 %.
 
 À CONFIRMER avec l'équipe Data : unité des pourcentages Product Info (points), sémantique de `DIVIDEND_AMOUNT`
 (par part) et `COEFFICIENT_OST` (multiplicatif), unité de `POIDS_LIGNE_EXPO`.

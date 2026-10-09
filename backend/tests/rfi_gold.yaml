@@ -189,7 +189,7 @@ cases:
   - {q: "% of AUM as of the withdrawal date:", concept: null}
   - {q: "Date de création de la Stratégie", concept: null}
   - {q: "Classe d'actif Quantalys", concept: null}
-  - {q: "Min. SFDR Art. 8 funds", concept: null}
+  - {q: "Min. SFDR Art. 8 funds", concept: fonds.part_min_fonds_article8}
   - {q: "Si oui, indiquer le code ISIN du fonds Maître", concept: null}
   - {q: "Pouvez-vous nous indiquer le code CIC ?", concept: fonds.code_cic}
   - {q: "Pouvez-vous nous indiquer la catégorie BCE ?", concept: fonds.categorie_bce}
@@ -237,3 +237,18 @@ cases:
   - {q: "Current size:", concept: jump.encours_fonds}
   - {q: "Zone géographique/Secteur", concept: fonds.zone}
   - {q: "Dans quels pays le fonds est-il éligible à la vente ?", concept: part.pays_enregistrement}
+  - {q: "Prise en compte des PAI relatifs à la biodiversité ?", concept: fonds.pai_biodiversite}
+  - {q: "Does the fund consider PAI on GHG emissions?", concept: fonds.pai_ges}
+  - {q: "Le fonds a-t-il développé une approche biodiversité ?", concept: null}
+  - {q: "Le fonds est-il aligné sur les objectifs de développement durable (ODD) ?", concept: fonds.alignement_odd}
+  - {q: "ODD 1 : Pas de pauvreté SDG 1: No poverty", concept: null}
+  - {q: "Valeur de l'indicateur PAI émissions de GES (tCO2e)", concept: null}
+  - {q: "A-t-il un track record de plus d'1 an ?", concept: fonds.track_record}
+  - {q: "Ancienneté du gérant principal sur le fonds ou la stratégie > 3 ans", concept: fonds.anciennete_gerant}
+  - {q: "Ancienneté du gérant back up sur le fonds ou la stratégie > 3 ans", concept: null}
+  - {q: "Gérant(s) back up", concept: fonds.gerant_suppleant}
+  - {q: "Le fonds applique-t-il un mécanisme visant à limiter la dilution ?", concept: part.mecanisme_anti_dilution}
+  - {q: "Le fonds applique-t-il un mécanisme de swing pricing ?", concept: part.swing_pricing}
+  - {q: "Est-ce un fonds à maturité ?", concept: fonds.a_maturite}
+  - {q: "Si le fonds est ouvert, un soft ou hard close du fonds est-il à l'ordre du jour ?", concept: null}
+  - {q: "Part d'investissement durable (% d'engagement)", concept: fonds.part_min_investissements_durables}

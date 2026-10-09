@@ -43,8 +43,9 @@ FIRM_TOPIC = re.compile(r"(?<![a-z])(organisation|organization|la societe|votre 
                         r"remuneration policy|politique de remuneration|cio|directeur des investissements|comite d'investissement|"
                         r"investment committee|risk management function|departement de gestion des risques|gestion des risques independant|"
                         r"controle interne|internal control|historique de la societe|history of the firm|actionnariat|shareholding)(?![a-z])")
-SAME_QUESTION = 0.84
-SAME_WORDING = 0.9  # même question à la formulation près (majorité des autres fonds)  # au-dessus : « même question »
+SAME_QUESTION = 0.84  # au-dessus : « même question »
+SAME_WORDING = 0.9  # même question à la formulation près (majorité des autres fonds)
+MIN_FUNDS_HABITUAL = 2  # banc de rejeu lot 02 : libellé repris d'un seul fonds ≈ 50 % juste, de 2 fonds concordants ≈ 89 %
 MAX_CHECKED = 6  # précédents contrôlés dans Fabric par case
 SOFT_FLAGS = ("non précisé", "autre lecture", "lecture indirecte")
 LABELS = {
@@ -356,8 +357,8 @@ class PrecedentAdvisor:
                 return None
         if na and not (len(ranked) == 1 and len(top) >= 3):
             return None
-        if total == 1 and self.ontology.vocab_value("yes_no", text) is None:
-            return None  # un seul autre fonds : preuve trop faible, sauf pour un oui / non (signalé)
+        if len(top) < MIN_FUNDS_HABITUAL and not (total == 1 and self.ontology.vocab_value("yes_no", text) is not None):
+            return None  # un seul fonds : seulement un oui / non (≈ 93 % justes au banc de rejeu), jamais un libellé
         stats = f"{len(top)} fonds sur {total}" + (f" ({share:.0%}) ; autres réponses : {others}" if len(ranked) > 1 else "")
         if firm:
             return self._proposal("precedent_constant", slot, text,

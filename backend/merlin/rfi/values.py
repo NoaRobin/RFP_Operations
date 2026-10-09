@@ -9,6 +9,7 @@ Règles de rattachement reprises d'App4everyone :
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
@@ -26,6 +27,22 @@ LABEL_COLUMNS = {"RSI_french_label": "ISR", "Belgium_Towards_Sustainability_labe
 # Coûts de transaction du DIC (PRIIPs) = explicites + implicites, moyennes 3 ans ex ante — À CONFIRMER avec l'équipe Data
 KID_TRANSACTION_COLUMNS = ("Explicit_Transaction_costs_ex_ante_3_years_mean", "Implicit_trans_costs_ex_ante3Y_mean")
 PRODUCT, SHARE, REGISTRATION = "pi_out_product_active", "PI_OUT_Share", "PI_OUT_CountryOfRegistration"
+
+
+NUMBER_WORDS = {"un": 1, "une": 1, "one": 1, "deux": 2, "two": 2, "trois": 3, "three": 3, "quatre": 4, "four": 4, "cinq": 5,
+                "five": 5, "dix": 10, "ten": 10}
+THRESHOLD = re.compile(r"(?:plus d'?|plus de|more than|over|>=?|superieur a|superieure a|au moins|at least|minimum de|min\.?)\s*"
+                       r"(\d+(?:[.,]\d+)?|" + "|".join(NUMBER_WORDS) + r")\s*(?:an|ans|annee|annees|year|years|yr)\b")
+
+
+def years_threshold(text: str) -> float | None:
+    from .ontology import norm  # « > 3 ans » : le comparateur est gardé avant normalisation
+
+    m = THRESHOLD.search(norm(str(text).replace("≥", " au moins ").replace(">", " plus de ")))
+    if not m:
+        return None
+    raw = m.group(1)
+    return float(NUMBER_WORDS.get(raw, raw.replace(",", ".") if raw not in NUMBER_WORDS else 0))
 
 
 @dataclass
@@ -96,9 +113,9 @@ class Values:
         cols = {c for concept in self.ontology.usable() for t, c in concept.columns if t == table}
         cols |= {concept.asof.split(".", 1)[1] for concept in self.ontology.usable() if concept.asof and concept.asof.startswith(table + ".")}
         if table == SHARE:
-            cols |= {"pi_shareid", "ProductID", "ISIN_Code", "Subscription_Currency"}
+            cols |= {"pi_shareid", "ProductID", "ISIN_Code", "Subscription_Currency", "First_NAV_Date", "Swing_Pricing", "ADL"}
         if table == PRODUCT:
-            cols |= set(LABEL_COLUMNS) | set(KID_TRANSACTION_COLUMNS)
+            cols |= set(LABEL_COLUMNS) | set(KID_TRANSACTION_COLUMNS) | {"First_NAV_Date", "Creation_Date", "Start_date_Portfolio_manager"}
         return sorted(cols)
 
     def load(self) -> None:
@@ -272,7 +289,11 @@ class Values:
             ids = {(self.ontology.vocab_value("country", c).id if self.ontology.vocab_value("country", c) else c) for c in countries}
             return Raw("yes" if all(c in ids for c in u.countries) else "no", "Product Info · PI_OUT_CountryOfRegistration.Country")
         if kind == "fund":
+            if measure in {"track_record", "pm_tenure"}:
+                return self._seniority(measure, u)
             return self._fund_measure(measure)
+        if kind == "share" and measure == "anti_dilution":
+            return self._anti_dilution()
         if kind == "precedent":
             return Raw(None, "anciens RFI", note="réponse de niveau société : tirée des anciens RFI, pas de Fabric")
         if kind == "meta":
@@ -282,6 +303,40 @@ class Values:
         if kind == "jump":
             return self._jump_measure(measure, u)
         return self._perf_measure(measure, u)
+
+    def _seniority(self, measure: str, u: Understanding) -> Raw:
+        """« Track record de plus d'1 an ? », « Ancienneté du gérant > 3 ans » : comparaison d'une date Product Info au seuil cité."""
+        years = years_threshold(u.text)
+        if years is None:
+            return Raw(None, measure, note="seuil (nombre d'années) non lu dans la question")
+        self.load()
+        if measure == "track_record":
+            candidates = [(self._share, SHARE, "First_NAV_Date"), (self._product, PRODUCT, "First_NAV_Date"), (self._product, PRODUCT, "Creation_Date")]
+        else:
+            candidates = [(self._product, PRODUCT, "Start_date_Portfolio_manager")]
+        for row, table, column in candidates:
+            d = to_date(row.get(column)) if row else None
+            if d is not None:
+                try:
+                    limit = self.as_of.replace(year=self.as_of.year - int(years))
+                except ValueError:  # 29 février
+                    limit = self.as_of.replace(year=self.as_of.year - int(years), day=28)
+                return Raw("yes" if d <= limit else "no", f"Product Info · {table}.{column} = {d.strftime('%d/%m/%Y')} (seuil {years:g} an(s))",
+                           data_date=d)
+        return Raw(None, measure, note="date de départ absente de Product Info")
+
+    def _anti_dilution(self) -> Raw:
+        """Mécanisme anti-dilution = swing pricing OU anti-dilution levy (oui si l'un est en place, non si les deux sont absents)."""
+        self.load()
+        if self._share is None:
+            return Raw(None, SHARE, note="part introuvable dans Product Info")
+        flags = [self.ontology.vocab_value("yes_no", self._share.get(c)) for c in ("Swing_Pricing", "ADL")]
+        evidence = f"Product Info · {SHARE}.Swing_Pricing / {SHARE}.ADL"
+        if any(f is not None and f.id == "yes" for f in flags):
+            return Raw("yes", evidence)
+        if all(f is not None and f.id == "no" for f in flags):
+            return Raw("no", evidence)
+        return Raw(None, evidence, note="swing pricing ou ADL non renseigné")
 
     def _fund_measure(self, measure: str) -> Raw:
         self.load()

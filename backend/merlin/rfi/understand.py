@@ -18,7 +18,7 @@ QUALITATIVE = re.compile(
     r"quelle est votre approche|what is your approach|votre philosophie|your philosophy|processus de|process for|"
     r"methodologie|methodology)\b")
 BOOL_QUESTION = re.compile(
-    r"(?:\b(?:oui|yes)\s*/\s*(?:non|no)\b|\by\s*/\s*n\b|\bo\s*/\s*n\b|-t-(?:il|elle|ils|elles)\b|\best-ce que\b|"
+    r"(?:\b(?:oui|yes)\s*/\s*(?:non|no)\b|\by\s*/\s*n\b|\bo\s*/\s*n\b|-t-(?:il|elle|ils|elles)\b|\best-ce que\b|^est-ce\s|\s>\s*\d+\s*(?:ans?|years?)\s*\??$|"
     r"^(?:is|are|does|do|has|have|can|will|was|were)\s|^(?:le|la|les|ce|cette)\s+\S+(?:\s+\S+)?\s+"
     r"(?:est-il|est-elle|a-t-il|peut-il|utilise-t-il|investit-il|exclut-il|prend-il|integre-t-il|dispose-t-il|applique-t-il))")
 PERCENT_ASK = re.compile(r"%|\bpourcentage\b|\bpercentage\b|\bpercent\b|\ben pourcent\b")
@@ -288,7 +288,8 @@ def understand(ontology: Ontology, text: str, *, hint: str = "", context: str = 
         u.context_scopes = {entity_scope}
         u.entity_scope = entity_scope
     u.qualitative = bool(QUALITATIVE.search(q))
-    u.yes_no = bool(BOOL_QUESTION.search(own)) or bool(HINT_BOOL.search(hint_n))
+    u.yes_no = bool(BOOL_QUESTION.search(own)) or bool(HINT_BOOL.search(hint_n)) or \
+        bool(re.search(r"(?:>|≥)\s*\d+\s*(?:ans?|years?)\s*\??\s*$", str(text).strip().lower()))  # « Ancienneté > 3 ans »
     u.existence = bool(EXISTENCE.search(own))
     u.parent = parent
     u.explicit_date = parse_explicit_date(q)
