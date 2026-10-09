@@ -207,3 +207,23 @@ def test_jump_found_by_isin_when_pi_fund_id_differs(client):
     v = Values(data, o, "ID-PI-INCONNU", A[1], date.today())
     raw = v.get(o.concepts["jump.encours_fonds"], understand(o, "Encours du fonds"), "fr")
     assert raw.value is not None, (raw, v.errors)
+
+
+def test_sharepoint_due_diligence_with_one_folder_per_fund(tmp_path):
+    from merlin.rfi.sources.local import LocalFolderSource
+    from merlin.rfi.sources.navigator import DueDiligenceNavigator
+
+    root = tmp_path / "1 - Appels d'offres - Due diligence"
+    dd = root / "2026" / "RFI" / "Questionnaires Assureur Fictif"
+    for fund in ("Fonds Imaginaire Alpha", "Fonds Imaginaire Beta"):
+        for step in ("Original", "Working", "Final"):
+            (dd / fund / step).mkdir(parents=True)
+        Workbook().save(dd / fund / "Original" / "vierge.xlsx")
+        Workbook().save(dd / fund / "Final" / f"Questionnaire {fund}.xlsx")
+    nav = DueDiligenceNavigator(LocalFolderSource(root), start_year=2026)
+    path = nav.due_diligences()["folders"][0]["path"]
+    listing = nav.final_documents(path)
+    assert len(listing["funds"]) == 2 and len(listing["documents"]) == 2
+    assert all("Original" not in d["path"] for d in listing["documents"])
+    beta = nav.final_documents(path, "beta")
+    assert [d["fund"] for d in beta["documents"]] == ["Fonds Imaginaire Beta"]

@@ -111,12 +111,13 @@ def sharepoint_due_diligences(year: int | None = None, q: str = "", source: str 
 
 
 @router.get("/sharepoint/final")
-def sharepoint_final(path: str, source: str | None = None, s: AppState = Depends(state)):
-    return _guard(_nav(s, source).final_documents, path)
+def sharepoint_final(path: str, fund: str = "", source: str | None = None, s: AppState = Depends(state)):
+    return _guard(_nav(s, source).final_documents, path, fund)
 
 
 class ImportRequest(BaseModel):
     path: str  # dossier de la due diligence
+    fund: str = ""  # filtre : dossier du fonds quand la due diligence en contient plusieurs
     source: str | None = None
 
 
@@ -124,12 +125,12 @@ class ImportRequest(BaseModel):
 def sharepoint_import(body: ImportRequest, s: AppState = Depends(state)) -> dict[str, Any]:
     """Télécharge les documents du dossier « final » (copie locale) et en fait des précédents."""
     nav = _nav(s, body.source)
-    listing = _guard(nav.final_documents, body.path)
+    listing = _guard(nav.final_documents, body.path, body.fund)
     store = get_index(_root(s)).store
     cache = _root(s) / "sharepoint"
     results = []
     for doc in listing["documents"]:
-        item = RemoteItem(**doc)
+        item = RemoteItem(**{k: v for k, v in doc.items() if k != "fund"})
         target = cache / item.path
         try:
             _guard(nav.source.download, item, target)

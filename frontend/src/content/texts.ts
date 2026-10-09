@@ -212,6 +212,8 @@ export const texts = {
     noFolder: 'Aucune due diligence trouvée.',
     foundIn: (y: number) => `Trouvé dans ${y}`,
     final: 'Dossier « final »',
+    fundFilter: 'Filtrer par fonds (si la due diligence a un dossier par fonds)',
+    fundsFound: (n: number) => `${n} dossier${n > 1 ? 's' : ''} « final » (un par fonds)`,
     importFinal: (n: number) => `Importer les ${n} document${n > 1 ? 's' : ''} du dossier final`,
     importing: 'Lecture des RFI déjà répondus…',
     inventory: 'Inventaire',

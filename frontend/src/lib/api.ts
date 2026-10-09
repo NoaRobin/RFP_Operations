@@ -108,8 +108,8 @@ export const api = {
       status: () => request<SharePointStatus>('/rfi/sharepoint/status'),
       dueDiligences: (year?: number | null, q = '') =>
         request<DueDiligenceList>(`/rfi/sharepoint/due-diligences?${year ? `year=${year}&` : ''}q=${encodeURIComponent(q)}`),
-      final: (path: string) => request<FinalListing>(`/rfi/sharepoint/final?path=${encodeURIComponent(path)}`),
-      importFinal: (path: string) => request<SharePointImport>('/rfi/sharepoint/import', json({ path })),
+      final: (path: string, fund = '') => request<FinalListing>(`/rfi/sharepoint/final?path=${encodeURIComponent(path)}&fund=${encodeURIComponent(fund)}`),
+      importFinal: (path: string, fund = '') => request<SharePointImport>('/rfi/sharepoint/import', json({ path, fund })),
     },
   },
 

@@ -360,7 +360,7 @@ export interface SourceStatus { source: string; ready: boolean; signed_in?: bool
 export interface SharePointStatus { site: string; root: string; graph: SourceStatus | null; local: SourceStatus; active: 'graph' | 'local' | null }
 export interface RemoteItem { id: string; name: string; path: string; is_folder: boolean; url: string; modified: string; size: number }
 export interface DueDiligenceList { year: number | null; folders: RemoteItem[]; years: number[]; tried?: number[] }
-export interface FinalListing { final_path: string | null; documents: RemoteItem[]; hint: string }
+export interface FinalListing { final_path: string | null; documents: (RemoteItem & { fund?: string })[]; funds: { fund: string; final_path: string }[]; hint: string }
 export interface SharePointImport { final_path: string | null; imported: number; hint: string; documents: { file: string; imported: number; identity_problem?: string; error?: string }[] }
 
 export interface RfiGenerated extends RfiAnalysis { version: number; written: number; file: string; download: string }

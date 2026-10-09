@@ -32,6 +32,7 @@ function SharePoint({ onImported }: { onImported: () => void }) {
   const [list, setList] = useState<DueDiligenceList | null>(null)
   const [folder, setFolder] = useState<string | null>(null)
   const [final, setFinal] = useState<FinalListing | null>(null)
+  const [fund, setFund] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<ApiError | null>(null)
   const ready = status.data?.active != null
@@ -54,11 +55,11 @@ function SharePoint({ onImported }: { onImported: () => void }) {
 
   useEffect(() => { if (ready) void load(null, '') }, [ready])
 
-  const pick = async (path: string) => {
+  const pick = async (path: string, f = fund) => {
     setFolder(path)
     setFinal(null)
     try {
-      setFinal(await api.rfi.sharepoint.final(path))
+      setFinal(await api.rfi.sharepoint.final(path, f))
     } catch (e) {
       setError(e instanceof ApiError ? e : new ApiError(String(e)))
     }
@@ -68,7 +69,7 @@ function SharePoint({ onImported }: { onImported: () => void }) {
     if (!folder) return
     setBusy(true)
     try {
-      const r = await api.rfi.sharepoint.importFinal(folder)
+      const r = await api.rfi.sharepoint.importFinal(folder, fund)
       toast('success', T.imported(r.imported), r.documents.filter((d) => d.identity_problem || d.error).map((d) => `${d.file} : ${d.identity_problem || d.error}`).join(' · ') || undefined)
       onImported()
     } catch (e) {
@@ -124,9 +125,17 @@ function SharePoint({ onImported }: { onImported: () => void }) {
           )}
           {final && (
             <div className="rounded-xl border-2 border-dashed border-fg/30 p-3">
-              <p className="text-sm font-bold">{T.final}{final.final_path ? ` · ${final.final_path}` : ''}</p>
+              <p className="text-sm font-bold">{final.funds.length > 1 ? T.fundsFound(final.funds.length) : `${T.final}${final.final_path ? ` · ${final.final_path}` : ''}`}</p>
+              {final.funds.length > 1 && (
+                <form onSubmit={(e) => { e.preventDefault(); if (folder) void pick(folder) }} className="mt-2 flex items-end gap-2">
+                  <Field label={T.fundFilter}>
+                    {({ id }) => <TextInput id={id} type="search" value={fund} onChange={(e) => setFund(e.target.value)} />}
+                  </Field>
+                  <Button type="submit" size="sm" icon={<FolderSearch size={15} />}>OK</Button>
+                </form>
+              )}
               {final.hint && <p className="text-sm font-semibold text-fg-2">{final.hint}</p>}
-              <ul className="mt-1 text-xs font-semibold text-fg-2">{final.documents.map((d) => <li key={d.path}>📄 {d.name}</li>)}</ul>
+              <ul className="mt-1 text-xs font-semibold text-fg-2">{final.documents.map((d) => <li key={d.path}>📄 {d.fund ? <b>{d.fund} · </b> : null}{d.name}</li>)}</ul>
               {final.documents.length > 0 && (
                 <Button className="mt-2" size="sm" variant="primary" icon={<Import size={15} />} loading={busy} onClick={importFinal}>
                   {busy ? T.importing : T.importFinal(final.documents.length)}
