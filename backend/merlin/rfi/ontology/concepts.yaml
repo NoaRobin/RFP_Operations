@@ -67,7 +67,7 @@ concepts:
     source: pi_out_product_active.Applicable_UCI_Regulation
     transform: {in: [ucits]}
     terms: [opcvm, ucits, ucits compliant, conforme ucits, conforme a la directive opcvm, ucits fund, is the fund ucits, coordonne]
-    exclude: [non ucits, fia, aif, statut reglementaire, regulatory status, regulatory framework, cadre reglementaire]
+    exclude: [non ucits, fia, aif, statut reglementaire, regulatory status, regulatory framework, cadre reglementaire, frais, fees, commission, acquis, droits]
 
   - id: fonds.domicile
     label: Pays de domiciliation | Fund domicile
@@ -352,7 +352,7 @@ concepts:
     scope: fund
     type: bool
     source: pi_out_product_active.Leveraged_Financial_or_Contingent_Liability_Instr
-    terms: [effet de levier, recours au levier, levier, leverage, use of leverage, leveraged, borrowing]
+    terms: [effet de levier, recours au levier, levier, leverage, use of leverage, leveraged, borrowing, is leverage used, leverage used, utilisation du levier]
     exclude: [maximum, max, niveau, level, ratio, "%", methode, method, gross, brut, net, engagement, commitment]
 
   - id: fonds.objectif_volatilite
@@ -407,8 +407,8 @@ concepts:
     type: enum
     vocab: sfdr
     source: pi_out_product_active.ESG_SFDR_Article
-    terms: [sfdr, classification sfdr, article sfdr, article 6, article 8, article 9, art. 8, art. 9, categorie sfdr, reglement sfdr, sfdr classification, sfdr article, sfdr category, sustainable finance disclosure regulation, article 8 or 9, article 6/8/9, art. 6/8/9]
-    exclude: [part minimale, minimum proportion, "%", pai, principales incidences, principal adverse, date, depuis, since, annexe, annex, precontractuel, pre-contractual, document, lien, link, url, raisons, reasons, pourquoi, why, decrivez, describe, explain, expliquez, min, minimum, funds, fonds sous-jacents, underlying]
+    terms: [sfdr, classification sfdr, article sfdr, sfdr & article, sfdr & classified, sfdr & classe, sfdr regulation, reglementation sfdr, article 6, article 8, article 9, art. 8, art. 9, categorie sfdr, reglement sfdr, sfdr classification, sfdr article, sfdr category, sustainable finance disclosure regulation, article 8 or 9, article 6/8/9, art. 6/8/9]
+    exclude: [part minimale, minimum proportion, "%", pai, principales incidences, principal adverse, date, depuis, since, annexe, annex, precontractuel, pre-contractual, document, lien, link, url, raisons, reasons, pourquoi, why, decrivez, describe, explain, expliquez, min, minimum, fonds sous-jacents, underlying funds]
 
   - id: fonds.categorie_amf_esg
     label: Catégorie AMF (doctrine extra-financière) | AMF ESG category
@@ -989,6 +989,7 @@ concepts:
     type: code
     source: PI_OUT_Share.Swiss_Valor_Number
     terms: [valor, numero valor, valoren, valor number, swiss valor, telekurs]
+    exclude: [valorisation, valorise, valuation, valoriser, delai, preavis]
 
   - id: part.note_morningstar
     label: Note Morningstar (étoiles) | Morningstar rating (stars)
@@ -1391,8 +1392,8 @@ concepts:
     type: list
     vocab: country
     source: registration:countries
-    terms: [pays d'enregistrement, pays de commercialisation, pays ou le fonds est enregistre, pays ou la part est autorisee, pays d'autorisation, autorise a la commercialisation, enregistre a la commercialisation, countries of registration, country of registration, registered for sale, registered for distribution, distribution countries, countries where the fund is registered, registration countries, passported, marketing authorisation, authorised for sale]
-    exclude: [date, depuis, since, domicile, domiciliation, est-il, is it, is the fund registered in]
+    terms: [pays d'enregistrement, pays de commercialisation, pays ou le fonds est enregistre, pays ou la part est autorisee, pays d'autorisation, autorise a la commercialisation, enregistre a la commercialisation, countries of registration, country of registration, registered for sale, registered for distribution, distribution countries, countries where the fund is registered, registration countries, passported, marketing authorisation, authorised for sale, eligible a la vente, dans quels pays, in which countries]
+    exclude: [date, depuis, since, domicile, domiciliation, est-il enregistre, est-il autorise, est-il commercialisable, is it registered, is the fund registered in]
 
   - id: part.enregistree_pays
     label: Enregistrée dans le pays demandé ? | Registered in the requested country?
@@ -1410,7 +1411,7 @@ concepts:
     type: amount
     range: [0, 1000000000000]
     source: jump:fund_aum
-    terms: [encours du fonds, encours, actif net du fonds, actif net, actifs nets, actifs sous gestion du fonds, taille du fonds, aum du fonds, fund aum, aum, assets under management, fund size, size of the fund, net assets, total net assets, fund assets, tna, total assets of the fund, encours total, total aum, actif & millions, actif du fonds, quel est l'actif, encours du support & toutes parts, encours du support, encours fonds]
+    terms: [encours du fonds, encours, actif net du fonds, actif net, actifs nets, actifs sous gestion du fonds, taille du fonds, aum du fonds, fund aum, aum, assets under management, fund size, size of the fund, net assets, total net assets, fund assets, tna, total assets of the fund, encours total, total aum, actif & millions, actif du fonds, quel est l'actif, encours du support & toutes parts, encours du support, encours fonds, current size, fund size, size of the fund, taille du fonds, taille actuelle]
     exclude: [strategie, strategy, strategies, vehicules, vehicles, tous vehicules, all vehicles, mandats & fonds, mandates & funds, part, share class, classe de parts, societe de gestion, management company, firm, groupe, group, strategie, strategy & total, composite, maison, house, equipe, team, gerant & total, evolution, historique, history, collecte, flows, flux, souscriptions nettes, net inflows, client, investisseur, investor, plus grand, largest, concentration, "%", minimum, seuil, threshold, mandat, mandates, dedie, dedicated, capacite, capacity, provenant, origine, from france, de france, part retail, part clean, sdg, societe de gestion, groupement]
     facets: {}
 
@@ -1562,7 +1563,7 @@ concepts:
     type: date
     source: meta:as_of
     terms: [date des donnees, date des donnees renseignees, donnees au, donnees arretees au, date d'arrete, date de reference des donnees, as of, data as of, as at, reference date, statistiques en date du, date of the data]
-    exclude: [creation, lancement, launch, inception, vl, nav, cloture, closing, echeance, maturity, premiere, first, gerant, manager, dic, kid, encours & au]
+    exclude: [creation, lancement, launch, inception, vl, nav, cloture, closing, echeance, maturity, premiere, first, gerant, manager, dic, kid, encours & au, "%", withdrawal, retrait, pourcentage, percentage, part de, share of]
 
   - id: meta.date_formulaire
     label: Date de rédaction du formulaire | Form completion date

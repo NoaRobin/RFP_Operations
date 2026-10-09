@@ -207,3 +207,8 @@ def test_computed_sources_use_catalog_columns_only():
     table = load_catalog(str(get_settings().catalog_csv)).table(PRODUCT)
     for column in [*LABEL_COLUMNS, *KID_TRANSACTION_COLUMNS]:
         assert table.column(column) is not None, column
+
+
+def test_choose_option_matches_combined_choices_in_any_order():
+    option, _ = choose_option(["Aucun", "ISR", "Finansol", "ISR/Finansol", "Greenfin"], texts=["Finansol, ISR"])
+    assert option == "ISR/Finansol"

@@ -130,6 +130,15 @@ def choose_option(options: list[str], *, number: float | None = None, vocab: Voc
     exact = [o for o, n in norm_opts if n in wanted]
     if len(set(exact)) == 1:
         return exact[0], "correspondance exacte"
+    # Choix combinés (« ISR/Finansol », « ISR + Greenfin ») : même ensemble d'éléments, dans n'importe quel ordre
+    def parts(text: str) -> frozenset[str]:
+        return frozenset(_opnorm(p) for p in re.split(r"\s*(?:/|,|;|\+|&|\bet\b|\band\b)\s*", str(text)) if _opnorm(p))
+    for t in texts or []:
+        want = parts(t)
+        if len(want) > 1:
+            combo = [o for o, _ in norm_opts if parts(o) == want]
+            if len(set(combo)) == 1:
+                return combo[0], "même combinaison d'éléments"
     if vocab is not None and ontology is not None and vocab_name:
         same = [o for o, _ in norm_opts if (v := ontology.vocab_value(vocab_name, o)) is not None and v.id == vocab.id]
         if len(set(same)) == 1:
@@ -173,6 +182,10 @@ def render(ontology: Ontology, concept: Concept, raw: Raw, u: Understanding, lan
     t = concept.type
 
     # ---------------------------------------------------------------- question fermée sur une valeur
+    if assert_value == "__present__":
+        if value is None or str(value).strip() == "" or (isinstance(value, (list, tuple)) and not value):
+            return Rendered(None, issues=["donnée vide : « non » ne peut pas en être déduit"], blocking=True)
+        return _bool_out(ontology.vocab_value("yes_no", "yes"), u, lang, issues, ontology)
     if assert_value == "__positive__":
         number = _num(value[0] if isinstance(value, tuple) else value)
         if number is None:

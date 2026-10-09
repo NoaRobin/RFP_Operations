@@ -228,3 +228,12 @@ cases:
   - {q: "Date d'obtention du label ISR", concept: null}
   - {q: "Signataire PRI", concept: societe.signataire_pri}
   - {q: "PRI transparency score", concept: null}
+  - {q: "% of AUM as of the withdrawal date:", concept: null}
+  - {q: "Y a-t-il des frais acquis à l'OPCVM (à l'entrée ou en cas de rachat) ?", concept: null}
+  - {q: "Does the Fund have a benchmark?", concept: fonds.indice_reference}
+  - {q: "Délai valorisation rachat + Préavis éventuel en cas de rachat + délai de valorisation du support ?", concept: null}
+  - {q: "Code Valor", concept: part.valor}
+  - {q: "If the Fund is subject to SFDR regulation, under which article is it classified?", concept: fonds.sfdr}
+  - {q: "Current size:", concept: jump.encours_fonds}
+  - {q: "Zone géographique/Secteur", concept: fonds.zone}
+  - {q: "Dans quels pays le fonds est-il éligible à la vente ?", concept: part.pays_enregistrement}

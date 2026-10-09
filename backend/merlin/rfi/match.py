@@ -145,6 +145,9 @@ def score_concept(ontology: Ontology, concept: Concept, u: Understanding) -> Can
         if concept.type in {"amount", "percent"} or (u.existence and concept.type in {"number", "int"}):
             assert_value = "__positive__"  # « Y a-t-il un minimum ? » : oui si la valeur est strictement positive
             reasons.append("question oui / non sur un montant ou un taux : oui si la valeur est > 0")
+        elif concept.type in {"text", "code", "list", "long"} and u.existence:
+            assert_value = "__present__"  # « Le fonds a-t-il un indice de référence ? » : oui si la donnée existe
+            reasons.append("question d'existence : oui si la donnée est renseignée (jamais « non » déduit d'un vide)")
         elif len(mentions) == 1:
             assert_value = mentions[0]
             reasons.append(f"question fermée sur la valeur « {mentions[0]} »")

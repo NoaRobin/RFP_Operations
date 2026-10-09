@@ -12,7 +12,9 @@ Jamais de copie automatique d'une valeur historique (auto_copy_allowed = faux).
 """
 from __future__ import annotations
 
+import difflib
 import re
+from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Callable
@@ -328,11 +330,15 @@ class PrecedentAdvisor:
             by_fund.setdefault(_fund_key(h), h)
         groups: dict[str, list[Hit]] = {}
         for h in by_fund.values():
-            groups.setdefault(self._answer_key(h.precedent.answer_text), []).append(h)
+            key = self._answer_key(h.precedent.answer_text)
+            # coquilles (« Quotidiennne ») : même réponse, regroupée avec la variante la plus proche
+            near = next((k for k in groups if not k.startswith("__") and not key.startswith("__")
+                         and difflib.SequenceMatcher(None, k, key).ratio() >= 0.9), None)
+            groups.setdefault(near or key, []).append(h)
         ranked = sorted(groups.values(), key=len, reverse=True)
         top, total = ranked[0], len(by_fund)
         share = len(top) / total
-        text = top[0].precedent.answer_text
+        text = Counter(h.precedent.answer_text.strip() for h in top).most_common(1)[0][0]  # la graphie majoritaire
         qn = norm(question)
         firm = bool(FIRM.search(qn)) and not re.search(r"commission|frais|fee|droit d", qn)
         na = norm(text).startswith(("non applicable", "not applicable", "sans objet", "n/a"))

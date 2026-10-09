@@ -43,6 +43,8 @@ def stem(token: str) -> str:
 
 
 def tokens(text: str) -> list[str]:
+    # « / » entre deux mots sépare deux mots (« zone géographique/secteur ») ; « 6/8/9 » reste un seul jeton
+    text = re.sub(r"(?<=[a-z])/(?=[a-z])", " ", text)
     return [stem(t) for t in re.split(r"[\s']+", text) if t]
 
 
