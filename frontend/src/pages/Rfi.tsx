@@ -341,7 +341,7 @@ export default function Rfi() {
                   <span className="grid size-14 place-items-center rounded-full border-[2.5px] border-fg bg-mint-400"><Check size={28} aria-hidden="true" /></span>
                   <div className="flex-1">
                     <p className="font-display text-2xl font-semibold">{texts.rfi.done(result.written)}</p>
-                    <p className="font-semibold text-fg-2">{result.file} · {texts.rfi.minutes(Math.round(result.written * 0.5))}</p>
+                    <p className="font-semibold text-fg-2">{result.file} · {texts.rfi.minutes(result.written * 2)}</p>
                     <p className="text-sm font-semibold text-fg-2">{texts.rfi.learned}</p>
                   </div>
                   <a href={result.download} className="inline-flex h-14 items-center gap-2 rounded-full border-[2.5px] border-fg bg-card px-7 font-display text-lg font-semibold shadow-[3px_3px_0_0_var(--color-fg)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-fg)]">

@@ -21,7 +21,7 @@ from .deps import bad_request, current_user, not_found, state
 
 router = APIRouter(prefix="/api/rfi")
 MAX_UPLOAD = 25 * 1024 * 1024
-MINUTES_PER_ANSWER = 0.5  # estimation prudente : une réponse vérifiée à la main prend rarement plus
+MINUTES_PER_ANSWER = 2
 
 
 def _store(s: AppState) -> RfiStore:
