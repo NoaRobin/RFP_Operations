@@ -326,6 +326,7 @@ export default function Rfi() {
                 <Workbench analysis={analysis} preview={preview} facts={facts} overrides={overrides} accepted={accepted}
                   onAccept={(id, on) => setAccepted((a) => toggle(a, id, on))}
                   onAcceptMany={(ids) => setAccepted((a) => new Set([...a, ...ids]))}
+                  onResetAccepted={() => setAccepted(new Set())}
                   onOverride={setOverride} toWrite={toWrite} generating={generating} onGenerate={generate} onCopilot={() => setCopilot(true)} />
               </div>
               <p className="mt-4 text-xs font-semibold text-fg-3">{texts.rfi.legal}</p>

@@ -24,9 +24,9 @@ function savedZoom(): number {
   try { return Number(window.localStorage.getItem(ZOOM_KEY)) || 15 } catch { return 15 }
 }
 
-export function Workbench({ analysis, preview, facts, overrides, accepted, onAccept, onAcceptMany, onOverride, toWrite, generating, onGenerate, onCopilot }: {
+export function Workbench({ analysis, preview, facts, overrides, accepted, onAccept, onAcceptMany, onResetAccepted, onOverride, toWrite, generating, onGenerate, onCopilot }: {
   analysis: RfiAnalysis; preview: RfiPreview | null; facts: RfiFact[]; overrides: Record<string, Override>; accepted: Set<string>
-  onAccept: (id: string, on: boolean) => void; onAcceptMany: (ids: string[]) => void; onOverride: (id: string, v: Override | undefined) => void
+  onAccept: (id: string, on: boolean) => void; onAcceptMany: (ids: string[]) => void; onResetAccepted: () => void; onOverride: (id: string, v: Override | undefined) => void
   toWrite: number; generating: boolean; onGenerate: () => void; onCopilot: () => void
 }) {
   const hasSheet = !!preview && (preview.kind === 'docx' ? preview.items.length > 0 : preview.sheets.length > 0)
@@ -99,6 +99,7 @@ export function Workbench({ analysis, preview, facts, overrides, accepted, onAcc
       const k = e.key.toLowerCase()
       if (k === 'j' || e.key === 'ArrowDown') { e.preventDefault(); move(1) }
       else if (k === 'k' || e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
+      else if (k === 'a' && e.shiftKey) { e.preventDefault(); onAcceptMany(analysis.questions.filter((x) => states[x.id] === 'review').map((x) => x.id)) }
       else if (k === 'a') { e.preventDefault(); acceptAndNext() }
       else if (k === 'e') { e.preventDefault(); card.current?.edit() }
       else if (k === 's') { e.preventDefault(); card.current?.source() }
@@ -116,15 +117,31 @@ export function Workbench({ analysis, preview, facts, overrides, accepted, onAcc
   }
   const docConfirmed = analysis.questions.filter((x) => states[x.id] === 'review' && (x.sources ?? []).some((s) => (s.kind === 'kid' || s.kind === 'prospectus') && s.check === 'match')).map((x) => x.id)
   const firm = analysis.questions.filter((x) => states[x.id] === 'review' && x.precedent?.kind === 'precedent_constant').map((x) => x.id)
+  const allReview = analysis.questions.filter((x) => states[x.id] === 'review').map((x) => x.id)
+  const visibleReview = visible.filter((x) => states[x.id] === 'review').map((x) => x.id)
+  const validated = analysis.questions.filter((x) => accepted.has(x.id) && states[x.id] === 'accepted').length
   const height = full ? 'h-[calc(100vh-7.5rem)]' : 'xl:h-[calc(100vh-11rem)]'
 
   return (
     <div ref={root} className={`flex flex-col gap-3 ${full ? 'overflow-auto bg-canvas p-4' : ''}`}>
       <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-fg bg-card-2 px-4 py-2.5">
         <ProgressRing counts={counts} />
-        <div className="flex flex-wrap gap-2">
-          {docConfirmed.length > 0 && <BulkButton label={R.bulkDocs(docConfirmed.length)} onClick={() => onAcceptMany(docConfirmed)} />}
-          {firm.length > 0 && <BulkButton label={R.bulkFirm(firm.length)} onClick={() => onAcceptMany(firm)} />}
+        <div className="flex flex-wrap items-center gap-2">
+          {allReview.length > 0 ? (
+            <button onClick={() => onAcceptMany(allReview)} title={R.validateAllHint}
+              className="inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-fg bg-mint-400 px-4 py-1.5 font-bold shadow-[3px_3px_0_0_var(--color-fg)] transition-transform hover:-translate-y-0.5">
+              <CheckCheck size={16} aria-hidden="true" />{R.validateAll(allReview.length)} <kbd className="text-[0.65rem] opacity-70">⇧A</kbd>
+            </button>
+          ) : <span className="text-sm font-bold text-mint-300">✓ {R.nothingToValidate}</span>}
+          {tab === 'list' && filter !== 'todo' && filter !== 'review' && visibleReview.length > 0 && visibleReview.length < allReview.length && (
+            <BulkButton label={R.bulkVisible(visibleReview.length)} onClick={() => onAcceptMany(visibleReview)} />
+          )}
+          {docConfirmed.length > 0 && docConfirmed.length < allReview.length && <BulkButton label={R.bulkDocs(docConfirmed.length)} onClick={() => onAcceptMany(docConfirmed)} />}
+          {firm.length > 0 && firm.length < allReview.length && <BulkButton label={R.bulkFirm(firm.length)} onClick={() => onAcceptMany(firm)} />}
+          {validated > 0 && (
+            <button onClick={onResetAccepted} className="rounded-full border-2 border-fg/30 px-3 py-1 text-xs font-bold text-fg-2 hover:border-fg">{R.undoValidations(validated)}</button>
+          )}
+          {counts.none > 0 && <span className="text-xs font-semibold text-fg-3">{R.stillEmpty(counts.none)}</span>}
         </div>
         <p className="ml-auto hidden items-center gap-1.5 text-xs font-semibold text-fg-3 2xl:flex"><Keyboard size={14} aria-hidden="true" />{R.shortcuts}</p>
       </div>
