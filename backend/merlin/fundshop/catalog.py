@@ -33,12 +33,14 @@ DOC_TYPES: dict[str, DocType] = {d.key: d for d in [
     DocType("annexe sfdr en", "Annexe SFDR EN", "Documents ESG", ("Annexe SFDR [EN]", "Annexe SFDR - EN", "Annexe SFDR EN", "SFDR Annex",
             "SFDR Annex [EN]"), False, "SFDR", "product", "EN", short="Annexe SFDR EN"),
     DocType("article 10 sfdr", "Article 10 SFDR", "Documents ESG", ("Article 10 SFDR",), False, "SFDR10", "product", short="Article 10 SFDR"),
+    DocType("rapport periodique sfdr en", "Rapport périodique SFDR EN", "Documents ESG", ("Rapport périodique SFDR",), False, "RPSFDR",
+            "product", "EN", short="Rapport périodique SFDR EN"),
     DocType("rapport annuel", "Rapport annuel", "Documents juridiques", ("Rapport annuel", "Annual report"), False, "RAAN", "product",
             short="Rapport annuel"),
-    DocType("rapport semestriel", "Rapport semestriel", "Documents juridiques", ("Rapport semestriel", "Semi-annual report"), False, None,
+    DocType("rapport semestriel", "Rapport semestriel", "Documents juridiques", ("Rapport semestriel", "Semi-annual report"), False, "RASA",
             "product", short="Rapport semestriel"),
     DocType("rapport periodique sfdr", "Rapport périodique SFDR", "Documents ESG", ("Rapport périodique SFDR", "Rapport periodique SFDR"),
-            False, None, "product", short="Rapport périodique SFDR"),
+            False, "RPSFDR", "product", short="Rapport périodique SFDR"),
 ]}
 
 ALIASES = {"dic priips": "dic", "kid": "dic", "dici": "dic", "rapport mensuel": "reporting mensuel", "reporting": "reporting mensuel",

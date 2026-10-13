@@ -232,12 +232,12 @@ def test_share_page_is_read_like_a_human_would(tmp_path):
       <div>DIC PRIIPS <a href="/docs/DIPR_{SHARE_GUID}_FR_FR.pdf">Télécharger</a></div>
       <div>Reporting mensuel <a href="https://site.test/docs/REPM_{SHARE_GUID}_FR_EN.pdf">PDF</a></div>
       <div>Prospectus <a href="/docs/PROS_{PRODUCT_GUID}_FR_FR.pdf">PDF</a></div>
-      <div>Rapport semestriel <a href="/media/rapport-semestriel-fonds-fictif.pdf">PDF</a></div></body></html>""".encode()
+      <div>Rapport semestriel <a href="/docs/RASA_{PRODUCT_GUID}_FR_FR.pdf">PDF</a></div></body></html>""".encode()
     report_sept = make_pdf([[f"Reporting fictif {ISIN} - données au 30/09/2026"] + [f"Ligne {n}" for n in range(30)]])
     semi = make_pdf([["Rapport semestriel fictif"] + [f"Ligne {n}" for n in range(40)]])
     served = {page: html, f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(), f"{BASE}/REPM_{SHARE_GUID}_FR_EN.pdf": report_sept,
               f"{BASE}/PROS_{PRODUCT_GUID}_FR_FR.pdf": make_pdf([["Prospectus fictif"] + [f"Article {n}" for n in range(40)]]),
-              "https://site.test/media/rapport-semestriel-fonds-fictif.pdf": semi}
+              f"{BASE}/RASA_{PRODUCT_GUID}_FR_FR.pdf": semi}
     res = resolver(tmp_path, served, data=None)
     ident = res.identity(ISIN, "Fonds Fictif", "C EUR")
     assert res.find(ident, doc_type("dic"), Period()).strategy == "page de la part"
@@ -251,5 +251,42 @@ def test_share_page_is_read_like_a_human_would(tmp_path):
         raise AssertionError("le reporting de septembre ne doit pas passer pour octobre")
     except DocumentProblem as error:
         assert error.problem.code == "absent"
-    # document sans motif d'adresse : retrouvé par son libellé sur la page
-    assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith("rapport-semestriel-fonds-fictif.pdf")
+    assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith(f"RASA_{PRODUCT_GUID}_FR_FR.pdf")
+
+
+def test_site_search_api_then_share_menu(tmp_path):
+    """Comme la recherche du site : API data-fund (ISIN → fonds + DIC), puis menu « Part … » → page de la part."""
+    import json
+
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+
+    other_guid = "99999999-8888-7777-6666-555555555555"
+    api = {"status": "ok", "tree": {"t": {"e": {"1": [{"fund_title": "Fonds Fictif", "share_title": "I EUR", "isin": OTHER,
+                                                         "fund_rewrite": "fonds-fictif", "DIPR": f"DIPR_{other_guid}_FR_FR.pdf"}]}}}}
+    fund_page = """<html><head><base href="https://site.test/"></head><body><select>
+      <option selected="true" value="/fr/nos-fonds/fonds-fictif/">Part C EUR</option>
+      <option value="/fr/nos-fonds/fonds-fictif/i-eur/">Part I EUR</option></select></body></html>"""
+    share_page = f"""<html><head><base href="https://site.test/"></head><body>
+      <a href="https://docs.test/DIPR_{other_guid}_FR_FR.pdf">DIC</a>
+      <a href="https://docs.test/REPM_{other_guid}_FR_FR_20260831.pdf">Août</a>
+      <a href="https://docs.test/RASA_{PRODUCT_GUID}_FR_FR.pdf">Rapport semestriel</a></body></html>"""
+    report = make_pdf([[f"Reporting fictif {OTHER} au 31/08/2026"] + [f"Ligne {n}" for n in range(30)]])
+    served = {"https://site.test/fr/nos-fonds/fonds-fictif/": fund_page.encode(), "https://site.test/fr/nos-fonds/fonds-fictif/i-eur/": share_page.encode(),
+              f"{BASE}/REPM_{other_guid}_FR_FR_20260831.pdf": report,
+              f"{BASE}/RASA_{PRODUCT_GUID}_FR_FR.pdf": make_pdf([["Rapport semestriel fictif"] + [f"Ligne {n}" for n in range(40)]])}
+    res = resolver(tmp_path, served, data=None)
+    net = res.net
+    original = net.get
+
+    def get(url):
+        if "/api/data-fund/" in url:
+            from merlin.fundshop.net import Reply
+            return Reply(200, json.dumps(api).encode(), "application/json", url)
+        return original(url)
+    net.get = get
+    ident = res.identity(OTHER)  # seul l'ISIN est connu : le site donne le reste
+    assert res.discover(ident, __import__("merlin.fundshop.resolver", fromlist=["Attempts"]).Attempts())[0].endswith("/fonds-fictif/i-eur/")
+    assert res.find(ident, doc_type("reporting mensuel"), Period(8, 2026)).url.endswith("_20260831.pdf")
+    assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith(f"RASA_{PRODUCT_GUID}_FR_FR.pdf")
+    assert res.memory.guid(OTHER, "share") == other_guid

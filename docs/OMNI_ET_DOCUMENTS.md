@@ -114,8 +114,13 @@ Le navigateur n'est donc **pas nécessaire** dès que l'on connaît le GUID.
   rapports annuels et semestriels.
 - **Adresse des PDF** : `{PRÉFIXE}_{GUID}_{PAYS}_{LANGUE}[_{AAAAMMJJ}].pdf`, servie à deux endroits identiques :
   `https://docs.am.eu.rothschildandco.com/…` et `https://am.eu.rothschildandco.com/docs/…`.
-  - préfixes vus : `DIPR` (DIC, par part), `REPM` (reporting mensuel, par part), `PROS` (prospectus, par fonds),
-    `SFDR` / `SFDR10` (documents SFDR), `RAAN` (rapport annuel) ;
+  - préfixes (code source de la page R-co Valor) : `DIPR` (DIC), `REPM` (reporting mensuel), `PERFNAV` (performances) par part ;
+    `PROS` (prospectus), `SFDR` (annexe), `SFDR10` (article 10), `RPSFDR` (rapport périodique SFDR), `RAAN` (rapport annuel),
+    `RASA` (rapport semestriel) par fonds ;
+- **Recherche du site** : `GET /api/data-fund/?query={ISIN}&country=fr&language=fr&user_type=individual` renvoie le fonds
+  (`fund_rewrite`, `fund_title`), la part (`share_title`) et le nom du fichier DIC (`DIPR`). La page du fonds contient
+  un menu « Part … » (`<option value="/fr/nos-fonds/{fonds}/{part}/">`) ; la part par défaut est la page du fonds elle-même.
+  Les liens « Téléchargements » sont écrits en clair dans la page (pas besoin de navigateur).
   - suffixe **PAYS_LANGUE** : `FR_FR` (France, français), `FR_EN` (France, anglais), `BE_FR`, `ES_EN`, `IT_EN`… ;
   - reporting : sans date = dernier mois publié ; avec date = mois précis (dernier jour ouvré, ex. `_20260130`).
 
@@ -129,7 +134,7 @@ changent, fonds introuvables. L'app va droit à l'adresse du PDF.
       automatique). Le premier qui répond est gardé.
 2. **Trouver l'adresse** (`resolver.py`), dans l'ordre :
    1. adresse mémorisée (`data/fundshop/learned.json`) ;
-   2. **la page de la part**, lue comme on le ferait à la main (rubrique « Téléchargements ») : tous ses liens sont
+   2. **la recherche du site** (API `data-fund` par ISIN) puis **la page de la part** (menu des parts), lue comme on le ferait à la main (rubrique « Téléchargements ») : tous ses liens sont
       mémorisés d'un coup (DIC, reportings, prospectus, SFDR…), puis la page du fonds ;
    3. adresse déduite des identifiants Product Info (`PI_OUT_Share.pi_shareid`… ; la colonne qui marche est retenue) ;
    4. **« J'ai le lien »** : l'utilisateur colle une fois le lien d'un PDF de la part (ou la page du fonds). L'app en déduit

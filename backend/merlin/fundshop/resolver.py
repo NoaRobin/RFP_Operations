@@ -4,6 +4,7 @@ ce qui marche est mémorisé. Si rien ne marche, la raison la plus utile est ren
 from __future__ import annotations
 
 import io
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -131,6 +132,7 @@ class Resolver:
         self._net = net
         self._ids: dict[str, Identity] = {}
         self._pages: dict[str, str | None] = {}
+        self._found: dict[str, list[str]] = {}
 
     @property
     def net(self) -> Network:
@@ -177,9 +179,58 @@ class Resolver:
             share = share[len(ident.fund):]
         return slug(share)
 
-    def pages(self, ident: Identity, lang: str = "FR") -> list[str]:
+    def discover(self, ident: Identity, seen: "Attempts") -> list[str]:
+        """Comme la recherche du site : l'API « data-fund » donne, pour un ISIN, le fonds (fund_rewrite) et le DIC de la part ;
+        la page du fonds liste ses parts (menu « Part … ») : on en déduit la page exacte de la part."""
+        if ident.isin in self._found:
+            return self._found[ident.isin]
+        out: list[str] = []
+        lang = "fr"
+        api = (f"{self._root()}/api/data-fund/?query={ident.isin}&type=&region=&range=&expertise=&period=&esg="
+               f"&country={lang}&language={lang}&user_type=individual")
+        try:
+            r = self.net.get(api)
+            data = json.loads(r.content.decode("utf-8", "replace")) if r.status == 200 else {}
+        except NetError as error:
+            seen.add(error.code, host=error.host, detail=error.detail, link=api)
+            data = {}
+        except ValueError:
+            data = {}
+        record = None
+        for funds in (data.get("tree") or {}).values() if isinstance(data, dict) else []:
+            for experts in (funds or {}).values():
+                for shares in (experts or {}).values():
+                    for rec in shares or []:
+                        if isinstance(rec, dict) and ident.isin in {str(v).upper() for v in rec.values() if isinstance(v, str)}:
+                            record = rec
+        if record:
+            if record.get("DIPR"):
+                self.memory.learn(ident.isin, urljoin(self.docs_base + "/", str(record["DIPR"])), kind="dic")
+            ident.fund = ident.fund or str(record.get("fund_title") or "")
+            ident.share = ident.share or str(record.get("share_title") or "")
+            if record.get("fund_rewrite"):
+                fund_page = f"{self._root()}/{lang}/nos-fonds/{record['fund_rewrite']}/"
+                share_page = self._share_from_menu(fund_page, str(record.get("share_title") or ident.share), seen)
+                out = [share_page or fund_page] + ([fund_page] if share_page and share_page != fund_page else [])
+        self._found[ident.isin] = out
+        return out
+
+    def _share_from_menu(self, fund_page: str, share_title: str, seen: "Attempts") -> str | None:
+        """Le menu « Part C EUR / Part C USD… » de la page du fonds → adresse de la page de la part demandée."""
+        self.links(fund_page, seen)  # charge la page (cache)
+        html = self._pages.get(fund_page) or ""
+        wanted = norm(re.sub(r"^part\s+", "", share_title, flags=re.I))
+        for m in re.finditer(r'<option[^>]*value="([^"]+)"[^>]*>\s*([^<]+?)\s*</option>', html):
+            label = norm(re.sub(r"^part\s+", "", m.group(2).replace("*", "").strip(), flags=re.I))
+            if label and (label == wanted or wanted.endswith(" " + label) or wanted == label):
+                return urljoin(self._root() + "/", m.group(1))
+        return None
+
+    def pages(self, ident: Identity, lang: str = "FR", seen: "Attempts | None" = None) -> list[str]:
         """Pages où sont listés les téléchargements : celle de la part d'abord, puis celle du fonds (FR puis EN)."""
         out = [self.memory.page(ident.isin)] if self.memory.page(ident.isin) else []
+        if seen is not None:
+            out += self.discover(ident, seen)
         if ident.fund:
             fund, share = slug(ident.fund), self.share_slug(ident)
             sections = ["fr/nos-fonds", "en/our-funds"] if lang == "FR" else ["en/our-funds", "fr/nos-fonds"]
@@ -211,7 +262,7 @@ class Resolver:
             context = norm(TAG.sub(" ", html[max(0, m.start() - 600):m.start()]))[-200:]
             out.setdefault(url, Link(url, prefix, guid, lang, date, context))
         for m in ANY_PDF.finditer(html):  # PDF sans motif connu (rapport semestriel…) : adresse telle quelle
-            url = urljoin(page, m.group(1))
+            url = urljoin(self._root() + "/", m.group(1)) if not m.group(1).startswith("/") and "<base" in html else urljoin(page, m.group(1))
             if not DOC_LINK.search(url):
                 context = norm(TAG.sub(" ", html[max(0, m.start() - 600):m.start()]))[-200:]
                 out.setdefault(url, Link(url, "", "", "", "", context))
@@ -295,9 +346,10 @@ class Resolver:
                     return f
                 trusted_404 = set(seen.codes) == {"absent"}
         # 2. la page de la part sur le site (comme à la main : « Téléchargements »), puis celle du fonds
+        self.discover(ident, seen)
         share_slug = self.share_slug(ident)
-        for page in self.pages(ident, doc.lang):
-            on_share_page = bool(share_slug) and page.rstrip("/").endswith("/" + share_slug)
+        for page in self.pages(ident, doc.lang, seen):
+            on_share_page = (bool(share_slug) and page.rstrip("/").endswith("/" + share_slug)) or page in self._found.get(ident.isin, [])[:1]
             links = self.links(page, seen)
             if not links:
                 continue
