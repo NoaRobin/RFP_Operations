@@ -1,0 +1,2223 @@
+2026-08-26 18:13:51,825 | ERROR | Validation impossible : Colonnes obligatoires manquantes : ['Type de document']
+Colonnes trouvées : ['Fonds', 'ISIN', 'Mois demandé', 'Nom final']
+2026-08-26 18:20:18,623 | ERROR | Validation impossible : liste_reportings.xlsx est ouvert ou verrouillé. Ferme Excel puis relance.
+2026-08-26 18:21:24,481 | ERROR | Validation impossible : Tableau Excel invalide :
+- Ligne 2 : Le type 'reporting mensuel' exige un mois et une année.
+2026-08-26 18:22:39,770 | ERROR | Validation impossible : liste_reportings.xlsx est ouvert ou verrouillé. Ferme Excel puis relance.
+2026-08-26 18:23:11,595 | INFO | 1 demande(s) active(s) validée(s).
+2026-08-26 18:24:33,189 | INFO | 1 demande(s) active(s) validée(s).
+2026-08-26 18:26:00,306 | ERROR | Ligne 2, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 891, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 754, in traiter_demande
+    ouvrir_fonds(page, demande)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 508, in ouvrir_fonds
+    page.goto(URL_FONDS, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\sync_api\_generated.py", line 9875, in goto
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.goto(
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        )
+        ^
+    )
+    ^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_page.py", line 560, in goto
+    return await self._main_frame.goto(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_frame.py", line 156, in goto
+    await self._channel.send(
+        "goto", self._navigation_timeout, locals_to_params(locals())
+    )
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Page.goto: Target page, context or browser has been closed
+2026-08-26 18:26:09,781 | ERROR | Validation impossible : Tableau Excel invalide :
+- Ligne 3 : Mois invalide : nan
+- Ligne 4 : Mois invalide : nan
+- Ligne 5 : Mois invalide : nan
+- Ligne 6 : Mois invalide : nan
+- Ligne 7 : Mois invalide : nan
+- Ligne 8 : Mois invalide : nan
+2026-08-26 18:40:29,308 | INFO | 7 demande(s) active(s) validée(s).
+2026-08-26 18:41:14,880 | INFO | 7 demande(s) active(s) validée(s).
+2026-08-26 18:41:42,704 | INFO | Ligne 2 | score=30 | texte='Reporting Mensuel' | raisons=type:reporting mensuel, periode:2026, extension:.pdf
+2026-08-26 18:42:56,711 | INFO | Ligne 3 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-26 18:43:21,956 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-26 18:44:34,694 | INFO | Ligne 3 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:27:16,950 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:27:58,373 | INFO | Ligne 4 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:28:23,656 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:29:19,102 | INFO | 7 demande(s) active(s) validée(s).
+2026-08-27 09:30:11,785 | INFO | 7 demande(s) active(s) validée(s).
+2026-08-27 09:31:26,377 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 674, in traiter_demande
+    ouvrir_fonds(page, demande)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 482, in ouvrir_fonds
+    champ.click()
+    ~~~~~~~~~~~^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\sync_api\_generated.py", line 17876, in click
+    self._sync(
+    ~~~~~~~~~~^
+        self._impl_obj.click(
+        ^^^^^^^^^^^^^^^^^^^^^
+    ...<11 lines>...
+        )
+        ^
+    )
+    ^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_locator.py", line 165, in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_frame.py", line 593, in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("input[placeholder*=\"Recherch\" i]:visible").first
+    - locator resolved to <input type="text" id="query_field" autocomplete="on" class="search_input" placeholder="Rechercher par nom ou code ISIN"/>
+  - attempting click action
+    2 × waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> intercepts pointer events
+    - retrying click action
+    - waiting 20ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> intercepts pointer events
+  2 × retrying click action
+      - waiting 100ms
+      - waiting for element to be visible, enabled and stable
+      - element is not stable
+  2 × retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <p>Ce site présente les informations relatives aux O…</p> from <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> subtree intercepts pointer events
+    - retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> intercepts pointer events
+  13 × retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <p>Ce site présente les informations relatives aux O…</p> from <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> subtree intercepts pointer events
+     - retrying click action
+       - waiting 500ms
+       - waiting for element to be visible, enabled and stable
+       - element is visible, enabled and stable
+       - scrolling into view if needed
+       - done scrolling
+       - <section tabindex="-1" role="dialog" aria-modal="true" class="modal show" id="modal_disclaimer" data-keyboard="false" data-backdrop="static">…</section> intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+
+2026-08-27 09:32:41,270 | INFO | Ligne 3 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:33:06,404 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:33:46,718 | INFO | Ligne 4 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:34:11,864 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:34:53,434 | INFO | Ligne 4 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:35:18,526 | ERROR | Ligne 4, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:35:59,125 | INFO | Ligne 5 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:36:24,240 | ERROR | Ligne 5, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:37:06,258 | INFO | Ligne 5 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:37:31,802 | ERROR | Ligne 5, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:38:04,762 | INFO | Ligne 6 | score=24 | texte='Rapport Annuel' | raisons=type:rapport annuel, extension:.pdf
+2026-08-27 09:39:02,407 | INFO | Ligne 7 | score=4 | texte='Rapport Annuel' | raisons=extension:.pdf
+2026-08-27 09:40:20,451 | ERROR | Ligne 8, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    raise ErreurControlee(f"Aucun document candidat pour le type '{demande.type_document}'.")
+ErreurControlee: Aucun document candidat pour le type 'politique esg'.
+2026-08-27 09:42:34,095 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 09:43:59,912 | INFO | Ligne 3 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:44:25,200 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:45:37,010 | INFO | Ligne 3 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:46:02,447 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:46:42,459 | INFO | Ligne 4 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:47:07,877 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:47:49,767 | INFO | Ligne 4 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:48:15,439 | ERROR | Ligne 4, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:48:56,173 | INFO | Ligne 5 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:49:21,416 | ERROR | Ligne 5, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    with page.expect_download(timeout=TIMEOUT_DOWNLOAD_MS) as information:
+         ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    url_source = telecharger_candidat(page, contexte, meilleur, chemin_final)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    raise ErreurControlee("Le lien a été trouvé, mais aucun téléchargement n'a démarré.") from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:50:03,349 | INFO | Ligne 5 | score=2 | texte='TÉLÉCHARGEMENTS' | raisons=telechargement
+2026-08-27 09:50:28,586 | ERROR | Ligne 5, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 650, in telecharger_candidat
+    download.save_as(str(destination))
+         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 85, in __exit__
+    self._event.value
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 59, in value
+    raise exception
+playwright._impl._errors.TimeoutError: Timeout 25000ms exceeded while waiting for event "download"
+=========================== logs ===========================
+waiting for event "download"
+============================================================
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 781, in main
+    "Ligne %s, tentative %s/%s en échec",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 687, in traiter_demande
+    demande.periode.libelle, demande.nom_final, "OK",
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 655, in telecharger_candidat
+    ) from exc
+ErreurControlee: Le lien a été trouvé, mais aucun téléchargement n'a démarré.
+2026-08-27 09:51:05,294 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 09:51:17,816 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 09:51:42,042 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 09:52:00,013 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 773, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    ligne, label_trouve = trouver_ligne_document(page, configuration["labels"])
+                          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 567, in trouver_ligne_document
+    raise ErreurControlee("Document introuvable. Libellés cherchés : " + ", ".join(labels))
+ErreurControlee: Document introuvable. Libellés cherchés : Annexe SFDR
+2026-08-27 09:52:09,389 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 773, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    ligne, label_trouve = trouver_ligne_document(page, configuration["labels"])
+                          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 567, in trouver_ligne_document
+    raise ErreurControlee("Document introuvable. Libellés cherchés : " + ", ".join(labels))
+ErreurControlee: Document introuvable. Libellés cherchés : Annexe SFDR
+2026-08-27 09:52:17,381 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 773, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    ligne, label_trouve = trouver_ligne_document(page, configuration["labels"])
+                          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 567, in trouver_ligne_document
+    raise ErreurControlee("Document introuvable. Libellés cherchés : " + ", ".join(labels))
+ErreurControlee: Document introuvable. Libellés cherchés : DIC PRIIPS, DIC, KID, KIID
+2026-08-27 09:52:27,069 | ERROR | Ligne 4, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 773, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    ligne, label_trouve = trouver_ligne_document(page, configuration["labels"])
+                          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 567, in trouver_ligne_document
+    raise ErreurControlee("Document introuvable. Libellés cherchés : " + ", ".join(labels))
+ErreurControlee: Document introuvable. Libellés cherchés : DIC PRIIPS, DIC, KID, KIID
+2026-08-27 09:52:35,166 | ERROR | Ligne 5, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 773, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    ligne, label_trouve = trouver_ligne_document(page, configuration["labels"])
+                          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 567, in trouver_ligne_document
+    raise ErreurControlee("Document introuvable. Libellés cherchés : " + ", ".join(labels))
+ErreurControlee: Document introuvable. Libellés cherchés : Prospectus
+2026-08-27 09:52:44,814 | ERROR | Ligne 5, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 773, in main
+    resultat = traiter_demande(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 680, in traiter_demande
+    ligne, label_trouve = trouver_ligne_document(page, configuration["labels"])
+                          ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 567, in trouver_ligne_document
+    raise ErreurControlee("Document introuvable. Libellés cherchés : " + ", ".join(labels))
+ErreurControlee: Document introuvable. Libellés cherchés : Prospectus
+2026-08-27 10:00:38,172 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 10:00:57,185 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 11:32:52,089 | INFO | 4 demande(s) active(s) validée(s).
+2026-08-27 11:42:05,921 | INFO | 4 demande(s) validée(s).
+2026-08-27 11:42:36,702 | ERROR | Ligne 2 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:42:50,278 | ERROR | Ligne 2 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:43:02,957 | ERROR | Ligne 3 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:43:16,213 | ERROR | Ligne 3 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:43:34,006 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:43:52,035 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:44:03,248 | ERROR | Ligne 5 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:44:14,620 | ERROR | Ligne 5 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 367, in main
+    r=traiter(page,ctx,d,urls,hashes); resultats.append(r); print(f"  {r.statut}: {r.detail}"); err=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 327, in traiter
+    c,label=trouver_document(page,d); url=telecharger(page,ctx,c,dest); fichier_valide(dest); h=sha256(dest)
+                                                                        ~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 175, in fichier_valide
+    p.unlink(missing_ok=True); raise ErreurControlee("Le fichier obtenu n'est pas un PDF valide.")
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ErreurControlee: Le fichier obtenu n'est pas un PDF valide.
+2026-08-27 11:53:38,822 | INFO | 4 demande(s) validée(s).
+2026-08-27 11:54:10,862 | INFO | 4 demande(s) validée(s).
+2026-08-27 11:54:33,123 | ERROR | Ligne 2, tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:54:46,808 | ERROR | Ligne 2, tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:54:59,909 | ERROR | Ligne 3, tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:55:13,518 | ERROR | Ligne 3, tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:55:35,329 | ERROR | Ligne 4, tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:55:55,854 | ERROR | Ligne 4, tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:56:11,135 | ERROR | Ligne 5, tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 11:56:25,662 | ERROR | Ligne 5, tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1818, in main
+    resultat = traiter_demande(
+        page,
+    ...<3 lines>...
+        empreintes_deja_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1508, in traiter_demande
+    valider_pdf(
+    ~~~~~~~~~~~^
+        destination
+        ^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 661, in valider_pdf
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Le fichier obtenu n'est pas un document PDF valide.
+2026-08-27 12:01:55,718 | INFO | 4 demande(s) validée(s).
+2026-08-27 12:02:13,470 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:02:15,324 | ERROR | Ligne 2, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Reporting
+2026-08-27 12:02:24,244 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:02:26,085 | ERROR | Ligne 2, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Reporting
+2026-08-27 12:02:34,314 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:02:36,149 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Documents ESG
+2026-08-27 12:02:45,147 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:02:47,004 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Documents ESG
+2026-08-27 12:02:55,183 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:02:57,031 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Documents juridiques
+2026-08-27 12:03:06,148 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:03:07,986 | ERROR | Ligne 4, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Documents juridiques
+2026-08-27 12:03:16,017 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:03:17,867 | ERROR | Ligne 5, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Documents juridiques
+2026-08-27 12:03:27,023 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:03:28,870 | ERROR | Ligne 5, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 635, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 549, in traiter
+    bloc = cliquer_rubrique(zone, config["rubrique"], page)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 392, in cliquer_rubrique
+    raise ErreurControlee(f"Rubrique introuvable : {titre}")
+ErreurControlee: Rubrique introuvable : Documents juridiques
+2026-08-27 12:05:23,857 | INFO | 4 demande(s) validée(s).
+2026-08-27 12:06:09,206 | INFO | 4 demande(s) validée(s).
+2026-08-27 12:06:27,540 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:06:30,904 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:06:32,827 | INFO | Rubrique ouverte : Reporting
+2026-08-27 12:06:32,879 | ERROR | Ligne 2, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in traiter
+    selectionner_mois(bloc, demande.periode, page)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 523, in selectionner_mois
+    raise ErreurControlee(f"Mois non sélectionné : {periode.libelle}")
+ErreurControlee: Mois non sélectionné : juillet 2026
+2026-08-27 12:06:41,741 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:06:45,102 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:06:47,008 | INFO | Rubrique ouverte : Reporting
+2026-08-27 12:06:47,058 | ERROR | Ligne 2, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in traiter
+    selectionner_mois(bloc, demande.periode, page)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 523, in selectionner_mois
+    raise ErreurControlee(f"Mois non sélectionné : {periode.libelle}")
+ErreurControlee: Mois non sélectionné : juillet 2026
+2026-08-27 12:06:54,976 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:06:58,318 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:07:00,206 | INFO | Rubrique ouverte : Documents ESG
+2026-08-27 12:07:00,242 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 628, in traiter
+    controle, libelle_site = trouver_document(bloc, config["libelles"])
+                             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 571, in trouver_document
+    raise ErreurControlee("Document introuvable dans la rubrique : " + ", ".join(libelles))
+ErreurControlee: Document introuvable dans la rubrique : Annexe SFDR
+2026-08-27 12:07:09,220 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:07:12,569 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:07:14,497 | INFO | Rubrique ouverte : Documents ESG
+2026-08-27 12:07:14,525 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 628, in traiter
+    controle, libelle_site = trouver_document(bloc, config["libelles"])
+                             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 571, in trouver_document
+    raise ErreurControlee("Document introuvable dans la rubrique : " + ", ".join(libelles))
+ErreurControlee: Document introuvable dans la rubrique : Annexe SFDR
+2026-08-27 12:07:22,491 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:07:25,829 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:07:27,766 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:07:27,808 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 628, in traiter
+    controle, libelle_site = trouver_document(bloc, config["libelles"])
+                             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 571, in trouver_document
+    raise ErreurControlee("Document introuvable dans la rubrique : " + ", ".join(libelles))
+ErreurControlee: Document introuvable dans la rubrique : DIC PRIIPS, DIC
+2026-08-27 12:07:36,925 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:07:40,325 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:07:42,284 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:07:42,332 | ERROR | Ligne 4, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 628, in traiter
+    controle, libelle_site = trouver_document(bloc, config["libelles"])
+                             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 571, in trouver_document
+    raise ErreurControlee("Document introuvable dans la rubrique : " + ", ".join(libelles))
+ErreurControlee: Document introuvable dans la rubrique : DIC PRIIPS, DIC
+2026-08-27 12:07:50,251 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:07:53,612 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:07:55,550 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:07:55,580 | ERROR | Ligne 5, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 628, in traiter
+    controle, libelle_site = trouver_document(bloc, config["libelles"])
+                             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 571, in trouver_document
+    raise ErreurControlee("Document introuvable dans la rubrique : " + ", ".join(libelles))
+ErreurControlee: Document introuvable dans la rubrique : Prospectus
+2026-08-27 12:08:04,958 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:08:08,368 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:08:10,400 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:08:10,456 | ERROR | Ligne 5, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 711, in main
+    resultat = traiter(page, contexte, demande)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 628, in traiter
+    controle, libelle_site = trouver_document(bloc, config["libelles"])
+                             ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 571, in trouver_document
+    raise ErreurControlee("Document introuvable dans la rubrique : " + ", ".join(libelles))
+ErreurControlee: Document introuvable dans la rubrique : Prospectus
+2026-08-27 12:15:16,174 | INFO | 4 demande(s) validée(s).
+2026-08-27 12:15:33,383 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:15:36,725 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:15:38,615 | INFO | Rubrique ouverte : Reporting
+2026-08-27 12:15:38,641 | ERROR | Ligne 2, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1597, in traiter
+    selectionner_mois(
+    ~~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+        demande.periode,
+        ^^^^^^^^^^^^^^^^
+        page,
+        ^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1163, in selectionner_mois
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Mois non sélectionné : juillet 2026
+2026-08-27 12:15:47,541 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:15:50,873 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:15:52,746 | INFO | Rubrique ouverte : Reporting
+2026-08-27 12:15:52,778 | ERROR | Ligne 2, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1597, in traiter
+    selectionner_mois(
+    ~~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+        demande.periode,
+        ^^^^^^^^^^^^^^^^
+        page,
+        ^^^^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1163, in selectionner_mois
+    raise ErreurControlee(
+    ...<2 lines>...
+    )
+ErreurControlee: Mois non sélectionné : juillet 2026
+2026-08-27 12:16:01,326 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:16:04,658 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:16:06,552 | INFO | Rubrique ouverte : Documents ESG
+2026-08-27 12:16:06,586 | ERROR | Ligne 3, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1603, in traiter
+    controle, libelle_site = trouver_document(
+                             ~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+    ...<4 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1340, in trouver_document
+    raise ErreurControlee(
+    ...<3 lines>...
+    )
+ErreurControlee: Document introuvable dans la rubrique. Wordings recherchés : Annexe SFDR, Informations précontractuelles
+2026-08-27 12:16:15,552 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:16:18,905 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:16:20,795 | INFO | Rubrique ouverte : Documents ESG
+2026-08-27 12:16:20,828 | ERROR | Ligne 3, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1603, in traiter
+    controle, libelle_site = trouver_document(
+                             ~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+    ...<4 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1340, in trouver_document
+    raise ErreurControlee(
+    ...<3 lines>...
+    )
+ErreurControlee: Document introuvable dans la rubrique. Wordings recherchés : Annexe SFDR, Informations précontractuelles
+2026-08-27 12:16:29,495 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:16:32,846 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:16:39,158 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:16:39,215 | ERROR | Ligne 4, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1603, in traiter
+    controle, libelle_site = trouver_document(
+                             ~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+    ...<4 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1340, in trouver_document
+    raise ErreurControlee(
+    ...<3 lines>...
+    )
+ErreurControlee: Document introuvable dans la rubrique. Wordings recherchés : DIC PRIIPS, DIC, Document d'informations clés, Document d’informations clés
+2026-08-27 12:16:48,080 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:16:51,447 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:16:53,469 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:16:53,586 | ERROR | Ligne 4, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1603, in traiter
+    controle, libelle_site = trouver_document(
+                             ~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+    ...<4 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1340, in trouver_document
+    raise ErreurControlee(
+    ...<3 lines>...
+    )
+ErreurControlee: Document introuvable dans la rubrique. Wordings recherchés : DIC PRIIPS, DIC, Document d'informations clés, Document d’informations clés
+2026-08-27 12:17:03,030 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:17:06,390 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:17:11,763 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:17:11,829 | ERROR | Ligne 5, tentative 1/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1603, in traiter
+    controle, libelle_site = trouver_document(
+                             ~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+    ...<4 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1340, in trouver_document
+    raise ErreurControlee(
+    ...<3 lines>...
+    )
+ErreurControlee: Document introuvable dans la rubrique. Wordings recherchés : Prospectus, Prospectus du fonds
+2026-08-27 12:17:21,145 | INFO | Fonds vérifié : R-co Valor Equity | FR001400YR47
+2026-08-27 12:17:24,493 | INFO | Zone Téléchargements atteinte. Rubriques visibles : Documents juridiques, Reporting, Documents ESG
+2026-08-27 12:17:26,394 | INFO | Rubrique ouverte : Documents juridiques
+2026-08-27 12:17:26,421 | ERROR | Ligne 5, tentative 2/2 en échec
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1938, in main
+    resultat = traiter(
+        page,
+    ...<3 lines>...
+        empreintes_utilisees,
+    )
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1603, in traiter
+    controle, libelle_site = trouver_document(
+                             ~~~~~~~~~~~~~~~~^
+        bloc,
+        ^^^^^
+    ...<4 lines>...
+        ),
+        ^^
+    )
+    ^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 1340, in trouver_document
+    raise ErreurControlee(
+    ...<3 lines>...
+    )
+ErreurControlee: Document introuvable dans la rubrique. Wordings recherchés : Prospectus, Prospectus du fonds
+2026-08-27 14:00:06,047 | INFO | 4 demande(s) validée(s).
+2026-08-27 14:00:28,554 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:00:33,652 | ERROR | Ligne 2 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 267, in process
+    if cfg["month"]: select_month(block,request.period,page)
+                     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 213, in select_month
+    if target not in norm(block.inner_text()): raise ControlledError(f"Mois non sélectionné: {period.label}")
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ControlledError: Mois non sélectionné: juillet 2026
+2026-08-27 14:00:42,047 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:00:47,124 | ERROR | Ligne 2 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 267, in process
+    if cfg["month"]: select_month(block,request.period,page)
+                     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 213, in select_month
+    if target not in norm(block.inner_text()): raise ControlledError(f"Mois non sélectionné: {period.label}")
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ControlledError: Mois non sélectionné: juillet 2026
+2026-08-27 14:00:55,042 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:01:00,100 | ERROR | Ligne 3 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 268, in process
+    control,site_label=find_document(block,cfg["labels"]); source=download_pdf(page,context,control,destination); validate_pdf(destination); file_hash=digest(destination); url_key=source.casefold().strip()
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 237, in find_document
+    raise ControlledError("Document introuvable. Wordings: "+", ".join(labels))
+ControlledError: Document introuvable. Wordings: Annexe SFDR, Informations précontractuelles
+2026-08-27 14:01:08,429 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:01:13,532 | ERROR | Ligne 3 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 268, in process
+    control,site_label=find_document(block,cfg["labels"]); source=download_pdf(page,context,control,destination); validate_pdf(destination); file_hash=digest(destination); url_key=source.casefold().strip()
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 237, in find_document
+    raise ControlledError("Document introuvable. Wordings: "+", ".join(labels))
+ControlledError: Document introuvable. Wordings: Annexe SFDR, Informations précontractuelles
+2026-08-27 14:01:21,463 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:01:26,560 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 268, in process
+    control,site_label=find_document(block,cfg["labels"]); source=download_pdf(page,context,control,destination); validate_pdf(destination); file_hash=digest(destination); url_key=source.casefold().strip()
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 237, in find_document
+    raise ControlledError("Document introuvable. Wordings: "+", ".join(labels))
+ControlledError: Document introuvable. Wordings: DIC PRIIPS, DIC, Document d'informations clés, Document d’informations clés
+2026-08-27 14:01:34,962 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:01:40,077 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 268, in process
+    control,site_label=find_document(block,cfg["labels"]); source=download_pdf(page,context,control,destination); validate_pdf(destination); file_hash=digest(destination); url_key=source.casefold().strip()
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 237, in find_document
+    raise ControlledError("Document introuvable. Wordings: "+", ".join(labels))
+ControlledError: Document introuvable. Wordings: DIC PRIIPS, DIC, Document d'informations clés, Document d’informations clés
+2026-08-27 14:01:47,935 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:01:53,010 | ERROR | Ligne 5 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 268, in process
+    control,site_label=find_document(block,cfg["labels"]); source=download_pdf(page,context,control,destination); validate_pdf(destination); file_hash=digest(destination); url_key=source.casefold().strip()
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 237, in find_document
+    raise ControlledError("Document introuvable. Wordings: "+", ".join(labels))
+ControlledError: Document introuvable. Wordings: Prospectus, Prospectus du fonds
+2026-08-27 14:02:01,384 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:02:06,461 | ERROR | Ligne 5 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 302, in main
+    result=process(page,context,request,urls,hashes); results.append(result); print(f"  {result.statut}: {result.detail}"); error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 268, in process
+    control,site_label=find_document(block,cfg["labels"]); source=download_pdf(page,context,control,destination); validate_pdf(destination); file_hash=digest(destination); url_key=source.casefold().strip()
+                       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 237, in find_document
+    raise ControlledError("Document introuvable. Wordings: "+", ".join(labels))
+ControlledError: Document introuvable. Wordings: Prospectus, Prospectus du fonds
+2026-08-27 14:06:05,558 | INFO | 4 demande(s) validée(s).
+2026-08-27 14:06:11,883 | INFO | 4 demande(s) validée(s).
+2026-08-27 14:06:33,013 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:06:39,215 | INFO | Rubrique cliquée: Reporting
+2026-08-27 14:06:39,566 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_f92a50f1-b59b-4667-9063-61d0f48ab6e7_FR_FR_20260731.pdf
+2026-08-27 14:06:49,010 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:06:55,238 | INFO | Rubrique cliquée: Documents ESG
+2026-08-27 14:06:55,467 | INFO | Document ciblé: Annexe SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-27 14:07:04,605 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:07:10,835 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 14:07:11,699 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: DIC PRIIPS, DIC
+2026-08-27 14:07:19,049 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:07:25,277 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 14:07:26,260 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: DIC PRIIPS, DIC
+2026-08-27 14:07:34,037 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:07:40,274 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 14:07:40,486 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-27 14:18:17,732 | INFO | 4 demande(s) validée(s).
+2026-08-27 14:18:27,202 | INFO | 4 demande(s) validée(s).
+2026-08-27 14:18:51,791 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:18:57,995 | INFO | Rubrique cliquée: Reporting
+2026-08-27 14:18:58,327 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_f92a50f1-b59b-4667-9063-61d0f48ab6e7_FR_FR_20260731.pdf
+2026-08-27 14:19:08,078 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:19:14,346 | INFO | Rubrique cliquée: Documents ESG
+2026-08-27 14:19:14,596 | INFO | Document ciblé: Annexe SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-27 14:19:23,516 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:19:29,804 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 14:19:30,063 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_f92a50f1-b59b-4667-9063-61d0f48ab6e7_FR_FR.pdf
+2026-08-27 14:19:39,110 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:19:45,365 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 14:19:45,628 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-27 14:36:47,490 | INFO | 3 demande(s) validée(s).
+2026-08-27 14:37:03,969 | INFO | Fonds vérifié: R-co Thematic Blockchain Global Equity | FR0014008M99
+2026-08-27 14:37:10,199 | INFO | Rubrique cliquée: Reporting
+2026-08-27 14:37:10,508 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_9b32f3f0-b4f6-ec11-8156-005056a02553_FR_FR_20260731.pdf
+2026-08-27 14:37:20,188 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 14:37:26,764 | INFO | Rubrique cliquée: Documents ESG
+2026-08-27 14:37:26,977 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-27 14:37:33,953 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-27 14:37:40,226 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 14:37:40,458 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_8917f286-f71f-ee11-b872-005056a03b00_FR_FR.pdf
+2026-08-27 17:12:47,984 | ERROR | Validation impossible: Ferme Excel: Liste de courses.xlsx est verrouillé.
+2026-08-27 17:13:09,347 | INFO | 4 demande(s) validée(s).
+2026-08-27 17:13:39,046 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581
+2026-08-27 17:13:45,529 | INFO | Rubrique cliquée: Reporting
+2026-08-27 17:13:46,811 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-27 17:13:58,994 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-27 17:14:05,377 | INFO | Rubrique cliquée: Documents ESG
+2026-08-27 17:14:05,647 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-27 17:14:13,394 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-27 17:14:19,891 | INFO | Rubrique cliquée: Documents juridiques
+2026-08-27 17:14:20,291 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_8917f286-f71f-ee11-b872-005056a03b00_FR_FR.pdf
+2026-08-27 17:14:31,764 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-27 17:14:38,355 | INFO | Rubrique cliquée: Documents ESG
+2026-08-27 17:14:41,404 | ERROR | Ligne 5 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-27 17:14:51,233 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-27 17:14:57,883 | INFO | Rubrique cliquée: Documents ESG
+2026-08-27 17:15:01,165 | ERROR | Ligne 5 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 16:33:13,130 | ERROR | Validation impossible: Ferme Excel: Liste de courses.xlsx est verrouillé.
+2026-08-28 16:33:29,429 | INFO | 6 demande(s) validée(s).
+2026-08-28 16:33:54,550 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-28 16:34:00,784 | INFO | Rubrique cliquée: Documents ESG
+2026-08-28 16:34:01,541 | ERROR | Ligne 5 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 16:34:09,001 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-28 16:34:15,239 | INFO | Rubrique cliquée: Documents ESG
+2026-08-28 16:34:16,034 | ERROR | Ligne 5 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 16:34:23,857 | INFO | Fonds vérifié: R-co Valor | FR0011253624
+2026-08-28 16:34:30,235 | INFO | Rubrique cliquée: Documents ESG
+2026-08-28 16:34:32,346 | ERROR | Ligne 6 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 16:34:40,923 | INFO | Fonds vérifié: R-co Valor | FR0011253624
+2026-08-28 16:34:47,409 | INFO | Rubrique cliquée: Documents ESG
+2026-08-28 16:34:49,479 | ERROR | Ligne 6 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 303, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 276, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 16:34:57,954 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581
+2026-08-28 16:35:02,336 | ERROR | Ligne 7 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 300, in process
+    click_section(page, section)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 217, in click_section
+    if title_loc is None: raise ControlledError(f"Rubrique introuvable: {title}")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ControlledError: Rubrique introuvable: Documents ESG
+2026-08-28 16:35:10,575 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581
+2026-08-28 16:35:14,988 | ERROR | Ligne 7 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 334, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 300, in process
+    click_section(page, section)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 217, in click_section
+    if title_loc is None: raise ControlledError(f"Rubrique introuvable: {title}")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ControlledError: Rubrique introuvable: Documents ESG
+2026-08-28 17:05:33,241 | INFO | 6 demande(s) validée(s).
+2026-08-28 17:05:56,931 | INFO | 6 demande(s) validée(s).
+2026-08-28 17:06:29,177 | ERROR | Ligne 2 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 377, in process
+    open_fund(page, request); open_downloads(page)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 204, in open_fund
+    raise ControlledError(f"Mauvaise page ouverte. ISIN attendu: {request.isin}. URL: {page.url}")
+ControlledError: Mauvaise page ouverte. ISIN attendu: FR001400ZCB0. URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-gold-mining/
+2026-08-28 17:06:36,530 | ERROR | Ligne 2 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 377, in process
+    open_fund(page, request); open_downloads(page)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 204, in open_fund
+    raise ControlledError(f"Mauvaise page ouverte. ISIN attendu: {request.isin}. URL: {page.url}")
+ControlledError: Mauvaise page ouverte. ISIN attendu: FR001400ZCB0. URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-gold-mining/
+2026-08-28 17:06:44,053 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47
+2026-08-28 17:06:50,401 | INFO | Rubrique ouverte et vérifiée: Documents ESG | document visible: Annexe SFDR
+2026-08-28 17:06:50,640 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-28 17:06:58,430 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 377, in process
+    open_fund(page, request); open_downloads(page)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 204, in open_fund
+    raise ControlledError(f"Mauvaise page ouverte. ISIN attendu: {request.isin}. URL: {page.url}")
+ControlledError: Mauvaise page ouverte. ISIN attendu: FR001400SEM8. URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-target-2030-ig/
+2026-08-28 17:07:05,789 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 377, in process
+    open_fund(page, request); open_downloads(page)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 204, in open_fund
+    raise ControlledError(f"Mauvaise page ouverte. ISIN attendu: {request.isin}. URL: {page.url}")
+ControlledError: Mauvaise page ouverte. ISIN attendu: FR001400SEM8. URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-target-2030-ig/
+2026-08-28 17:07:13,266 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-28 17:07:19,585 | INFO | Rubrique ouverte et vérifiée: Documents ESG | document visible: Annexe SFDR
+2026-08-28 17:07:21,598 | ERROR | Ligne 5 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 382, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 355, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:07:28,998 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9
+2026-08-28 17:07:35,351 | INFO | Rubrique ouverte et vérifiée: Documents ESG | document visible: Annexe SFDR
+2026-08-28 17:07:36,308 | ERROR | Ligne 5 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 382, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 355, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:07:44,890 | INFO | Fonds vérifié: R-co Valor | FR0011253624
+2026-08-28 17:07:51,211 | INFO | Rubrique ouverte et vérifiée: Documents ESG | document visible: Annexe SFDR
+2026-08-28 17:07:52,081 | ERROR | Ligne 6 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    result = process(page, context, req); results.append(result); print(f"  {result.statut}: {result.detail}"); final_error=None; break
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 382, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 355, in find_document_control
+    raise ControlledError("Document introuvable après ouverture de la rubrique. Libellés: " + ", ".join(labels))
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:07:59,758 | INFO | Fonds vérifié: R-co Valor | FR0011253624
+2026-08-28 17:08:06,076 | INFO | Rubrique ouverte et vérifiée: Documents ESG | document visible: Annexe SFDR
+2026-08-28 17:15:37,392 | ERROR | Ligne 6 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 413, in main
+    if option is None: raise ControlledError(f"Option de mois introuvable: {target}")
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 382, in process
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 355, in find_document_control
+    )
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:36:46,718 | ERROR | Validation impossible: Ferme Excel: Liste de courses.xlsx est verrouillé.
+2026-08-28 17:36:58,290 | INFO | 6 demande(s) validée(s).
+2026-08-28 17:37:19,727 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR001400ZCB0 | Part demandée: I EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-gold-mining/
+2026-08-28 17:37:26,035 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-08-28 17:37:26,340 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-28 17:37:27,466 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 574, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:37:35,306 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR001400SEM8 | Part demandée: IC EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-target-2030-ig/
+2026-08-28 17:37:41,653 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-28 17:37:41,903 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_4c53328e-a492-ef11-b894-005056a024a0_FR_FR.pdf
+2026-08-28 17:37:43,011 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 574, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:37:50,483 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9 | Part: C EUR
+2026-08-28 17:37:56,763 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-28 17:37:58,094 | ERROR | Ligne 5 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 733, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 626, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 552, in find_document_control
+    raise ControlledError(
+    ...<2 lines>...
+    )
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:38:05,402 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9 | Part: C EUR
+2026-08-28 17:38:11,672 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-28 17:38:13,164 | ERROR | Ligne 5 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 733, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 626, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 552, in find_document_control
+    raise ControlledError(
+    ...<2 lines>...
+    )
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:38:20,826 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-28 17:38:27,117 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-28 17:38:28,192 | ERROR | Ligne 6 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 733, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 626, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 552, in find_document_control
+    raise ControlledError(
+    ...<2 lines>...
+    )
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:38:35,970 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-28 17:38:42,247 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-28 17:38:43,405 | ERROR | Ligne 6 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 733, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 626, in process
+    control, site_label = find_document_control(page, labels)
+                          ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 552, in find_document_control
+    raise ControlledError(
+    ...<2 lines>...
+    )
+ControlledError: Document introuvable après ouverture de la rubrique. Libellés: Annexe SFDR [EN]
+2026-08-28 17:38:50,572 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-28 17:38:54,945 | ERROR | Ligne 7 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 733, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 621, in process
+    click_section(page, section, labels)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 411, in click_section
+    raise ControlledError(f"Rubrique introuvable: {title}")
+ControlledError: Rubrique introuvable: Documents ESG
+2026-08-28 17:39:02,157 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-28 17:39:06,518 | ERROR | Ligne 7 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 733, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 621, in process
+    click_section(page, section, labels)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 411, in click_section
+    raise ControlledError(f"Rubrique introuvable: {title}")
+ControlledError: Rubrique introuvable: Documents ESG
+2026-08-28 17:47:09,477 | ERROR | Validation impossible: Tableau invalide:
+- Ligne 7: Ce type exige un mois et une année.
+2026-08-28 17:47:36,403 | ERROR | Validation impossible: Tableau invalide:
+- Ligne 7: Ce type exige un mois et une année.
+2026-08-28 17:52:39,212 | INFO | 6 demande(s) validée(s).
+2026-08-28 17:53:10,729 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9 | Part: C EUR
+2026-08-28 17:53:16,982 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-28 17:53:17,202 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_4692aa56-f41f-ee11-b872-005056a03b00_FR_FR.pdf
+2026-08-28 17:53:17,421 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:53:24,657 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-28 17:53:30,940 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-28 17:53:31,173 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_e2e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-28 17:53:32,334 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:53:40,534 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-28 17:53:46,969 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-08-28 17:53:47,327 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-28 17:53:48,453 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:55:33,627 | INFO | 6 demande(s) validée(s).
+2026-08-28 17:56:01,800 | INFO | Fonds vérifié: R-co Conviction Credit 12M Euro | FR0010697482 | Part: C EUR
+2026-08-28 17:56:08,096 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-28 17:56:08,335 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_11964884-e6e1-e411-80c9-0050569251cf_FR_FR.pdf
+2026-08-28 17:56:09,433 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:56:17,677 | INFO | Fonds vérifié: R-co Valor Equity | FR001400YR47 | Part: C EUR
+2026-08-28 17:56:24,022 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-28 17:56:24,275 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_1baa2960-a38a-48b7-ad04-d635812951df_FR_FR.pdf
+2026-08-28 17:56:25,893 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:56:34,335 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR001400SEM8 | Part demandée: IC EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-target-2030-ig/
+2026-08-28 17:56:40,615 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-28 17:56:40,870 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_4c53328e-a492-ef11-b894-005056a024a0_FR_FR.pdf
+2026-08-28 17:56:41,956 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:56:49,698 | INFO | Fonds vérifié: R-co Target 2027 HY | FR001400IBF9 | Part: C EUR
+2026-08-28 17:56:55,989 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-28 17:56:56,254 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_4692aa56-f41f-ee11-b872-005056a03b00_FR_FR.pdf
+2026-08-28 17:56:56,534 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:57:03,630 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-28 17:57:09,892 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-28 17:57:10,132 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_e2e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-28 17:57:11,279 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-28 17:57:19,111 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-28 17:57:25,443 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-08-28 17:57:25,767 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-28 17:57:26,870 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-31 14:45:03,466 | INFO | 8 demande(s) validée(s).
+2026-08-31 14:46:13,274 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 14:46:19,355 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 14:46:28,629 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-31 14:46:35,221 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 14:46:35,556 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_e2e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 14:46:36,889 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-31 14:46:45,162 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 14:46:51,232 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 14:46:59,933 | INFO | Fonds vérifié: R-co 4Change Moderate Allocation | FR0011276567 | Part: C EUR
+2026-08-31 14:47:06,370 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 14:47:06,703 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_60e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 14:47:08,257 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-31 15:17:54,104 | INFO | 8 demande(s) validée(s).
+2026-08-31 15:18:00,292 | INFO | 8 demande(s) validée(s).
+2026-08-31 15:18:25,104 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:18:30,672 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:18:35,959 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:18:41,877 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:24:06,326 | INFO | 8 demande(s) validée(s).
+2026-08-31 15:24:22,773 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:24:27,868 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:24:33,134 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:24:38,264 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:27:47,085 | ERROR | Validation impossible: Dossier cible introuvable: C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\7 - Ressources\Stagiaire\FundShop
+2026-08-31 15:27:52,254 | ERROR | Validation impossible: Dossier cible introuvable: C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\7 - Ressources\Stagiaire\FundShop
+2026-08-31 15:30:26,527 | ERROR | Validation impossible: Dossier cible introuvable: C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\7 - Ressources\Stagiaire\FundShop
+2026-08-31 15:33:49,893 | ERROR | Validation impossible: Dossier cible introuvable: C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\7 - Ressources\Stagiaire\Passation stagiaires\FundShop
+2026-08-31 15:36:39,595 | INFO | 8 demande(s) validée(s).
+2026-08-31 15:37:09,596 | INFO | Fonds vérifié: R-co Conviction Credit 12M Euro | FR0010697482 | Part: C EUR
+2026-08-31 15:37:15,922 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:37:16,197 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_11964884-e6e1-e411-80c9-0050569251cf_FR_FR.pdf
+2026-08-31 15:37:17,309 | ERROR | Téléchargement direct impossible, essai par clic.
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 584, in download_pdf
+    is_html = body[:100].lstrip().casefold().startswith(b"<!doctype html")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'bytes' object has no attribute 'casefold'
+2026-08-31 15:37:20,787 | ERROR | Ligne 2 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 637, in process
+    source = download_pdf(page, context, control, destination)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 600, in download_pdf
+    download.save_as(str(destination))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\sync_api\_generated.py", line 7969, in save_as
+    return mapping.from_maybe_impl(self._sync(self._impl_obj.save_as(path=path)))
+                                   ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_download.py", line 61, in save_as
+    await self._artifact.save_as(path)
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_artifact.py", line 46, in save_as
+    await self._channel.send(
+    ...<2 lines>...
+    )
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\RP119879\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\playwright\_impl\_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.TargetClosedError: Download.save_as: Target page, context or browser has been closed
+2026-08-31 15:38:44,034 | INFO | 8 demande(s) validée(s).
+2026-08-31 15:39:02,016 | INFO | Fonds vérifié: R-co Conviction Credit 12M Euro | FR0010697482 | Part: C EUR
+2026-08-31 15:39:08,311 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:39:08,560 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_11964884-e6e1-e411-80c9-0050569251cf_FR_FR.pdf
+2026-08-31 15:39:16,492 | INFO | Fonds vérifié: R-co Valor Bond Opportunities | FR0013417524 | Part: C EUR
+2026-08-31 15:39:22,757 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:39:23,041 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_17edf6ea-60ad-e911-8111-0050569246f2_FR_FR.pdf
+2026-08-31 15:39:29,120 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:39:34,593 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:39:42,536 | INFO | Fonds vérifié: R-co Conviction Convertibles Europe | FR0007009139 | Part: C EUR
+2026-08-31 15:39:48,827 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-31 15:39:49,091 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_76e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 15:39:56,511 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-31 15:40:03,034 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-08-31 15:40:03,470 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-31 15:40:09,189 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:40:14,392 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:41:29,856 | INFO | 8 demande(s) validée(s).
+2026-08-31 15:41:49,559 | INFO | Fonds vérifié: R-co Conviction Credit 12M Euro | FR0010697482 | Part: C EUR
+2026-08-31 15:41:55,790 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:41:55,994 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_11964884-e6e1-e411-80c9-0050569251cf_FR_FR.pdf
+2026-08-31 15:42:03,328 | INFO | Fonds vérifié: R-co Valor Bond Opportunities | FR0013417524 | Part: C EUR
+2026-08-31 15:42:09,589 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:42:09,834 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_17edf6ea-60ad-e911-8111-0050569246f2_FR_FR.pdf
+2026-08-31 15:42:16,342 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:42:22,092 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 15:42:29,789 | INFO | Fonds vérifié: R-co Conviction Convertibles Europe | FR0007009139 | Part: C EUR
+2026-08-31 15:42:36,220 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-31 15:42:36,516 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_76e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 15:42:43,683 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-31 15:42:50,171 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:42:51,266 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_e2e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 15:43:00,705 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-31 15:43:07,119 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-08-31 15:43:07,563 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-31 15:43:13,300 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:43:19,670 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 15:43:27,612 | INFO | Fonds vérifié: R-co 4Change Moderate Allocation | FR0011276567 | Part: C EUR
+2026-08-31 15:43:34,085 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 15:43:34,395 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_60e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 16:30:05,503 | ERROR | Validation impossible: Tableau invalide:
+- Ligne 6: Fonds ou ISIN vide.
+2026-08-31 16:32:00,570 | INFO | 9 demande(s) validée(s).
+2026-08-31 16:32:29,151 | INFO | Fonds vérifié: R-co Conviction Convertibles Europe | FR0007009139 | Part: C EUR
+2026-08-31 16:32:35,417 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 16:32:35,684 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_d1954884-e6e1-e411-80c9-0050569251cf_FR_FR.pdf
+2026-08-31 16:32:43,498 | INFO | Fonds vérifié: R-co Valor Bond Opportunities | FR0013417524 | Part: C EUR
+2026-08-31 16:32:49,812 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 16:32:50,065 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_17edf6ea-60ad-e911-8111-0050569246f2_FR_FR.pdf
+2026-08-31 16:32:56,026 | ERROR | Ligne 4 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 16:33:01,754 | ERROR | Ligne 4 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: R-co Conviction Credit SD Euro / FR0011845437
+2026-08-31 16:33:10,230 | INFO | Fonds vérifié: R-co Conviction Convertibles Europe | FR0007009139 | Part: C EUR
+2026-08-31 16:33:16,596 | INFO | Rubrique ouverte et vérifiée: Documents ESG
+2026-08-31 16:33:16,853 | INFO | Document ciblé: Article 10 SFDR | href=https://docs.am.eu.rothschildandco.com/SFDR10_76e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 16:33:23,915 | INFO | Fonds vérifié: R-co Valor | FR0011253624 | Part: C EUR
+2026-08-31 16:33:30,363 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 16:33:30,682 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_e2e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 16:33:38,948 | INFO | Fonds vérifié: R-co Gold Mining | FR0007001581 | Part: C EUR
+2026-08-31 16:33:45,450 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-08-31 16:33:45,973 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_c1964884-e6e1-e411-80c9-0050569251cf_FR_FR_20260731.pdf
+2026-08-31 16:33:52,239 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 16:33:58,089 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-08-31 16:34:06,595 | INFO | Fonds vérifié: R-co 4Change Moderate Allocation | FR0011276567 | Part: C EUR
+2026-08-31 16:34:12,983 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 16:34:13,289 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_60e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-08-31 16:34:22,627 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR0011994862 | Part demandée: I EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-4change-net-zero-equity-euro/
+2026-08-31 16:34:29,051 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-08-31 16:34:29,356 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_7ae4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-09-07 14:42:26,648 | ERROR | Validation impossible: Tableau invalide:
+- Ligne 11: Type inconnu: . Valeurs: reporting mensuel, reporting mensuel en, dic, prospectus, annexe sfdr, annexe sfdr en, article 10 sfdr, rapport periodique sfdr
+2026-09-07 14:43:14,670 | ERROR | Validation impossible: Tableau invalide:
+- Ligne 11: Nom final vide.
+2026-09-07 14:44:01,094 | INFO | 10 demande(s) validée(s).
+2026-09-07 14:44:25,134 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR001400QPP1 | Part demandée: IS EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-valor/
+2026-09-07 14:44:31,473 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-09-07 14:44:31,756 | INFO | Document ciblé: Prospectus | href=https://docs.am.eu.rothschildandco.com/PROS_e2e4b412-e3e1-e411-80c8-005056924e5f_FR_FR.pdf
+2026-09-07 14:44:39,645 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR001400QPP1 | Part demandée: IS EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-valor/
+2026-09-07 14:44:45,948 | INFO | Rubrique ouverte et vérifiée: Documents juridiques
+2026-09-07 14:44:46,215 | INFO | Document ciblé: DIC PRIIPS | href=https://docs.am.eu.rothschildandco.com/DIPR_87974884-e6e1-e411-80c9-0050569251cf_FR_FR.pdf
+2026-09-07 14:44:54,191 | WARNING | L'ISIN demandé n'est pas visible sur la page ouverte: FR001400QPP1 | Part demandée: IS EUR | URL: https://am.eu.rothschildandco.com/fr/nos-fonds/r-co-valor/
+2026-09-07 14:45:00,858 | INFO | Rubrique ouverte et vérifiée: Reporting
+2026-09-07 14:45:01,441 | INFO | Document ciblé: Reporting Mensuel | href=https://docs.am.eu.rothschildandco.com/REPM_87974884-e6e1-e411-80c9-0050569251cf_FR_FR_20260831.pdf
+2026-09-07 14:45:07,743 | ERROR | Ligne 8 tentative 1/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-09-07 14:45:13,591 | ERROR | Ligne 8 tentative 2/2
+Traceback (most recent call last):
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 743, in main
+    result = process(page, context, request)
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 627, in process
+    open_fund(page, request)
+    ~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\RP119879\Rothschild & Co\AM-RFP-CONF - Documents\3 - Consultants\Automatisation - Python\Téléchargement Reportings Swiss Life\blabla\telecharger_documents_fonds.py", line 348, in open_fund
+    raise ControlledError(
+        f"Fonds introuvable: {request.fund} / {request.isin}"
+    )
+ControlledError: Fonds introuvable: Ar Men Global Flexible / FR0013312055
+2026-10-13 14:52:08,522 | INFO | 10 demande(s) validée(s).
