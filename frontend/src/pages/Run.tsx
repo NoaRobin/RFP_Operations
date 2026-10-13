@@ -107,7 +107,7 @@ export default function RunPage() {
     if (pokes.current % 4 === 0) toast('magic', pick(texts.easterEggs.orb, pokes.current / 4 - 1))
   }
 
-  const back = run?.target_type === 'recipe' ? '/atelier' : run?.target_type === 'rfi' ? '/rfi' : run?.target_type === 'mergecodes' ? '/merge-codes' : run ? `/automatisations/${run.target_id}` : '/sorts'
+  const back = run?.target_type === 'recipe' ? '/atelier' : run?.target_type === 'rfi' ? '/rfi' : run?.target_type === 'mergecodes' ? '/merge-codes' : run ? `/automatisations/${run.target_id}` : '/'
 
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-12">

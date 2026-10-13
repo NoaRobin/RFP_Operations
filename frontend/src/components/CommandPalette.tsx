@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  BookOpen, CalendarClock, Clock, CornerDownLeft, FileSpreadsheet, History, Info, LayoutDashboard, Lightbulb,
+  CalendarCheck, CalendarClock, FileDown, Paintbrush, Clock, CornerDownLeft, FileSpreadsheet, History, Info, LayoutDashboard, Lightbulb,
   MonitorSmartphone, Play, PlayCircle, Plug, RotateCcw, Search, UserRound, Home, FileQuestion, Tags, Activity,
 } from 'lucide-react'
 import { texts } from '../content/texts'
@@ -162,7 +162,9 @@ export function CommandPalette({ open, onClose, onSuggest, onUser, onFabric }: {
       ['/rfi', texts.nav.rfi, <FileQuestion size={18} />, 'rfi rfp questionnaire word excel remplir due diligence'],
       ['/merge-codes', texts.nav.merge, <Tags size={18} />, 'qvidian merge codes annees experience bot'],
       ['/suivi-activite', texts.nav.suivi, <Activity size={18} />, 'suivi activite appels offres pilotage tryv2'],
-      ['/sorts', texts.nav.library, <BookOpen size={18} />, 'sorts automatisations bibliotheque'],
+      ['/documents', texts.nav.fundshop, <FileDown size={18} />, 'documents dic prospectus reporting sfdr telecharger'],
+      ['/omni', texts.nav.omni, <CalendarCheck size={18} />, 'omni holdings performances mensuel'],
+      ['/rfpascontente', texts.nav.rfpascontente, <Paintbrush size={18} />, 'defouloir peinture tarte deguisement rfpascontente'],
       ['/atelier', texts.nav.atelier, <FileSpreadsheet size={18} />, 'excel questionnaire remplir'],
       ['/tableau-de-bord', texts.nav.dashboard, <LayoutDashboard size={18} />, 'dashboard statistiques planification'],
       ['/historique', texts.nav.history, <History size={18} />, 'registre executions'],

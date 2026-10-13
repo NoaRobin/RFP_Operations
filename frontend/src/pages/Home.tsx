@@ -4,7 +4,7 @@
  */
 import { useMemo, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Activity, ArrowRight, BookOpen, Command, FileQuestion, FileSpreadsheet, Sparkles, Tags } from 'lucide-react'
+import { Activity, ArrowRight, Command, FileQuestion, FileSpreadsheet, Paintbrush, Sparkles, Tags } from 'lucide-react'
 import { Chase } from '../components/fx/Chase'
 import { Mathilde } from '../components/fx/Mathilde'
 import { useApp } from '../components/layout/AppContext'
@@ -24,7 +24,7 @@ const STICKERS = [
   { to: '/rfi', label: texts.home.stickers.rfi, icon: FileQuestion, bg: 'bg-sun-400', pos: 'lg:left-[2%] lg:top-[8%]', rot: -7 },
   { to: '/merge-codes', label: texts.home.stickers.merge, icon: Tags, bg: 'bg-bubble-400', pos: 'lg:right-[3%] lg:top-[4%]', rot: 6 },
   { to: '/suivi-activite', label: texts.home.stickers.suivi, icon: Activity, bg: 'bg-mint-400', pos: 'lg:left-[0%] lg:bottom-[14%]', rot: 5 },
-  { to: '/sorts', label: texts.home.stickers.sorts, icon: BookOpen, bg: 'bg-magic-400', pos: 'lg:right-[1%] lg:bottom-[20%]', rot: -5 },
+  { to: '/rfpascontente', label: texts.home.stickers.sorts, icon: Paintbrush, bg: 'bg-magic-400', pos: 'lg:right-[1%] lg:bottom-[20%]', rot: -5 },
   { to: '/atelier', label: texts.home.stickers.atelier, icon: FileSpreadsheet, bg: 'bg-card', pos: 'lg:left-[16%] lg:-bottom-[2%]', rot: -3 },
 ] as const
 
@@ -32,7 +32,7 @@ const MODULES = [
   { to: '/rfi', icon: FileQuestion, color: 'bg-sun-400', ...texts.home.cards.rfi },
   { to: '/merge-codes', icon: Tags, color: 'bg-bubble-400', ...texts.home.cards.merge },
   { to: '/suivi-activite', icon: Activity, color: 'bg-mint-400', ...texts.home.cards.suivi },
-  { to: '/sorts', icon: BookOpen, color: 'bg-magic-400', ...texts.home.cards.sorts },
+  { to: '/rfpascontente', icon: Paintbrush, color: 'bg-magic-400', ...texts.home.cards.sorts },
 ]
 
 export default function Home() {
@@ -103,7 +103,7 @@ export default function Home() {
         <p data-fade className="mt-6 max-w-2xl text-lg font-semibold text-fg-2 sm:text-xl">{texts.home.lead}</p>
         <div data-fade className="mt-7 flex flex-wrap justify-center gap-3">
           <ButtonLink to="/rfi" variant="primary" size="lg" icon={<FileQuestion size={20} />}>{texts.home.ctaRfi}</ButtonLink>
-          <ButtonLink to="/sorts" size="lg" icon={<BookOpen size={20} />}>{texts.home.ctaSorts}</ButtonLink>
+          <ButtonLink to="/rfpascontente" size="lg" icon={<Paintbrush size={20} />}>{texts.home.ctaSorts}</ButtonLink>
         </div>
 
         {/* Les automatisations, en autocollants autour du hashtag (en ligne sur mobile) */}

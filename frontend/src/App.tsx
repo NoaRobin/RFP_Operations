@@ -13,10 +13,10 @@ import { ToastProvider } from './components/ui/Toast'
 import Home from './pages/Home'
 
 const Intro = lazy(() => import('./pages/Intro'))
-const Library = lazy(() => import('./pages/Library'))
 const Rfi = lazy(() => import('./pages/Rfi'))
 const FundShop = lazy(() => import('./pages/FundShop'))
 const Omni = lazy(() => import('./pages/Omni'))
+const RFPascontente = lazy(() => import('./pages/RFPascontente'))
 const MergeCodes = lazy(() => import('./pages/MergeCodes'))
 const Suivi = lazy(() => import('./pages/Suivi'))
 const AutomationPage = lazy(() => import('./pages/AutomationPage'))
@@ -38,10 +38,11 @@ function Shell() {
               <Route path="/rfi" element={<Rfi />} />
               <Route path="/documents" element={<FundShop />} />
               <Route path="/omni" element={<Omni />} />
+              <Route path="/rfpascontente" element={<RFPascontente />} />
               <Route path="/merge-codes" element={<MergeCodes />} />
               <Route path="/suivi-activite" element={<Suivi />} />
-              <Route path="/sorts" element={<Library />} />
-              <Route path="/bibliotheque" element={<Navigate to="/sorts" replace />} />
+              <Route path="/sorts" element={<Navigate to="/" replace />} />
+              <Route path="/bibliotheque" element={<Navigate to="/" replace />} />
               <Route path="/automatisations/:id" element={<AutomationPage />} />
               <Route path="/executions/:runId" element={<RunPage />} />
               <Route path="/atelier" element={<Atelier />} />

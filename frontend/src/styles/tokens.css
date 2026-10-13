@@ -99,6 +99,8 @@
 @keyframes leg-a { from { transform: rotate(-32deg); } to { transform: rotate(32deg); } }
 @keyframes leg-b { from { transform: rotate(32deg); } to { transform: rotate(-32deg); } }
 @keyframes hop { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes pop { from { scale: 0.4; opacity: 0; } to { scale: 1; opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .runner-leg-a { transform-box: fill-box; transform-origin: 50% 0%; animation: leg-a 0.18s ease-in-out infinite alternate; }
 .runner-leg-b { transform-box: fill-box; transform-origin: 50% 0%; animation: leg-b 0.18s ease-in-out infinite alternate; }
 .runner-hop { animation: hop 0.18s ease-out infinite alternate; }

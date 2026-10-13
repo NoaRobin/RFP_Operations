@@ -132,7 +132,7 @@ export default function AutomationPage() {
 
   return (
     <div ref={root} className="mx-auto w-[min(100%-2rem,72rem)] pt-12">
-      <Link to="/sorts" className="inline-flex items-center gap-2 text-sm text-fg-2 hover:text-fg">
+      <Link to="/" className="inline-flex items-center gap-2 text-sm text-fg-2 hover:text-fg">
         <ArrowLeft size={16} aria-hidden="true" />
         {texts.automation.back}
       </Link>

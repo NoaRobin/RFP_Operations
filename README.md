@@ -9,7 +9,7 @@
 | **Remplir un RFI** (`/rfi`) | Vous déposez un questionnaire **Excel ou Word**. L'app repère les questions quantitatives, cherche les réponses dans Fabric (≈ 90 % Product Info, le reste JUMP) et vous rend **exactement le même fichier**, avec les cases remplies. L'original n'est jamais modifié. |
 | **Merge codes Qvidian** (`/merge-codes`) | Le bot *mergecode* (repris tel quel depuis la branche `claude/merge-code`) repère les années d'expérience dans l'export Word de Qvidian et propose le bon `<<merge code>>`. Vous validez d'un clic, il insère et produit le compte rendu Excel. |
 | **Suivi d'activité** (`/suivi-activite`) | Le module *tryv2* (appels d'offres ouverts, gagnés, perdus, tarification), intégré sans modification sous `/suivi`. |
-| **Les épreuves** (`/sorts`) | La bibliothèque d'automatisations (chaque automatisation est une épreuve, façon Koh-Lanta, que vous ne passerez plus à la main) (encours par part, top lignes, contrôles…) + l'Atelier Excel, le tableau de bord, l'historique, la palette **Ctrl+K**. |
+| **RFPascontente** (`/rfpascontente`) | Le défouloir 3D : on déguise la tête sur mesure (perruques, moustaches, chapeaux, lunettes…) puis on lui lance peinture, tartes, tomates, œufs, verres et classeurs (taches « decals » three.js, physique cannon-es, sons synthétisés). Tête : scan Lee Perry-Smith, CC BY 3.0. Aussi : l'Atelier Excel, le tableau de bord, l'historique, la palette **Ctrl+K**. |
 
 Sans connexion Fabric, l'app démarre en **mode démonstration** avec un Lakehouse fictif (ISIN `QZ…`, fonds imaginaires).
 
@@ -31,7 +31,7 @@ Dans l'app, cliquez sur le badge **Fabric** en haut à droite, puis :
 2. **Votre identifiant Microsoft** (prenom.nom@…) ;
 3. **Ouvrir la fenêtre Microsoft** : la fenêtre de connexion habituelle apparaît, vous validez. C'est tout.
 
-L'app utilise le pilote `mssql-python` (le même que l'extension VS Code, installé automatiquement sous Windows, aucun pilote ODBC requis) en `ActiveDirectoryInteractive`, lecture seule. Le serveur, la base et l'identifiant sont retenus dans `data/fabric.json` (**aucun mot de passe ni jeton n'est stocké**). Une seule fenêtre Microsoft par session : toutes les épreuves partagent la connexion.
+L'app utilise le pilote `mssql-python` (le même que l'extension VS Code, installé automatiquement sous Windows, aucun pilote ODBC requis) en `ActiveDirectoryInteractive`, lecture seule. Le serveur, la base et l'identifiant sont retenus dans `data/fabric.json` (**aucun mot de passe ni jeton n'est stocké**). Une seule fenêtre Microsoft par session : toutes les automatisations partagent la connexion.
 
 ### Développement
 
