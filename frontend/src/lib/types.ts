@@ -469,16 +469,23 @@ export interface Binding {
   status: 'candidate' | 'validated' | 'rejected' | 'ambiguous' | 'weak'; runner_up: string; examples: string[]; usable: boolean; strong: boolean
 }
 
+export interface FundShopProblem { code: string; title: string; why: string; fix: string; link: string }
+export interface FundShopResult {
+  id: string; status: 'OK' | 'DÉJÀ PRÉSENT' | 'ÉCHEC'; title: string; why: string; fix: string; code: string; link: string
+  file: string; url: string; size: number; at: string; period: string
+}
 export interface FundShopItem {
   id: string; isin: string; kind: string; fund: string; part: string; month: string; filename: string; active: boolean; overwrite: boolean
-  target?: string; period_label?: string; present?: boolean; error?: string
+  target?: string; period_label?: string; present?: boolean; error?: string; result?: FundShopResult | null
 }
 export interface FundShopOverview {
   items: FundShopItem[]; destination: string; default_name: string
-  types: { key: string; label: string; needs_month: boolean; direct: boolean }[]
-  memory: { shares: number; funds: number; id_column: Record<string, string>; langs: Record<string, string> }
-  imported?: number; errors?: string[]
+  types: { key: string; label: string; needs_month: boolean }[]
+  memory: { shares: number; funds: number; pages: number; id_column: Record<string, string>; langs: Record<string, string> }
+  last_run: { at: string; destination: string; network: string; blocked: FundShopProblem | null } | null
+  imported?: number; duplicates?: number; errors?: string[]
 }
+export interface FundShopDiagnostic { ok: boolean; network: string; checks: { label: string; ok: boolean; message: string; fix?: string }[] }
 
 export interface OmniOverview {
   root: string; inbox: string; outlook: boolean; sender: string; jump_excel: boolean

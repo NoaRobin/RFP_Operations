@@ -195,18 +195,18 @@ class FundShopFinder:
     def find(self, isin: str, fund_name: str, share_name: str) -> list[DocumentRef]:
         from ...fundshop.catalog import DOC_TYPES
         from ...fundshop.period import Period
-        from ...fundshop.resolver import DocumentNotFound
+        from ...fundshop.problems import DocumentProblem
 
         ident = self.resolver.identity(isin, fund_name, share_name)
         refs = []
         for key, kind in (("dic", "kid"), ("prospectus", "prospectus")):
             try:
-                found = self.resolver.find(ident, DOC_TYPES[key], Period(), allow_browser=False)
-            except DocumentNotFound as error:
-                self.errors.append(f"{DOC_TYPES[key].label} : {error}")
+                found = self.resolver.find(ident, DOC_TYPES[key], Period())
+            except DocumentProblem as error:
+                self.errors.append(f"{DOC_TYPES[key].label} : {error.problem.title.lower()}")
                 continue
             self._content[found.url] = found.content
-            refs.append(DocumentRef(isin=isin, kind=kind, title=f"{DOC_TYPES[key].label} ({found.strategy})", url=found.url, lang="fr",
+            refs.append(DocumentRef(isin=isin, kind=kind, title=f"{DOC_TYPES[key].label} (adresse {found.strategy})", url=found.url, lang="fr",
                                     source="site"))
         self.resolver.memory.save()
         return refs

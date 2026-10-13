@@ -1,7 +1,9 @@
-"""La liste des documents à télécharger (« liste de courses ») : éditée dans l'app, ou importée de l'Excel historique.
+"""La liste des documents à télécharger (« liste de courses ») : éditée dans l'app, ou remplie dans Excel puis importée.
 
-Colonnes reconnues (Excel) : Fonds, Part, ISIN, Type de document, Mois demandé, Année, Nom final, Actif, Écraser.
-Le mois peut être relatif (« M-1 », « mois précédent ») : la même liste resservira chaque mois, en boucle.
+Deux formats d'Excel sont lus :
+- la liste vierge de l'app (template.py) : Part (choisie dans une liste), ISIN, Document, Mois, Remplacer, Nom du fichier ;
+- l'ancienne « Liste de courses » : Fonds, Part, ISIN, Type de document, Mois demandé, Année, Nom final, Actif, Écraser.
+Un mois relatif (« Mois précédent », « Il y a 2 mois ») est gardé tel quel : la même liste resservira chaque mois.
 """
 from __future__ import annotations
 
@@ -17,11 +19,32 @@ from openpyxl import load_workbook
 
 from ..rfi.ontology import norm
 from .catalog import doc_type
-from .period import Period, resolve
+from .period import Period, month_spec, resolve
 
 DEFAULT_NAME = "Rothschild & Co AM - {fonds} - {type}{mois}"
-COLUMNS = {"fonds": "fund", "part": "part", "isin": "isin", "type de document": "kind", "mois demande": "month", "annee": "year",
-           "nom final": "filename", "actif": "active", "ecraser": "overwrite"}
+ISIN_RE = re.compile(r"\b([A-Z]{2}[A-Z0-9]{9}\d)\b")
+
+
+def column_of(header: object) -> str | None:
+    """En-tête Excel → champ (tolère les variantes : « Part (choisir dans la liste) », « Type de document »…)."""
+    h = norm(header)
+    rules = [("choix", "choice"), ("part choisir", "choice"), ("isin", "isin"), ("type de document", "kind"), ("document", "kind"),
+             ("mois", "month"), ("annee", "year"), ("nom", "filename"), ("actif", "active"), ("ecraser", "overwrite"),
+             ("remplacer", "overwrite"), ("fonds", "fund"), ("part", "part")]
+    for prefix, key in rules:
+        if h.startswith(prefix):
+            return key
+    return None
+
+
+def parse_choice(label: object) -> tuple[str, str, str]:
+    """« Fonds · Part (ISIN) » → (fonds, part, isin)."""
+    text = str(label or "").strip()
+    m = ISIN_RE.search(text.upper())
+    isin = m.group(1) if m else ""
+    head = re.sub(r"\s*\([^)]*\)\s*$", "", text)
+    fund, _, part = head.partition(" · ")
+    return fund.strip(), part.strip(), isin
 
 
 @dataclass
@@ -69,31 +92,35 @@ def _bool(value: Any, default: bool) -> bool:
 
 
 def from_excel(path: Path) -> tuple[list[Item], list[str]]:
-    """Lit la feuille « Liste de courses » (ou la première) ; valeurs calculées par Excel (formules non réévaluées)."""
+    """Lit la feuille « Liste de courses » (ou la première). Valeurs calculées par Excel (formules non réévaluées)."""
     wb = load_workbook(path, read_only=True, data_only=True)
-    ws = next((w for w in wb.worksheets if norm(w.title) in {"liste de courses", "liste"}), wb.worksheets[0])
+    ws = next((w for w in wb.worksheets if norm(w.title) in {"liste de courses", "liste", "documents"}), wb.worksheets[0])
     rows = ws.iter_rows(values_only=True)
-    header = [COLUMNS.get(norm(h)) for h in next(rows, [])]
+    header = [column_of(h) for h in next(rows, [])]
     items, errors = [], []
     for n, row in enumerate(rows, start=2):
-        rec = {k: v for k, v in zip(header, row) if k}
-        if not any(v not in (None, "") for v in rec.values()):
-            continue
+        rec: dict[str, Any] = {}
+        for k, v in zip(header, row):
+            if k and k not in rec:
+                rec[k] = v
+        if not any(str(rec.get(k) or "").strip() for k in ("choice", "isin", "kind", "fund")):
+            continue  # ligne vide (les colonnes pré-remplies « Non » et la formule ISIN ne comptent pas)
         try:
+            fund, part, isin_from_choice = parse_choice(rec.get("choice")) if rec.get("choice") else ("", "", "")
             isin = str(rec.get("isin") or "").strip().upper()
-            if not re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", isin):
-                raise ValueError(f"ISIN invalide « {isin or '—'} » (formule non calculée ? ouvrir et enregistrer le fichier dans Excel)")
+            if not ISIN_RE.fullmatch(isin):
+                isin = isin_from_choice
+            if not ISIN_RE.fullmatch(isin or ""):
+                raise ValueError("part non reconnue : choisissez-la dans la liste de la colonne A, ou tapez l'ISIN en colonne B")
+            if not rec.get("kind"):
+                raise ValueError("choisissez le document (colonne Document)")
             doc = doc_type(rec.get("kind"))
-            month_raw = rec.get("month")
-            if month_raw is not None and rec.get("year") and not re.search(r"\d{4}", str(month_raw)) and not hasattr(month_raw, "year"):
-                month_raw = f"{month_raw} {rec.get('year')}"
             month = ""
             if doc.needs_month:
-                p = resolve(month_raw)
-                if not p.month:
-                    raise ValueError("ce type exige un mois et une année")
-                month = f"{p.year}-{p.month:02d}"
-            items.append(Item(isin=isin, kind=doc.key, fund=str(rec.get("fund") or "").strip(), part=str(rec.get("part") or "").strip(),
+                month = month_spec(rec.get("month"), rec.get("year"))
+                if not month:
+                    raise ValueError(f"« {doc.label} » change chaque mois : indiquez le mois (« Mois précédent » ou « juillet 2026 »)")
+            items.append(Item(isin=isin, kind=doc.key, fund=str(rec.get("fund") or fund).strip(), part=str(rec.get("part") or part).strip(),
                               month=month, filename=str(rec.get("filename") or "").strip(), active=_bool(rec.get("active"), True),
                               overwrite=_bool(rec.get("overwrite"), False)))
         except ValueError as error:

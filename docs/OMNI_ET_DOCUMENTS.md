@@ -108,31 +108,43 @@ https://docs.am.eu.rothschildandco.com/{PRÉFIXE}_{GUID}_{LANGUE}_{PAYS}[_{AAAAM
 Le navigateur n'est donc **pas nécessaire** dès que l'on connaît le GUID.
 
 ### Ce que fait Merlin (page `/documents`, automatisation « Documents des fonds »)
-1. **Ordre des stratégies** :
-   1. **adresse apprise** : mémoire `data/fundshop/learned.json`, alimentée par chaque succès et par l'import du CSV historique ;
-   2. **adresse construite** à partir des GUID de Product Info. L'app essaie les colonnes `PI_OUT_Share.pi_shareid` / `Id` et `pi_out_product_active.pi_productid` / `Id` / `Product_Global_ID`, et **retient celle qui fonctionne** ;
-   3. **page du fonds** : liens PDF portant le bon préfixe ;
-   4. **navigateur** en dernier recours, seulement pour découvrir l'adresse ; le téléchargement se fait ensuite en HTTP.
-2. **Vérification de chaque PDF** :
-   - une taille minimale ;
-   - un PDF valide ;
-   - aucun ISIN d'une autre part dans le document. Le DIC d'une autre part est refusé.
-3. **Parallélisme** : 4 téléchargements HTTP à la fois. Les échecs sont ensuite repris un par un avec le navigateur.
-4. **Fichiers** : « seulement les absents » par défaut, aucun écrasement sans « Écraser », écriture atomique. Le rapport Excel indique pour chaque ligne le statut (OK, DÉJÀ PRÉSENT, ÉCHEC, IGNORÉ), la stratégie et l'adresse.
-5. **Ponctuel ou en boucle** : chaque ligne porte un mois **précis** (« 2026-07 ») ou **relatif** (« M-1 », « M-2 »).
-   - « Télécharger maintenant » lance la liste une fois.
-   - « Programmer (en boucle) » la relance chaque mois, et M-1 désigne alors toujours le mois écoulé.
-   - La liste se construit dans l'app (recherche de fonds) ou s'importe depuis l'Excel historique.
-6. **Le complétueur RFI** utilise le même mécanisme pour trouver le DIC et le prospectus d'une part, sans navigateur.
+**Plus de navigateur.** Cliquer dans le site (Playwright) était lent et fragile : délais de téléchargement, pages qui
+changent, fonds introuvables. L'app va droit à l'adresse du PDF.
+
+1. **Réseau du poste** (`merlin/fundshop/net.py`) :
+   1. Python avec les certificats et le proxy de Windows (`truststore`, paramètres Internet) : rapide, 4 téléchargements à la fois ;
+   2. sinon la connexion de Windows elle-même (WinINet, celle d'Edge : proxy d'entreprise, script PAC, authentification
+      automatique). Le premier qui répond est gardé.
+2. **Trouver l'adresse** (`resolver.py`), dans l'ordre :
+   1. adresse mémorisée (`data/fundshop/learned.json`) ;
+   2. adresse déduite des identifiants Product Info (`PI_OUT_Share.pi_shareid`… ; la colonne qui marche est retenue) ;
+   3. liens PDF de la page du fonds ;
+   4. **« J'ai le lien »** : l'utilisateur colle une fois le lien d'un PDF de la part (ou la page du fonds). L'app en déduit
+      l'adresse de tous les documents de cette part, pour tous les mois.
+
+   Chaque DIC lu au passage apprend aussi l'adresse des autres parts qu'il cite.
+3. **Vérification de chaque PDF** : vrai PDF, taille minimale, ISIN de la part (le DIC d'une autre part est refusé).
+4. **Quand ça ne marche pas** (`problems.py`), chaque ligne dit pourquoi et quoi faire, en une phrase :
+   proxy, certificat, site injoignable, pas de réponse, accès refusé, adresse encore inconnue, document pas encore publié
+   (reportings), document d'une autre part, page au lieu d'un PDF, fichier déjà présent, dossier inaccessible.
+   Avant de lancer, l'app vérifie le dossier et le site : si le réseau bloque, une seule explication plutôt que 50 échecs.
+   Le bouton « Tester la connexion » fait le même contrôle à la demande.
+5. **La liste** : dans l'app (recherche de part, enregistrement automatique), ou dans Excel avec la **liste vierge** :
+   la part, le document et le mois se choisissent dans des listes déroulantes, l'ISIN se remplit tout seul ; onglet « Aide ».
+   L'ancienne « Liste de courses » s'importe aussi. « Ma liste en Excel » exporte la liste actuelle dans le même format.
+6. **Une fois ou en boucle** : « Mois précédent » / « Il y a 2 mois » sont gardés relatifs ; « Programmer chaque mois »
+   relance la liste. Les fichiers déjà présents ne sont jamais remplacés sans la case « Remplacer » (écriture atomique).
+7. **Le complétueur RFI** utilise le même mécanisme pour le DIC et le prospectus d'une part.
 
 **À CONFIRMER**
 - **GUID** : que les GUID des adresses sont bien ceux de Product Info. L'app le vérifie d'elle-même et apprend la bonne colonne.
 - **Versions anglaises** : les codes `EN_FR`, `EN_GB`, `EN_LU`… sont essayés tour à tour.
-- **Rapport périodique SFDR** : son préfixe est inconnu ; ce document passe donc par la page du fonds ou le navigateur.
+- **Rapport périodique SFDR** : son préfixe est inconnu ; il faut coller une fois son lien (« J'ai le lien »).
 - **Date des reportings** : fin de mois calendaire ou dernier jour ouvré ? Les deux sont essayées.
 
 **Pour démarrer sur le poste**
-- Importer `resultats_telechargement.csv` (« Apprendre du CSV ») : toutes les adresses déjà trouvées deviennent directes.
+- Cliquer « Tester la connexion » : il dit tout de suite si le réseau, le dossier et le site sont accessibles.
+- (Options) reprendre `resultats_telechargement.csv` de l'ancien script : ses adresses deviennent directes.
 - Renseigner `FUNDSHOP_DIR`, le dossier FundShop de destination.
 
 ---

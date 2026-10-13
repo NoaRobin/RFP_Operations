@@ -5,7 +5,6 @@ from pathlib import Path
 
 from ..config import Settings
 from ..data.access import DataAccess
-from .browser import SiteBrowser
 from .memory import Memory
 from .resolver import Resolver
 from .shopping import ShoppingList
@@ -27,10 +26,5 @@ def memory(settings: Settings) -> Memory:
     return Memory(root(settings) / "learned.json")
 
 
-def resolver(settings: Settings, data: DataAccess | None, with_browser: bool = True) -> tuple[Resolver, SiteBrowser | None]:
-    browser = None
-    if with_browser and settings.fundshop.browser != "off":
-        candidate = SiteBrowser(settings.fundshop.site_base, headless=True, channel=settings.fundshop.browser_channel or None)
-        browser = candidate if candidate.available() else None
-    return Resolver(data, memory(settings), browser=browser, docs_base=settings.fundshop.docs_base,
-                    site_base=settings.fundshop.site_base), browser
+def resolver(settings: Settings, data: DataAccess | None) -> Resolver:
+    return Resolver(data, memory(settings), docs_base=settings.fundshop.docs_base, site_base=settings.fundshop.site_base)

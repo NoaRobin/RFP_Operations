@@ -35,7 +35,7 @@ def _shop(s: AppState):
     from ..fundshop.service import resolver
 
     if s.data.mode not in _shops:
-        _shops[s.data.mode] = resolver(s.settings, s.data, with_browser=False)[0]
+        _shops[s.data.mode] = resolver(s.settings, s.data)
     return _shops[s.data.mode]
 
 

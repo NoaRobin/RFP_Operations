@@ -82,8 +82,6 @@ class FundShopSettings:
     dest_dir: str = ""  # ex. …\7 - Ressources\Stagiaire\FundShop ; vide = data/fundshop/documents
     docs_base: str = "https://docs.am.eu.rothschildandco.com"
     site_base: str = "https://am.eu.rothschildandco.com/fr/nos-fonds/"
-    browser: str = "auto"  # auto (si Playwright installé) | off
-    browser_channel: str = ""  # msedge pour utiliser Edge
 
 
 @dataclass(frozen=True)
@@ -176,8 +174,6 @@ def get_settings() -> Settings:
             dest_dir=_env("FUNDSHOP_DIR"),
             docs_base=_env("FUNDSHOP_DOCS_BASE", FundShopSettings.docs_base),
             site_base=_env("FUNDSHOP_SITE_BASE", FundShopSettings.site_base),
-            browser=_env("FUNDSHOP_BROWSER", "auto").lower(),
-            browser_channel=_env("FUNDSHOP_BROWSER_CHANNEL"),
         ),
         fund_documents=FundDocumentSettings(
             mode=_env("FUND_DOCS", "auto").lower(),

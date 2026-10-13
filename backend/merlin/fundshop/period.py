@@ -54,6 +54,9 @@ def resolve(spec: object, today: date | None = None) -> Period:
         return shift(today, int(m.group(1)))
     if text in {"mois precedent", "dernier", "dernier disponible", "derniere", "previous month", "latest"}:
         return shift(today, 1)
+    m = re.fullmatch(r"il y a (\d{1,2}) mois", text)
+    if m:
+        return shift(today, int(m.group(1)))
     m = re.match(r"(\d{4})-(\d{1,2})", text) or None
     if m:
         return Period(int(m.group(2)), int(m.group(1)))
@@ -69,6 +72,25 @@ def resolve(spec: object, today: date | None = None) -> Period:
             year = int(y.group(1)) if y and len(y.group(1)) == 4 else (2000 + int(y.group(1)) if y else today.year)
             return Period(i, year)
     raise ValueError(f"Mois non reconnu : {spec}")
+
+
+RELATIVE_LABELS = {"M-1": "Mois précédent", "M-2": "Il y a 2 mois", "M-3": "Il y a 3 mois"}
+
+
+def month_spec(raw: object, year: object = None) -> str:
+    """Valeur saisie (Excel ou app) → « M-n » si relative (la liste resservira chaque mois), sinon « AAAA-MM »."""
+    text = norm(raw)
+    if not text or text in {"nan", "none", "nat"}:
+        return ""
+    m = re.fullmatch(r"m\s*-\s*(\d{1,2})", text) or re.fullmatch(r"il y a (\d{1,2}) mois", text)
+    if m:
+        return f"M-{int(m.group(1))}"
+    if text in {"mois precedent", "dernier", "dernier disponible", "derniere", "previous month", "latest"}:
+        return "M-1"
+    if year and not re.search(r"\d{4}", str(raw)) and not hasattr(raw, "year"):
+        raw = f"{raw} {year}"
+    p = resolve(raw)
+    return f"{p.year}-{p.month:02d}" if p.month else ""
 
 
 def describe(spec: object) -> str:

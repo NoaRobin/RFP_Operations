@@ -30,7 +30,7 @@ class Memory:
     def __init__(self, path: Path):
         self.path = path
         self._lock = threading.Lock()
-        self.data: dict[str, Any] = {"guids": {}, "id_column": {}, "langs": {}, "urls": {}}
+        self.data: dict[str, Any] = {"guids": {}, "id_column": {}, "langs": {}, "urls": {}, "pages": {}}
         if path.exists():
             try:
                 self.data.update(json.loads(path.read_text(encoding="utf-8")))
@@ -46,6 +46,17 @@ class Memory:
 
     def guid(self, isin: str, level: str) -> str | None:
         return self.data["guids"].get(f"{isin.upper()}|{level}")
+
+    def page(self, isin: str) -> str | None:
+        return self.data["pages"].get(isin.upper())
+
+    def remember_page(self, isin: str, url: str) -> None:
+        with self._lock:
+            self.data["pages"][isin.upper()] = url
+
+    def url(self, isin: str, kind: str) -> str | None:
+        entry = self.data["urls"].get(f"{isin.upper()}|{kind}")
+        return entry.get("url") if entry else None
 
     def learn(self, isin: str, url: str, id_column: str | None = None, kind: str | None = None) -> None:
         info = parse_url(url)
@@ -75,4 +86,5 @@ class Memory:
     def stats(self) -> dict[str, Any]:
         guids = self.data["guids"]
         return {"shares": sum(1 for k in guids if k.endswith("|share")), "funds": sum(1 for k in guids if k.endswith("|product")),
+                "pages": len(self.data["pages"]),
                 "id_column": self.data["id_column"], "langs": self.data["langs"]}

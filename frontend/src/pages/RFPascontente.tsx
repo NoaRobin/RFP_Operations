@@ -36,14 +36,6 @@ function savedCostume(): Costume {
   return DEFAULT_COSTUME
 }
 
-/** Tirage sans répétition immédiate. */
-function nextIndex(n: number, current: number) {
-  if (n < 2) return 0
-  let i = current
-  while (i === current) i = Math.floor(Math.random() * n)
-  return i
-}
-
 export default function RFPascontente() {
   const stage = useRef<HTMLDivElement>(null)
   const frame = useRef<HTMLDivElement>(null)
@@ -55,22 +47,7 @@ export default function RFPascontente() {
   const [hits, setHits] = useState(0)
   const [costume, setCostume] = useState<Costume>(savedCostume)
   const [knocked, setKnocked] = useState<Slot[]>([])
-  const [reason, setReason] = useState(0)
-  const [bubble, setBubble] = useState<{ text: string; key: number } | null>(null)
-  const [combo, setCombo] = useState<{ n: number; key: number } | null>(null)
-  const streak = useRef({ n: 0, last: 0 })
-  const bubbleTimer = useRef(0)
-  const lastBubble = useRef(0)
   const reduced = prefersReducedMotion()
-
-  const say = (text: string, force = false) => {
-    const now = performance.now()
-    if (!force && now - lastBubble.current < 1400) return
-    lastBubble.current = now
-    setBubble({ text, key: now })
-    window.clearTimeout(bubbleTimer.current)
-    bubbleTimer.current = window.setTimeout(() => setBubble(null), 2600)
-  }
 
   useEffect(() => {
     document.title = `${T.title} · RFP pas envie de travailler`
@@ -84,41 +61,15 @@ export default function RFPascontente() {
         reduced,
         onReady: () => alive && setState('ready'),
         onError: () => alive && setState('error'),
-        onHit: () => {
-          if (!alive) return
-          setHits((n) => n + 1)
-          const now = performance.now()
-          const s = streak.current
-          s.n = now - s.last < 1600 ? s.n + 1 : 1
-          s.last = now
-          if (s.n >= 3) setCombo({ n: s.n, key: now })
-          say(T.reactions[Math.floor(Math.random() * T.reactions.length)])
-        },
-        onKnock: (slot) => {
-          if (!alive) return
-          setKnocked((k) => [...new Set([...k, slot])])
-          if (T.knocked[slot]) say(T.knocked[slot], true)
-        },
+        onHit: () => alive && setHits((n) => n + 1),
+        onKnock: (slot) => alive && setKnocked((k) => [...new Set([...k, slot])]),
       })
       instance.setCostume(costume)
       engine.current = instance
     })
-    return () => { alive = false; instance?.dispose(); engine.current = null; window.clearTimeout(bubbleTimer.current) }
+    return () => { alive = false; instance?.dispose(); engine.current = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Motifs de colère : un nouveau toutes les 7 secondes
-  useEffect(() => {
-    setReason(Math.floor(Math.random() * T.reasons.length))
-    const id = window.setInterval(() => setReason((r) => nextIndex(T.reasons.length, r)), 7000)
-    return () => window.clearInterval(id)
-  }, [])
-
-  useEffect(() => {
-    if (!combo) return
-    const id = window.setTimeout(() => setCombo(null), 1500)
-    return () => window.clearTimeout(id)
-  }, [combo])
 
   useEffect(() => { if (engine.current) engine.current.weapon = weapon }, [weapon, state])
   useEffect(() => { if (engine.current) engine.current.paint = paint }, [paint, state])
@@ -138,8 +89,6 @@ export default function RFPascontente() {
     engine.current?.clean()
     setHits(0)
     setKnocked([])
-    streak.current = { n: 0, last: 0 }
-    setReason((r) => nextIndex(T.reasons.length, r))
   }
 
   useEffect(() => {
@@ -165,12 +114,6 @@ export default function RFPascontente() {
       <header className="max-w-3xl">
         <p className="eyebrow"><Brush size={13} aria-hidden="true" />{T.eyebrow}</p>
         <h1 className="mt-4 text-[clamp(2.2rem,5.5vw,4rem)] font-bold">{T.title}</h1>
-        <div className="mt-4 flex flex-wrap items-start gap-3">
-          <p className="min-h-[3.5rem] flex-1 text-lg font-semibold text-fg-2" aria-live="polite">
-            <span key={reason} className={reduced ? '' : 'animate-[fadeIn_.4s_ease-out]'}>{T.reasons[reason]}</span>
-          </p>
-          <Button size="sm" variant="secondary" icon={<Shuffle size={16} />} onClick={() => setReason((r) => nextIndex(T.reasons.length, r))}>{T.anotherReason}</Button>
-        </div>
       </header>
 
       <div ref={frame} className="mt-6 flex flex-col overflow-hidden rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card shadow-[var(--shadow-pop-lg)]">
@@ -214,21 +157,7 @@ export default function RFPascontente() {
             <div className="mt-1.5 h-3 overflow-hidden rounded-full border-2 border-fg bg-card-2" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={stress} aria-label={T.stress}>
               <div className="h-full bg-bubble-400 transition-[width] duration-300" style={{ width: `${stress}%` }} />
             </div>
-            <p className="mt-1 text-xs font-semibold text-fg-2">{T.calm(hits)}</p>
           </div>
-          {bubble && (
-            <div key={bubble.key} role="status"
-              className={`pointer-events-none absolute left-1/2 top-[12%] max-w-[min(26rem,80%)] -translate-x-1/2 rounded-3xl border-[2.5px] border-fg bg-card px-5 py-3 text-center font-display text-lg font-semibold shadow-[4px_4px_0_0_var(--color-fg)] ${reduced ? '' : 'animate-[pop_.35s_cubic-bezier(.34,1.56,.64,1)]'}`}>
-              {bubble.text}
-              <span aria-hidden="true" className="absolute -bottom-[11px] left-1/2 size-5 -translate-x-1/2 rotate-45 border-b-[2.5px] border-r-[2.5px] border-fg bg-card" />
-            </div>
-          )}
-          {combo && (
-            <p key={combo.key} aria-live="polite"
-              className={`pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 -rotate-3 rounded-full border-[2.5px] border-fg bg-sun-400 px-5 py-2 font-display text-2xl font-bold shadow-[4px_4px_0_0_var(--color-fg)] ${reduced ? '' : 'animate-[pop_.35s_cubic-bezier(.34,1.56,.64,1)]'}`}>
-              {T.combo(combo.n)}
-            </p>
-          )}
           {knocked.length > 0 && (
             <div className="absolute bottom-3 right-3">
               <Button size="sm" variant="secondary" icon={<Shirt size={16} />} onClick={putBack}>{C.putBack}</Button>
@@ -242,7 +171,6 @@ export default function RFPascontente() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 id="costume-title" className="flex items-center gap-2 text-2xl"><Shirt size={22} aria-hidden="true" />{C.title}</h2>
-            <p className="mt-1 text-sm font-semibold text-fg-2">{C.lead}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="secondary" icon={<Shuffle size={16} />} onClick={() => dress(randomCostume())}>{C.random}</Button>
