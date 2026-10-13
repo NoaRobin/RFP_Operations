@@ -33,13 +33,18 @@ DOC_TYPES: dict[str, DocType] = {d.key: d for d in [
     DocType("annexe sfdr en", "Annexe SFDR EN", "Documents ESG", ("Annexe SFDR [EN]", "Annexe SFDR - EN", "Annexe SFDR EN", "SFDR Annex",
             "SFDR Annex [EN]"), False, "SFDR", "product", "EN", short="Annexe SFDR EN"),
     DocType("article 10 sfdr", "Article 10 SFDR", "Documents ESG", ("Article 10 SFDR",), False, "SFDR10", "product", short="Article 10 SFDR"),
+    DocType("rapport annuel", "Rapport annuel", "Documents juridiques", ("Rapport annuel", "Annual report"), False, "RAAN", "product",
+            short="Rapport annuel"),
+    DocType("rapport semestriel", "Rapport semestriel", "Documents juridiques", ("Rapport semestriel", "Semi-annual report"), False, None,
+            "product", short="Rapport semestriel"),
     DocType("rapport periodique sfdr", "Rapport périodique SFDR", "Documents ESG", ("Rapport périodique SFDR", "Rapport periodique SFDR"),
             False, None, "product", short="Rapport périodique SFDR"),
 ]}
 
 ALIASES = {"dic priips": "dic", "kid": "dic", "dici": "dic", "rapport mensuel": "reporting mensuel", "reporting": "reporting mensuel",
            "reporting en": "reporting mensuel en", "rapport periodique sfdr": "rapport periodique sfdr", "annexe sfdr [en]": "annexe sfdr en",
-           "article 10": "article 10 sfdr", "prospectus complet": "prospectus"}
+           "article 10": "article 10 sfdr", "annual report": "rapport annuel", "semi-annual report": "rapport semestriel",
+           "priips kid": "dic", "monthly report": "reporting mensuel", "prospectus complet": "prospectus"}
 
 
 def doc_type(value: object) -> DocType:

@@ -107,6 +107,18 @@ https://docs.am.eu.rothschildandco.com/{PRÉFIXE}_{GUID}_{LANGUE}_{PAYS}[_{AAAAM
 
 Le navigateur n'est donc **pas nécessaire** dès que l'on connaît le GUID.
 
+### Comment le site range les documents (relevé sur le site public, octobre 2026)
+- **Page de chaque part** : `https://am.eu.rothschildandco.com/fr/nos-fonds/{fonds}/{part}/` (en anglais `/en/our-funds/…`),
+  ex. `…/nos-fonds/r-co-valor/c-eur/`. Le nom du fonds et de la part donnent l'adresse (minuscules, tirets, sans accents).
+  La rubrique « Téléchargements » liste les PDF de la part : DIC PRIIPs, prospectus, reportings, documents SFDR,
+  rapports annuels et semestriels.
+- **Adresse des PDF** : `{PRÉFIXE}_{GUID}_{PAYS}_{LANGUE}[_{AAAAMMJJ}].pdf`, servie à deux endroits identiques :
+  `https://docs.am.eu.rothschildandco.com/…` et `https://am.eu.rothschildandco.com/docs/…`.
+  - préfixes vus : `DIPR` (DIC, par part), `REPM` (reporting mensuel, par part), `PROS` (prospectus, par fonds),
+    `SFDR` / `SFDR10` (documents SFDR), `RAAN` (rapport annuel) ;
+  - suffixe **PAYS_LANGUE** : `FR_FR` (France, français), `FR_EN` (France, anglais), `BE_FR`, `ES_EN`, `IT_EN`… ;
+  - reporting : sans date = dernier mois publié ; avec date = mois précis (dernier jour ouvré, ex. `_20260130`).
+
 ### Ce que fait Merlin (page `/documents`, automatisation « Documents des fonds »)
 **Plus de navigateur.** Cliquer dans le site (Playwright) était lent et fragile : délais de téléchargement, pages qui
 changent, fonds introuvables. L'app va droit à l'adresse du PDF.
@@ -117,8 +129,9 @@ changent, fonds introuvables. L'app va droit à l'adresse du PDF.
       automatique). Le premier qui répond est gardé.
 2. **Trouver l'adresse** (`resolver.py`), dans l'ordre :
    1. adresse mémorisée (`data/fundshop/learned.json`) ;
-   2. adresse déduite des identifiants Product Info (`PI_OUT_Share.pi_shareid`… ; la colonne qui marche est retenue) ;
-   3. liens PDF de la page du fonds ;
+   2. **la page de la part**, lue comme on le ferait à la main (rubrique « Téléchargements ») : tous ses liens sont
+      mémorisés d'un coup (DIC, reportings, prospectus, SFDR…), puis la page du fonds ;
+   3. adresse déduite des identifiants Product Info (`PI_OUT_Share.pi_shareid`… ; la colonne qui marche est retenue) ;
    4. **« J'ai le lien »** : l'utilisateur colle une fois le lien d'un PDF de la part (ou la page du fonds). L'app en déduit
       l'adresse de tous les documents de cette part, pour tous les mois.
 
@@ -138,7 +151,7 @@ changent, fonds introuvables. L'app va droit à l'adresse du PDF.
 
 **À CONFIRMER**
 - **GUID** : que les GUID des adresses sont bien ceux de Product Info. L'app le vérifie d'elle-même et apprend la bonne colonne.
-- **Versions anglaises** : les codes `EN_FR`, `EN_GB`, `EN_LU`… sont essayés tour à tour.
+- **Versions anglaises** : `FR_EN` d'abord, puis `LU_EN`, `BE_EN`, `CH_EN`, `ES_EN`, `IT_EN`.
 - **Rapport périodique SFDR** : son préfixe est inconnu ; il faut coller une fois son lien (« J'ai le lien »).
 - **Date des reportings** : fin de mois calendaire ou dernier jour ouvré ? Les deux sont essayées.
 

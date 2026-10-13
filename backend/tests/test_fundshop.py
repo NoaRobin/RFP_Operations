@@ -108,7 +108,7 @@ def test_failures_are_explained_in_plain_words(tmp_path):
     assert p.code == "proxy" and "Edge" in p.fix
     # aucune adresse connue (rien ne répond) : on explique comment donner le lien une fois
     p = why(resolver(tmp_path, {}, data=None))
-    assert p.code == "adresse-inconnue" and "J'ai le lien" in p.fix and p.link.startswith("https://site.test/fonds/fonds-fictif")
+    assert p.code == "adresse-inconnue" and "J'ai le lien" in p.fix and p.link.startswith("https://site.test/fr/nos-fonds/fonds-fictif")
     # PDF d'une autre part : refusé, et son adresse est retenue pour l'autre part
     res = resolver(tmp_path, {f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(OTHER)})
     p = why(res)
@@ -220,3 +220,36 @@ def test_fundshop_api(client):
     assert mine["C2"].value == "Reporting mensuel" and mine["D2"].value == "Mois précédent"
     bad = client.post("/api/fundshop/link", json={"isin": ISIN, "url": "https://ailleurs.example/x"})
     assert bad.status_code == 400 and "ni un PDF" in bad.json()["detail"]["message"]
+
+
+def test_share_page_is_read_like_a_human_would(tmp_path):
+    """Comme à la main : page de la part → « Téléchargements » → liens /docs/… ; tout est mémorisé, sans Fabric."""
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+
+    page = "https://site.test/fr/nos-fonds/fonds-fictif/c-eur/"
+    html = f"""<html><body><h2>Téléchargements</h2>
+      <div>DIC PRIIPS <a href="/docs/DIPR_{SHARE_GUID}_FR_FR.pdf">Télécharger</a></div>
+      <div>Reporting mensuel <a href="https://site.test/docs/REPM_{SHARE_GUID}_FR_EN.pdf">PDF</a></div>
+      <div>Prospectus <a href="/docs/PROS_{PRODUCT_GUID}_FR_FR.pdf">PDF</a></div>
+      <div>Rapport semestriel <a href="/media/rapport-semestriel-fonds-fictif.pdf">PDF</a></div></body></html>""".encode()
+    report_sept = make_pdf([[f"Reporting fictif {ISIN} - données au 30/09/2026"] + [f"Ligne {n}" for n in range(30)]])
+    semi = make_pdf([["Rapport semestriel fictif"] + [f"Ligne {n}" for n in range(40)]])
+    served = {page: html, f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(), f"{BASE}/REPM_{SHARE_GUID}_FR_EN.pdf": report_sept,
+              f"{BASE}/PROS_{PRODUCT_GUID}_FR_FR.pdf": make_pdf([["Prospectus fictif"] + [f"Article {n}" for n in range(40)]]),
+              "https://site.test/media/rapport-semestriel-fonds-fictif.pdf": semi}
+    res = resolver(tmp_path, served, data=None)
+    ident = res.identity(ISIN, "Fonds Fictif", "C EUR")
+    assert res.find(ident, doc_type("dic"), Period()).strategy == "page de la part"
+    assert res.memory.guid(ISIN, "share") == SHARE_GUID and res.memory.guid(ISIN, "product") == PRODUCT_GUID  # tout est appris
+    # le dernier reporting publié (adresse sans date) est accepté s'il porte bien sur le mois demandé…
+    assert res.find(ident, doc_type("reporting mensuel en"), Period(9, 2026)).url.endswith("_FR_EN.pdf")
+    # …et refusé pour un autre mois : « pas encore sur le site »
+    from merlin.fundshop.problems import DocumentProblem
+    try:
+        res.find(ident, doc_type("reporting mensuel en"), Period(10, 2026))
+        raise AssertionError("le reporting de septembre ne doit pas passer pour octobre")
+    except DocumentProblem as error:
+        assert error.problem.code == "absent"
+    # document sans motif d'adresse : retrouvé par son libellé sur la page
+    assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith("rapport-semestriel-fonds-fictif.pdf")

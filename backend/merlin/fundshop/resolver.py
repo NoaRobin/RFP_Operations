@@ -7,7 +7,7 @@ import io
 import re
 from dataclasses import dataclass, field
 from datetime import timedelta
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 from ..data.access import DataAccess, DataError
 from ..rfi.ontology import norm
@@ -21,11 +21,16 @@ DOCS_BASE = "https://docs.am.eu.rothschildandco.com"
 SITE_BASE = "https://am.eu.rothschildandco.com/fr/nos-fonds/"
 MIN_SIZE = 1000
 ISIN = re.compile(rb"[A-Z]{2}[A-Z0-9]{9}\d")
-EN_LANGS = ("EN_FR", "EN_GB", "EN_EN", "EN_LU", "EN_INT")
+# Suffixe PAYS_LANGUE : la version française pour la France d'abord, puis les autres pays d'enregistrement
+LANGS = {"FR": ("FR_FR", "BE_FR", "LU_FR", "CH_FR"), "EN": ("FR_EN", "LU_EN", "BE_EN", "CH_EN", "ES_EN", "IT_EN")}
 SHARE_ID_COLUMNS = ("pi_shareid", "Id")
 PRODUCT_ID_COLUMNS = ("pi_productid", "Id", "Product_Global_ID")
 GUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
-PDF_LINK = re.compile(r"https?://[^\"'\s<>]+?\.pdf", re.I)
+DOC_LINK = re.compile(r"(?:https?://[^\"'\s<>]*?)?/?(?:docs/)?([A-Z0-9]+)_([0-9a-fA-F-]{36})_([A-Z]{2}_[A-Z]{2})(?:_(\d{8}))?\.pdf", re.I)
+ANY_PDF = re.compile(r"href=[\"']([^\"']+?\.pdf)[\"']", re.I)
+TAG = re.compile(r"<[^>]+>")
+MONTHS_FR = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+MONTHS_EN = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
 
 
 @dataclass
@@ -58,18 +63,43 @@ def month_end_candidates(period: Period) -> list[str]:
     return [x.strftime("%Y%m%d") for x in out]
 
 
-def pdf_isins(content: bytes) -> set[str]:
-    """ISIN présents dans le texte du PDF (pypdf) ; repli : chaînes brutes."""
-    found: set[str] = set()
+def pdf_text(content: bytes, pages: int = 6) -> str:
     try:
         from pypdf import PdfReader
 
         reader = PdfReader(io.BytesIO(content))
-        for page in reader.pages[:6]:
-            found |= set(re.findall(r"[A-Z]{2}[A-Z0-9]{9}\d", page.extract_text() or ""))
+        return "\n".join(page.extract_text() or "" for page in reader.pages[:pages])
     except Exception:  # noqa: BLE001
-        found |= {m.decode() for m in ISIN.findall(content[:400_000])}
-    return found
+        return ""
+
+
+def pdf_isins(content: bytes) -> set[str]:
+    """ISIN présents dans le texte du PDF (pypdf) ; repli : chaînes brutes."""
+    text = pdf_text(content)
+    if text:
+        return set(re.findall(r"[A-Z]{2}[A-Z0-9]{9}\d", text))
+    return {m.decode() for m in ISIN.findall(content[:400_000])}
+
+
+def mentions_month(content: bytes, period: Period) -> bool | None:
+    """Le reporting porte-t-il sur le mois demandé ? (« au 30/09/2026 », « September 2026 »…) ; None si illisible."""
+    text = pdf_text(content, pages=2).lower()
+    if not text or not period.month:
+        return None
+    mm, yyyy = f"{period.month:02d}", str(period.year)
+    if re.search(rf"\b\d{{1,2}}[/.-]{mm}[/.-]{yyyy}\b", text):
+        return True
+    return MONTHS_FR[period.month - 1] + " " + yyyy in text or MONTHS_EN[period.month - 1] + " " + yyyy in text
+
+
+@dataclass
+class Link:
+    url: str
+    prefix: str
+    guid: str
+    lang: str
+    date: str
+    context: str  # texte autour du lien sur la page (libellé de la ligne de téléchargement)
 
 
 def slug(name: str) -> str:
@@ -135,12 +165,60 @@ class Resolver:
         self._ids[isin] = ident
         return ident
 
+    # ------------------------------------------------------------------ pages du site
+    def _root(self) -> str:
+        u = urlparse(self.site_base)
+        return f"{u.scheme}://{u.netloc}"
+
+    def share_slug(self, ident: Identity) -> str:
+        """« R-co Valor C EUR » (ou « C EUR ») → « c-eur », comme dans l'adresse de la page de la part."""
+        share = ident.share or ""
+        if ident.fund and norm(share).startswith(norm(ident.fund)):
+            share = share[len(ident.fund):]
+        return slug(share)
+
+    def pages(self, ident: Identity, lang: str = "FR") -> list[str]:
+        """Pages où sont listés les téléchargements : celle de la part d'abord, puis celle du fonds (FR puis EN)."""
+        out = [self.memory.page(ident.isin)] if self.memory.page(ident.isin) else []
+        if ident.fund:
+            fund, share = slug(ident.fund), self.share_slug(ident)
+            sections = ["fr/nos-fonds", "en/our-funds"] if lang == "FR" else ["en/our-funds", "fr/nos-fonds"]
+            for section in sections:
+                if share:
+                    out.append(f"{self._root()}/{section}/{fund}/{share}/")
+                out.append(f"{self._root()}/{section}/{fund}/")
+        return list(dict.fromkeys(out))
+
     def fund_page(self, ident: Identity) -> str:
-        """Page à ouvrir pour vérifier à la main : page mémorisée, sinon celle déduite du nom du fonds."""
-        return self.memory.page(ident.isin) or (self.site_base + slug(ident.fund) + "/" if ident.fund else self.site_base)
+        """Page à ouvrir pour vérifier à la main."""
+        candidates = self.pages(ident)
+        return candidates[0] if candidates else self.site_base
+
+    def links(self, page: str, seen: "Attempts") -> list[Link]:
+        """Tous les PDF listés sur une page (adresses absolues ou /docs/…), avec le texte qui les entoure."""
+        if page not in self._pages:
+            try:
+                r = self.net.get(page)
+                self._pages[page] = r.content.decode("utf-8", "replace") if r.status == 200 else None
+            except NetError as error:
+                seen.add(error.code, host=error.host, detail=error.detail, link=page)
+                self._pages[page] = None
+        html = (self._pages[page] or "").replace("\\/", "/").replace("&amp;", "&")
+        out: dict[str, Link] = {}
+        for m in DOC_LINK.finditer(html):
+            prefix, guid, lang, date = m.group(1).upper(), m.group(2).lower(), m.group(3).upper(), m.group(4) or ""
+            url = f"{self.docs_base}/{prefix}_{guid}_{lang}{'_' + date if date else ''}.pdf"
+            context = norm(TAG.sub(" ", html[max(0, m.start() - 600):m.start()]))[-200:]
+            out.setdefault(url, Link(url, prefix, guid, lang, date, context))
+        for m in ANY_PDF.finditer(html):  # PDF sans motif connu (rapport semestriel…) : adresse telle quelle
+            url = urljoin(page, m.group(1))
+            if not DOC_LINK.search(url):
+                context = norm(TAG.sub(" ", html[max(0, m.start() - 600):m.start()]))[-200:]
+                out.setdefault(url, Link(url, "", "", "", "", context))
+        return list(out.values())
 
     # ------------------------------------------------------------------ un essai
-    def _try(self, url: str, ident: Identity, doc: DocType, strategy: str, seen: Attempts) -> Found | None:
+    def _try(self, url: str, ident: Identity, doc: DocType, strategy: str, seen: Attempts, period: Period | None = None) -> Found | None:
         seen.tried += 1
         try:
             r = self.net.get(url)
@@ -166,15 +244,24 @@ class Resolver:
                 return None
             if not isins:
                 note = "ISIN non vérifiable dans le PDF"
+        info = parse_url(url)
+        if doc.needs_month and period and info and not info["date"] and mentions_month(r.content, period) is False:
+            seen.add("absent", link=url)  # dernier reporting publié, mais d'un autre mois
+            return None
         return Found(url, r.content, strategy, note)
 
-    def _built(self, doc: DocType, period: Period, guid: str) -> list[str]:
-        if doc.lang == "FR":
-            langs = ["FR_FR"]
-        else:
-            langs = [self.memory.data["langs"][doc.key]] if doc.key in self.memory.data["langs"] else list(EN_LANGS)
+    def hosts(self) -> list[str]:
+        """Les deux adresses du site qui servent les PDF (la configurée d'abord)."""
+        alt = {"https://docs.am.eu.rothschildandco.com": "https://am.eu.rothschildandco.com/docs",
+               "https://am.eu.rothschildandco.com/docs": "https://docs.am.eu.rothschildandco.com"}
+        return [self.docs_base] + ([alt[self.docs_base]] if self.docs_base in alt else [])
+
+    def _built(self, doc: DocType, period: Period, guid: str, host: str | None = None, lang: str | None = None) -> list[str]:
+        learned = self.memory.data["langs"].get(doc.key)
+        langs = [lang] if lang else list(dict.fromkeys(([learned] if learned else []) + list(LANGS[doc.lang])))
         dates = month_end_candidates(period) if doc.needs_month else [""]
-        return [f"{self.docs_base}/{doc.prefix}_{guid}_{lang}{'_' + d if d else ''}.pdf" for lang in langs for d in dates]
+        base = (host or self.docs_base).rstrip("/")
+        return [f"{base}/{doc.prefix}_{guid}_{lg}{'_' + d if d else ''}.pdf" for lg in langs for d in dates]
 
     # ------------------------------------------------------------------ recherche
     def find(self, ident: Identity, doc: DocType, period: Period) -> Found:
@@ -182,31 +269,64 @@ class Resolver:
         if doc.needs_month and not (period.month and period.year):
             raise DocumentProblem(problem("mois", doc=doc.label))
         seen = Attempts()
+        tried: set[str] = set()
         trusted_404 = False
-        if not doc.prefix:
-            # Type sans adresse connue : seulement le lien collé par l'utilisateur pour cette part
-            pasted = self.memory.url(ident.isin, doc.key)
-            if pasted and (f := self._try(pasted, ident, doc, "lien collé", seen)):
-                return f
-        else:
-            tried: set[str] = set()
 
-            def attempt(urls: list[str], strategy: str) -> Found | None:
-                for url in urls:
-                    if url in tried:
-                        continue
-                    tried.add(url)
-                    if (f := self._try(url, ident, doc, strategy, seen)):
-                        return f
-                return None
+        def attempt(urls: list[str], strategy: str) -> Found | None:
+            for url in urls:
+                if url in tried:
+                    continue
+                tried.add(url)
+                if (f := self._try(url, ident, doc, strategy, seen, period)):
+                    if doc.prefix:
+                        self.memory.learn(ident.isin, f.url, kind=doc.key)
+                    return f
+            return None
 
-            # 1. adresse mémorisée (GUID déjà vérifié : un 404 veut dire « pas sur le site »)
+        # 0. lien collé pour ce document précis (types sans motif d'adresse)
+        pasted = self.memory.url(ident.isin, doc.key)
+        if pasted and not doc.prefix and (f := attempt([pasted], "lien collé")):
+            return f
+        if doc.prefix:
+            # 1. adresse mémorisée (déjà vérifiée : un 404 veut dire « pas sur le site »)
             guid = self.memory.guid(ident.isin, doc.level)
             if guid:
                 if (f := attempt(self._built(doc, period, guid), "mémorisée")):
                     return f
                 trusted_404 = set(seen.codes) == {"absent"}
-            # 2. identifiants Product Info (la colonne qui a déjà marché d'abord)
+        # 2. la page de la part sur le site (comme à la main : « Téléchargements »), puis celle du fonds
+        share_slug = self.share_slug(ident)
+        for page in self.pages(ident, doc.lang):
+            on_share_page = bool(share_slug) and page.rstrip("/").endswith("/" + share_slug)
+            links = self.links(page, seen)
+            if not links:
+                continue
+            if doc.prefix:
+                if on_share_page:  # la page de la part : ses adresses sont mémorisées pour toutes les prochaines fois
+                    for ln in links:
+                        if ln.prefix:
+                            self.memory.learn(ident.isin, ln.url)
+                found_links = [ln for ln in links if ln.prefix == doc.prefix]
+                wanted = [ln for ln in found_links if ln.lang.endswith("_" + doc.lang)] or found_links
+                for ln in wanted:
+                    same_lang = ln.lang.endswith("_" + doc.lang)
+                    urls = ([ln.url] if same_lang and not doc.needs_month else []) + (self._built(doc, period, ln.guid, lang=ln.lang) if same_lang else []) \
+                        + self._built(doc, period, ln.guid)
+                    if doc.needs_month and not ln.date and same_lang:
+                        urls.append(ln.url)  # dernier reporting publié (sans date) : accepté s'il porte sur le mois demandé
+                    before = set(seen.codes)
+                    if (f := attempt(urls, "page de la part" if on_share_page else "page du fonds")):
+                        return f
+                    if on_share_page and set(seen.codes) - before == {"absent"}:
+                        trusted_404 = True
+            else:
+                labels = [norm(x) for x in doc.site_labels]
+                matching = [ln.url for ln in links if any(lb in ln.context[-80:] for lb in labels)]
+                if (f := attempt(matching, "page de la part")):
+                    self.memory.data["urls"][f"{ident.isin}|{doc.key}"] = {"url": f.url}
+                    return f
+        if doc.prefix:
+            # 3. identifiants Product Info (la colonne qui a déjà marché d'abord)
             ids = ident.share_ids if doc.level == "share" else ident.product_ids
             learned_col = self.memory.data["id_column"].get(doc.level, "").split(".")[-1]
             for column in sorted(ids, key=lambda c: c != learned_col):
@@ -214,31 +334,13 @@ class Resolver:
                     table = "PI_OUT_Share" if doc.level == "share" else "pi_out_product_active"
                     self.memory.learn(ident.isin, f.url, f"{table}.{column}", doc.key)
                     return f
-            # 3. liens de la page du fonds
-            for guid_found in self._page_guids(ident, doc, seen):
-                if (f := attempt(self._built(doc, period, guid_found), "page du fonds")):
-                    self.memory.learn(ident.isin, f.url, kind=doc.key)
-                    return f
+            # 4. l'autre adresse du site si la première ne répond pas (même fichier, autre chemin)
+            if any(code in seen.codes for code in ("proxy", "hors-ligne", "delai", "reseau", "refuse")):
+                guid = self.memory.guid(ident.isin, doc.level)
+                for host in self.hosts()[1:]:
+                    if guid and (f := attempt(self._built(doc, period, guid, host=host), "mémorisée")):
+                        return f
         raise DocumentProblem(self._explain(seen, ident, doc, label, trusted_404))
-
-    def _page_guids(self, ident: Identity, doc: DocType, seen: Attempts) -> list[str]:
-        page = self.memory.page(ident.isin) or (self.site_base + slug(ident.fund) + "/" if ident.fund else "")
-        if not page:
-            return []
-        if page not in self._pages:
-            try:
-                r = self.net.get(page)
-                self._pages[page] = r.content.decode("utf-8", "replace") if r.status == 200 else None
-            except NetError as error:
-                seen.add(error.code, host=error.host, detail=error.detail, link=page)
-                self._pages[page] = None
-        html = self._pages[page] or ""
-        out: list[str] = []
-        for m in PDF_LINK.finditer(html.replace("\\/", "/")):
-            info = parse_url(m.group(0))
-            if info and info["prefix"] == doc.prefix and info["guid"] not in out:
-                out.append(info["guid"])
-        return out
 
     def _explain(self, seen: Attempts, ident: Identity, doc: DocType, label: str, trusted_404: bool) -> Problem:
         worst = seen.worst()

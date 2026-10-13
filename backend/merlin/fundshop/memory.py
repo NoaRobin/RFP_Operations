@@ -13,7 +13,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-URL = re.compile(r"https?://[^/\s]+/([A-Z0-9]+)_([0-9a-fA-F-]{36})_([A-Z]{2}_[A-Z]{2})(?:_(\d{8}))?\.pdf", re.I)
+# Deux adresses servent les mêmes fichiers : docs.am.eu.rothschildandco.com/X.pdf et am.eu.rothschildandco.com/docs/X.pdf ;
+# suffixe PAYS_LANGUE (FR_FR, FR_EN, BE_FR, ES_EN…), puis la date du reporting (dernier jour ouvré du mois) si besoin.
+URL = re.compile(r"https?://[^\s\"'<>]*?/([A-Z0-9]+)_([0-9a-fA-F-]{36})_([A-Z]{2}_[A-Z]{2})(?:_(\d{8}))?\.pdf", re.I)
 SHARE_PREFIXES = {"DIPR", "REPM"}
 
 
