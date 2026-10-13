@@ -3,7 +3,7 @@ import { texts } from '../content/texts'
 import type {
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
-  DueDiligenceList, FinalListing, SharePointImport, RfiPreview, FundDocuments, Binding, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  DueDiligenceList, FinalListing, SharePointImport, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -71,6 +71,25 @@ export const api = {
     request<Schedule>(`/schedules/${id}`, { method: 'PATCH', body: JSON.stringify({ enabled }), headers: { 'Content-Type': 'application/json' } }),
   deleteSchedule: (id: string) => request<{ ok: boolean }>(`/schedules/${id}`, { method: 'DELETE' }),
   suggest: (body: { title: string; description: string; urgency: string }) => request('/suggestions', json(body)),
+
+  omni: () => request<OmniOverview>('/omni'),
+
+  fundshop: {
+    overview: () => request<FundShopOverview>('/fundshop'),
+    save: (items: Partial<FundShopItem>[]) => request<FundShopOverview>('/fundshop', { method: 'PUT', body: JSON.stringify(items), headers: { 'Content-Type': 'application/json' } }),
+    importExcel: (file: File, replaceAll = false) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<FundShopOverview>(`/fundshop/import?replace_all=${replaceAll}`, { method: 'POST', body: form })
+    },
+    learnCsv: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<{ learned: number }>('/fundshop/learn-csv', { method: 'POST', body: form })
+    },
+    tryOne: (isin: string, kind: string, month: string) =>
+      request<{ found: boolean; url?: string; strategy?: string; detail?: string; note?: string }>('/fundshop/try', json({ isin, kind, month })),
+  },
 
   fabric: {
     status: () => request<FabricStatus>('/fabric'),

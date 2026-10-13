@@ -67,6 +67,26 @@ class SharePointSettings:
 
 
 @dataclass(frozen=True)
+class OmniSettings:
+    """OMNI mensuel (Holdings + performances NET / GROSS rangés par trimestre)."""
+    root: str = ""  # …\3 - Consultants (dossier synchronisé) ; vide = data/omni
+    inbox: str = ""  # dossier de dépôt des performances ; vide = data/omni/depot
+    sender: str = ""  # expéditeur Outlook des performances
+    subject_words: str = "perf,omni"
+    jump_script: str = ""  # JUMP_OMNI.py (mode « JUMP Excel », Windows)
+
+
+@dataclass(frozen=True)
+class FundShopSettings:
+    """Téléchargement des documents des fonds (liste à la carte, en boucle)."""
+    dest_dir: str = ""  # ex. …\7 - Ressources\Stagiaire\FundShop ; vide = data/fundshop/documents
+    docs_base: str = "https://docs.am.eu.rothschildandco.com"
+    site_base: str = "https://am.eu.rothschildandco.com/fr/nos-fonds/"
+    browser: str = "auto"  # auto (si Playwright installé) | off
+    browser_channel: str = ""  # msedge pour utiliser Edge
+
+
+@dataclass(frozen=True)
 class FundDocumentSettings:
     """DIC PRIIPs et prospectus : site public des fonds, dossier local, dépôts manuels."""
     mode: str = "auto"  # auto : site utilisé seulement avec Fabric (fonds réels) | on | off
@@ -93,6 +113,8 @@ class Settings:
     fabric: FabricSettings = field(default_factory=FabricSettings)
     sharepoint: SharePointSettings = field(default_factory=SharePointSettings)
     fund_documents: FundDocumentSettings = field(default_factory=FundDocumentSettings)
+    fundshop: FundShopSettings = field(default_factory=FundShopSettings)
+    omni: OmniSettings = field(default_factory=OmniSettings)
 
     @property
     def db_path(self) -> Path:
@@ -142,6 +164,20 @@ def get_settings() -> Settings:
             tenant_id=_env("FABRIC_TENANT_ID"),
             odbc_driver=_env("FABRIC_ODBC_DRIVER", "ODBC Driver 18 for SQL Server"),
             timeout=int(_env("FABRIC_TIMEOUT", "30")),
+        ),
+        omni=OmniSettings(
+            root=_env("OMNI_ROOT"),
+            inbox=_env("OMNI_INBOX"),
+            sender=_env("OMNI_SENDER"),
+            subject_words=_env("OMNI_SUBJECT_WORDS", "perf,omni"),
+            jump_script=_env("OMNI_JUMP_SCRIPT"),
+        ),
+        fundshop=FundShopSettings(
+            dest_dir=_env("FUNDSHOP_DIR"),
+            docs_base=_env("FUNDSHOP_DOCS_BASE", FundShopSettings.docs_base),
+            site_base=_env("FUNDSHOP_SITE_BASE", FundShopSettings.site_base),
+            browser=_env("FUNDSHOP_BROWSER", "auto").lower(),
+            browser_channel=_env("FUNDSHOP_BROWSER_CHANNEL"),
         ),
         fund_documents=FundDocumentSettings(
             mode=_env("FUND_DOCS", "auto").lower(),

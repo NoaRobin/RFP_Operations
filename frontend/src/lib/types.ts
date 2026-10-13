@@ -468,3 +468,20 @@ export interface Binding {
   id: string; question: string; target: string; label: string; type: string; support: number; compared: number; rate: number
   status: 'candidate' | 'validated' | 'rejected' | 'ambiguous' | 'weak'; runner_up: string; examples: string[]; usable: boolean; strong: boolean
 }
+
+export interface FundShopItem {
+  id: string; isin: string; kind: string; fund: string; part: string; month: string; filename: string; active: boolean; overwrite: boolean
+  target?: string; period_label?: string; present?: boolean; error?: string
+}
+export interface FundShopOverview {
+  items: FundShopItem[]; destination: string; default_name: string
+  types: { key: string; label: string; needs_month: boolean; direct: boolean }[]
+  memory: { shares: number; funds: number; id_column: Record<string, string>; langs: Record<string, string> }
+  imported?: number; errors?: string[]
+}
+
+export interface OmniOverview {
+  root: string; inbox: string; outlook: boolean; sender: string; jump_excel: boolean
+  next: { periode: string; mois: number; annee: number; date_arrete: string; source: string }
+  reports: { file: string; periode: string; statut: string; date_arrete: string; alertes: string[]; holdings: number | null; controle_net: string | null }[]
+}

@@ -25,7 +25,18 @@ def service_for(s: AppState):
         names = tuple(i["name"] for i in fund_directory(s.data))
     except DataError:
         names = ()
-    return document_service(s.settings.data_dir / "rfi" / "documents", s.settings.fund_documents, s.data.mode, names)
+    return document_service(s.settings.data_dir / "rfi" / "documents", s.settings.fund_documents, s.data.mode, names, _shop(s))
+
+
+_shops: dict = {}
+
+
+def _shop(s: AppState):
+    from ..fundshop.service import resolver
+
+    if s.data.mode not in _shops:
+        _shops[s.data.mode] = resolver(s.settings, s.data, with_browser=False)[0]
+    return _shops[s.data.mode]
 
 
 def _names(s: AppState, isin: str) -> tuple[str, str]:

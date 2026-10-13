@@ -15,6 +15,8 @@ import Home from './pages/Home'
 const Intro = lazy(() => import('./pages/Intro'))
 const Library = lazy(() => import('./pages/Library'))
 const Rfi = lazy(() => import('./pages/Rfi'))
+const FundShop = lazy(() => import('./pages/FundShop'))
+const Omni = lazy(() => import('./pages/Omni'))
 const MergeCodes = lazy(() => import('./pages/MergeCodes'))
 const Suivi = lazy(() => import('./pages/Suivi'))
 const AutomationPage = lazy(() => import('./pages/AutomationPage'))
@@ -34,6 +36,8 @@ function Shell() {
             <Routes location={display}>
               <Route path="/" element={<Home />} />
               <Route path="/rfi" element={<Rfi />} />
+              <Route path="/documents" element={<FundShop />} />
+              <Route path="/omni" element={<Omni />} />
               <Route path="/merge-codes" element={<MergeCodes />} />
               <Route path="/suivi-activite" element={<Suivi />} />
               <Route path="/sorts" element={<Library />} />

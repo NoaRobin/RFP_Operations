@@ -1,0 +1,47 @@
+id: telechargement_documents
+name: Documents des fonds (site)
+description: >
+  Télécharge la « liste de courses » de documents (DIC PRIIPs, prospectus, reportings mensuels, documents SFDR)
+  depuis le site des fonds. Adresse directe d'abord (sans navigateur), navigateur en dernier recours ; chaque PDF
+  est vérifié (ISIN de la part). À lancer une fois, ou à programmer chaque mois avec des mois relatifs (M-1).
+icon: download
+category: Documents
+type: python
+version: "1.0"
+tags: [DIC, prospectus, reporting, SFDR]
+estimated_minutes_saved: 40
+requires: []
+steps:
+  - Préparation de la liste
+  - Téléchargements
+  - Rapport
+params:
+  - name: mode
+    label: Que télécharger ?
+    type: select
+    default: missing
+    options:
+      - {value: missing, label: "Seulement les documents absents du dossier"}
+      - {value: all, label: "Tout re-télécharger (les fichiers « Écraser » seulement)"}
+  - name: types
+    label: Types de documents
+    type: multiselect
+    required: false
+    placeholder: Tous les types
+    options:
+      - {value: dic, label: DIC}
+      - {value: prospectus, label: Prospectus}
+      - {value: reporting mensuel, label: Reporting mensuel}
+      - {value: reporting mensuel en, label: Reporting mensuel EN}
+      - {value: annexe sfdr, label: Annexe SFDR}
+      - {value: annexe sfdr en, label: Annexe SFDR EN}
+      - {value: article 10 sfdr, label: Article 10 SFDR}
+      - {value: rapport periodique sfdr, label: Rapport périodique SFDR}
+  - name: navigateur
+    label: Navigateur en dernier recours
+    type: boolean
+    default: true
+    help: Si l'adresse directe ne fonctionne pas, l'app parcourt le site (plus lent).
+outputs:
+  - type: excel
+    label: Rapport de téléchargement
