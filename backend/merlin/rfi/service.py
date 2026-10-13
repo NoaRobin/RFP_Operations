@@ -19,7 +19,9 @@ from .precedents import PrecedentIndex
 from .precedents.advisor import Decision, Entity, FundResolver, PrecedentAdvisor
 from .render import Rendered, render
 from .understand import Understanding, understand
-from .values import PRODUCT, SHARE, Values
+from .documents.service import DocumentService
+from .precedents.compare import same
+from .values import PRODUCT, SHARE, Raw, Values, to_date
 from .writer import write
 
 ALLOWED = {".xlsx", ".xlsm", ".docx"}
@@ -147,7 +149,8 @@ def _share_fund(data: DataAccess, isin: str) -> str | None:
 
 def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: str | None, isin: str | None,
             as_of: str | None, lang: str | None = None, overrides: dict[str, Any] | None = None,
-            precedents: PrecedentIndex | None = None, precedent_isin: str | None = None) -> dict[str, Any]:
+            precedents: PrecedentIndex | None = None, precedent_isin: str | None = None,
+            documents: "DocumentService | None" = None) -> dict[str, Any]:
     """Propose une réponse par case. overrides[id] = id de concept | None (ne pas remplir) | {"text": …}.
 
     Avec des précédents, chaque case reçoit aussi une décision justifiée (repris de l'ancien, modèle d'ontologie,
@@ -165,7 +168,9 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
         e_pid = pid if (not slot.entity.get("isin") or slot.entity.get("isin") == isin) else (_share_fund(data, e_isin) or pid)
         key = (e_pid, e_isin)
         if key not in values_by_entity:
-            values_by_entity[key] = Values(data, ontology, e_pid, e_isin, as_of_d)
+            vals = Values(data, ontology, e_pid, e_isin, as_of_d)
+            vals.doc_facts = _document_facts(data, documents, vals, e_pid, e_isin, errors)  # type: ignore[attr-defined]
+            values_by_entity[key] = vals
         return values_by_entity[key]
 
     advisor = _advisor(data, ontology, precedents, pid, precedent_isin or isin, as_of_d, lang)
@@ -192,6 +197,30 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
                          "rate": round(answerable / total, 3) if total else 0.0},
             "notes": layout.notes, "library": library.stats(), "decisions": decisions,
             "precedents": precedents.store.count() if precedents is not None else 0}
+
+
+def _document_facts(data: DataAccess, documents, vals: Values, pid: str | None, isin: str | None, errors: list[str]) -> dict:
+    """Faits du DIC / prospectus de la part (cache local, puis recherche) ; une panne de document n'arrête jamais l'analyse."""
+    if documents is None or not isin:
+        return {}
+    try:
+        directory = fund_directory(data)
+    except DataError:
+        directory = []
+    fund = next((i for i in directory if i["pid"] == pid), None)
+    share = next((s for i in directory for s in i["shares"] if s["isin"] == isin), None)
+    vals.load()
+    last_kid = to_date((vals._share or {}).get("Last_DIC_Modification_Date"))
+    try:
+        facts, problems, _ = documents.facts(isin, fund["name"] if fund else "", share["name"] if share else "", last_kid)
+    except Exception as error:  # noqa: BLE001
+        errors.append(f"Documents officiels : {type(error).__name__}")
+        return {}
+    for p in problems[:3]:
+        message = f"Documents officiels ({isin}) : {p}"
+        if message not in errors:
+            errors.append(message)
+    return facts
 
 
 def _advisor(data: DataAccess, ontology, precedents: PrecedentIndex | None, pid: str | None, isin: str | None, as_of: date,
@@ -303,16 +332,90 @@ def _finish(ontology, base: dict, slot: Slot, u: Understanding, vals: Values, la
     row = {**base, "concept": best_c.concept.id, "concept_label": best_c.concept.label(lang), "confidence": round(best_c.score, 2),
            "reasons": best_c.reasons, "alternatives": alternatives, "evidence": best_raw.evidence if best_raw else None,
            "data_date": best_raw.data_date.isoformat() if best_raw and best_raw.data_date else None, "source": source}
+    sources = []
+    if best_raw is not None and best_raw.value is not None:
+        sources.append({"kind": "fabric", "label": best_raw.evidence, "value": best_r.display,
+                        "date": best_raw.data_date.isoformat() if best_raw.data_date else None})
+    row["sources"] = sources
+    fact = _document_fact(best_c.concept, getattr(vals, "doc_facts", {}))
     if best_r.display is None:
+        if fact is not None and best_c.score >= MIN_SCORE:
+            return _from_document(ontology, row, best_c, fact, u, lang, slot, as_of, issues)
         return {**row, "status": "no_value" if best_c.score >= MIN_SCORE else "unmatched", "issues": issues}
     row.update({"answer": best_r.display, "value": _jsonable(best_r.value), "option": best_r.option})
     if best_c.score < MIN_SCORE:
         return {**row, "status": "unmatched", "issues": issues + ["confiance trop faible"], "answer": None, "value": None,
                 "suggestion": best_r.display}
+    confirmed = False
+    if fact is not None:
+        check = _check_document(ontology, best_c.concept, best_raw.value if best_raw else None, fact)
+        sources.append(_fact_source(fact, check, ontology, best_c.concept, u, lang, as_of))
+        if check == "match":
+            confirmed = True
+            row["reasons"] = row["reasons"] + [f"confirmé par le {fact.citation}"]
+        elif check == "mismatch":
+            issues.append(f"incohérence : Fabric = {best_r.display}, {fact.citation} = {_fact_display(ontology, best_c.concept, fact, u, lang, as_of)}")
+    if confirmed and issues and all(any(f in i for f in SOFT_ISSUES) for i in issues):
+        row["reasons"] = row["reasons"] + [f"réserves levées par le document officiel : {'; '.join(issues)}"]
+        issues = []  # Fabric et le document officiel disent la même chose : la lecture est sûre
     status = "auto" if best_c.score >= AUTO and not issues else "review"
     if slot.state == "answered":
         status = "existing"
     return {**row, "status": status, "issues": issues, "_value": best_r.value}
+
+
+# --------------------------------------------------------------------------- documents officiels (DIC, prospectus)
+SOFT_ISSUES = ("non précisé", "autre lecture", "lecture indirecte")
+
+
+def _document_fact(concept: Concept, facts: dict) -> Any:
+    for name in concept.doc:
+        if name in facts:
+            return facts[name]
+    return None
+
+
+def _fact_value(concept: Concept, fact) -> Any:
+    value = fact.value
+    if concept.type == "bool" and isinstance(value, (int, float)):
+        return "yes" if value > 0 else "no"  # « commission de performance : 0 % » → non
+    return value
+
+
+def _check_document(ontology, concept: Concept, fabric: Any, fact) -> str:
+    if concept.type == "long":
+        return "unknown"  # un paragraphe ne se compare pas mot à mot
+    value = _fact_value(concept, fact)
+    if fact.field.startswith("prospectus.") and value == "yes" and concept.type == "bool":
+        # le prospectus ne lit que la présence (« swing pricing ») : un silence n'est pas un « non »
+        v = ontology.vocab_value("yes_no", fabric)
+        return "match" if v is not None and v.id == "yes" else "mismatch" if v is not None else "unknown"
+    return same(ontology, concept, fabric, value)
+
+
+def _fact_display(ontology, concept: Concept, fact, u: Understanding, lang: str, as_of: date) -> str:
+    rendered = render(ontology, concept, Raw(_fact_value(concept, fact), fact.citation), u, lang, as_of=as_of)
+    return rendered.display or str(fact.value)
+
+
+def _fact_source(fact, check: str, ontology, concept: Concept, u: Understanding, lang: str, as_of: date) -> dict[str, Any]:
+    return {"kind": fact.doc.kind if fact.doc else "document", "label": fact.citation, "value": _fact_display(ontology, concept, fact, u, lang, as_of),
+            "snippet": fact.snippet, "url": fact.doc.url if fact.doc else "", "check": check}
+
+
+def _from_document(ontology, row: dict, cand: Candidate, fact, u: Understanding, lang: str, slot: Slot, as_of: date,
+                   issues: list[str]) -> dict[str, Any]:
+    """Fabric vide : la donnée du document officiel est proposée, citée, jamais écrite sans validation."""
+    raw = Raw(_fact_value(cand.concept, fact), fact.citation, data_date=to_date(fact.doc.doc_date) if fact.doc else None)
+    rendered = render(ontology, cand.concept, raw, u, lang, number_format=slot.number_format, assert_value=cand.assert_value, as_of=as_of)
+    source = _fact_source(fact, "fill", ontology, cand.concept, u, lang, as_of)
+    if rendered.display is None:
+        return {**row, "status": "no_value", "issues": issues + rendered.issues, "sources": row["sources"] + [source]}
+    return {**row, "status": "review" if slot.state != "answered" else "existing", "answer": rendered.display,
+            "value": _jsonable(rendered.value), "_value": rendered.value, "option": rendered.option, "source": "document",
+            "evidence": fact.citation, "reasons": row["reasons"] + [f"Fabric vide : repris du {fact.citation}"],
+            "issues": issues + ["donnée lue dans le document officiel, absente de Fabric : à vérifier"],
+            "sources": row["sources"] + [source]}
 
 
 def _jsonable(value: Any) -> Any:
@@ -323,11 +426,12 @@ def _jsonable(value: Any) -> Any:
 
 def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, isin: str | None, as_of: str | None,
              lang: str | None, overrides: dict[str, Any], overwrite: bool, accept: list[str] | None, user: str,
-             remember: bool = True, reusable: list[str] | None = None, precedents: PrecedentIndex | None = None) -> dict[str, Any]:
+             remember: bool = True, reusable: list[str] | None = None, precedents: PrecedentIndex | None = None,
+             documents: "DocumentService | None" = None) -> dict[str, Any]:
     """Écrit les réponses « auto » + celles acceptées par l'utilisateur dans une nouvelle version du fichier."""
     path = store.original(doc_id)
     layout = detect(path)
-    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents)
+    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents, documents=documents)
     accepted = set(accept or [])
     slots = {s.id: s for s in layout.slots}
     answers = []

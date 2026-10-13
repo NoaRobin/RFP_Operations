@@ -67,6 +67,16 @@ class SharePointSettings:
 
 
 @dataclass(frozen=True)
+class FundDocumentSettings:
+    """DIC PRIIPs et prospectus : site public des fonds, dossier local, dépôts manuels."""
+    mode: str = "auto"  # auto : site utilisé seulement avec Fabric (fonds réels) | on | off
+    site_url: str = "https://am.eu.rothschildandco.com"
+    fund_path: str = "/en/our-funds/{slug}/"
+    search_path: str = "/en/search/?q={isin}"
+    local_dir: str = ""  # dossier synchronisé « Documentation » (PDF nommés avec l'ISIN)
+
+
+@dataclass(frozen=True)
 class Settings:
     data_mode: str  # auto | mock | fabric
     data_dir: Path
@@ -82,6 +92,7 @@ class Settings:
     cors_origins: list[str] = field(default_factory=list)
     fabric: FabricSettings = field(default_factory=FabricSettings)
     sharepoint: SharePointSettings = field(default_factory=SharePointSettings)
+    fund_documents: FundDocumentSettings = field(default_factory=FundDocumentSettings)
 
     @property
     def db_path(self) -> Path:
@@ -131,6 +142,13 @@ def get_settings() -> Settings:
             tenant_id=_env("FABRIC_TENANT_ID"),
             odbc_driver=_env("FABRIC_ODBC_DRIVER", "ODBC Driver 18 for SQL Server"),
             timeout=int(_env("FABRIC_TIMEOUT", "30")),
+        ),
+        fund_documents=FundDocumentSettings(
+            mode=_env("FUND_DOCS", "auto").lower(),
+            site_url=_env("FUND_SITE_URL", FundDocumentSettings.site_url),
+            fund_path=_env("FUND_SITE_FUND_PATH", FundDocumentSettings.fund_path),
+            search_path=_env("FUND_SITE_SEARCH_PATH", FundDocumentSettings.search_path),
+            local_dir=_env("FUND_DOCS_DIR"),
         ),
         sharepoint=SharePointSettings(
             site_url=_env("SHAREPOINT_SITE_URL", SharePointSettings.site_url),

@@ -19,3 +19,4 @@ plotly>=5.19        # module Suivi d'activité (tryv2)
 numpy>=1.23
 mssql-python>=0.13 ; sys_platform == "win32"   # connecteur Fabric officiel Microsoft (aucun pilote ODBC requis)
 msal>=1.28             # SharePoint via Microsoft Graph (facultatif : sinon dossier synchronisé OneDrive)
+pypdf>=4.0              # lecture des DIC PRIIPs et prospectus (PDF)

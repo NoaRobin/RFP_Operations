@@ -88,6 +88,7 @@ class Concept:
     validate: str | None = None
     transform: Any = None
     qualitative_ok: bool = False
+    doc: list[str] = field(default_factory=list)  # faits de document (DIC, prospectus) qui recoupent ce concept
     ambiguous_always: bool = False  # lecture indirecte de la colonne : toujours « à vérifier »
     ask_bool: bool = False  # concept oui / non utilisable seulement si la question attend oui / non
     asof: str | None = None
@@ -194,6 +195,7 @@ def load_ontology(catalog: Catalog) -> Ontology:
             range=_range(spec.get("range")), validate=spec.get("validate"), transform=spec.get("transform"),
             qualitative_ok=bool(spec.get("qualitative_ok")), asof=spec.get("asof"), ask_bool=bool(spec.get("ask_bool")),
             ambiguous_always=bool(spec.get("ambiguous_always")),
+            doc=[spec["doc"]] if isinstance(spec.get("doc"), str) else list(spec.get("doc") or []),
         )
         concept.pseudo_require = [t for t in spec.get("require", []) if t in PSEUDO_TERMS]  # type: ignore[attr-defined]
         if concept.id in concepts:

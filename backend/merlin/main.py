@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import atelier, core, mergecodes, precedents, rfi
+from .api import atelier, core, documents, mergecodes, precedents, rfi
 from .atelier.store import AtelierStore
 from .config import get_settings
 from .data.access import DataError, build_data_access, resolve_mode, set_shared
@@ -64,6 +64,7 @@ app.include_router(core.router)
 app.include_router(atelier.router)
 app.include_router(rfi.router)
 app.include_router(precedents.router)
+app.include_router(documents.router)
 app.include_router(mergecodes.router)
 
 _suivi = build_suivi_app(get_settings().data_dir)

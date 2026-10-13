@@ -196,6 +196,7 @@ concepts:
     type: long
     qualitative_ok: true
     source: {fr: pi_out_product_active.Investment_objective_FR, en: pi_out_product_active.Investment_objective_EN}
+    doc: kid.objective
     terms: [objectif de gestion, objectif d'investissement, objectif du fonds, investment objective, fund objective, objective of the fund, investment goal]
     exclude: [esg, durable, sustainab, carbon, carbone, volatil, performance fee]
 
@@ -221,6 +222,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Recommended_Investment_Period
+    doc: kid.rhp
     terms: [duree de placement recommandee, duree minimale de placement, horizon de placement, horizon d'investissement, duree d'investissement recommandee, recommended holding period, recommended investment period, recommended investment horizon, investment horizon, minimum holding period, minimum recommended investment period, holding period]
 
   # =================================================================== GESTION
@@ -319,6 +321,7 @@ concepts:
     vocab: sri
     range: [1, 7]
     source: pi_out_product_active.Official_Risk_Scale
+    doc: kid.sri
     terms: [sri, indicateur de risque, indicateur synthetique de risque, echelle de risque, niveau de risque, profil de risque, classe de risque, score de risque, risque sur une echelle, summary risk indicator, risk indicator, risk class, risk level, risk scale, risk score, risk category, risk profile, risk rating, priips risk, risk/reward profile, profil rendement risque, profil de risque et de rendement]
     exclude: [srri, label, isr, ucits risk, mois precedent, previous month, methode, method, calcul, calculation, description, decrivez, describe, gestion des risques, risk management, contrepartie, counterparty, liquidite, liquidity, credit, change, currency, durabilite, sustainability]
 
@@ -647,6 +650,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: pi_out_product_active.Max_management_fee_PerCent
+    doc: prospectus.max_management_fee
     terms: [frais de gestion, commission de gestion, frais de gestion financiere, management fee, management fees, management charge, annual management charge, amc, investment management fee, base fee]
     exclude: [surperformance, performance fee, variable, indirect, indirects, administratif, administratifs, administrative, admin, entree, entry, sortie, exit, souscription, subscription, rachat, redemption, retrocession, rebate, trailer, courants, ongoing, ter, total expense, transaction, base de calcul, calculation base, assiette, methode, method, mode de calcul, structure]
     facets: {level: max}
@@ -752,6 +756,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Depositary
+    doc: prospectus.depositary
     terms: [depositaire, depositary, depository, trustee, banque depositaire, depositary bank]
     exclude: [lei, adresse, address, contact, frais, fees, commission, depuis, since, notation, rating, pays, country, conservateur, custodian & different]
 
@@ -792,6 +797,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Commissaire_Aux_Comptes
+    doc: prospectus.auditor
     terms: [commissaire aux comptes, cac, auditeur, auditeur externe, auditeur legal, auditor, statutory auditor, external auditor, independent auditor, audit firm, cabinet d'audit, auditors]
     exclude: [lei, adresse, address, contact, frais, fees, depuis, since, mandat, mandate, rotation, interne, internal, rapport, report, date]
 
@@ -1033,6 +1039,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: PI_OUT_Share.Ongoing_Charges_ex_ante
+    doc: kid.ongoing_costs
     asof: PI_OUT_Share.Ongoing_Charges_ex_ante_Calculation_Date
     terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais courants dic, frais de gestion & kid, frais de gestion & dic, frais de gestion et autres frais administratifs et d'exploitation]
     exclude: [date, calcul au, calculated as of, methode, method, transaction, entree, sortie, entry, exit, souscription, rachat, subscription, redemption, surperformance, performance fee, retrocession, trailer]
@@ -1065,6 +1072,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: PI_OUT_Share.Max_Financial_Management_Fees
+    doc: prospectus.max_management_fee
     terms: [frais de gestion, commission de gestion, frais de gestion financiere, management fee, management fees, management charge, annual management charge, amc, investment management fee, frais de gestion fixes, fixed management fee]
     exclude: [surperformance, performance fee, variable, indirect, indirects, administratif, administratifs, administrative, admin, entree, entry, sortie, exit, souscription, subscription, rachat, redemption, retrocession, rebate, trailer, courants, ongoing, ter, total expense, transaction, base de calcul, calculation base, assiette, methode, method, mode de calcul, structure]
     facets: {level: max}
@@ -1105,6 +1113,7 @@ concepts:
     scope: share
     type: bool
     source: PI_OUT_Share.Performance_fees
+    doc: kid.performance_fee
     terms: [commission de surperformance, commissions de surperformance, frais de surperformance, commission de performance, frais variables de gestion, performance fee, performance fees, incentive fee, outperformance fee, carried interest, commissions de sur-performance, commission de sur-performance, sur-performance]
     exclude: [taux, rate, "%", pourcentage, percentage, montant, amount, preleve, charged, dernier exercice, last financial year, moyenne, average, formule, formula, methode, method, mode de calcul, calculation, hurdle, seuil, indice, benchmark, high water mark, hwm, periode, period, cristallisation, crystallisation, plafond, cap]
 
@@ -1130,6 +1139,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: PI_OUT_Share.Maximum_Subscription_Fee_Rate_Not_Retained
+    doc: [kid.entry_costs, prospectus.max_entry_fee]
     terms: [droits d'entree, droit d'entree, frais d'entree, commission de souscription, commissions de souscription, frais de souscription, entry fee, entry fees, entry charge, entry charges, entry load, subscription fee, subscription fees, subscription charge, initial charge, front-end load, front end load, sales charge, sales load, entry costs, subs fee, subscription fees, droit d'entree]
     exclude: [rachat, redemption, sortie, exit, back-end, retrocession, trailer]
     facets: {retention: not_retained, level: max}
@@ -1151,6 +1161,7 @@ concepts:
     type: percent
     range: [0, 10]
     source: PI_OUT_Share.Maximum_Redemption_Fee_Rate_Not_Retained
+    doc: [kid.exit_costs, prospectus.max_exit_fee]
     terms: [droits de sortie, droit de sortie, frais de sortie, commission de rachat, commissions de rachat, frais de rachat, exit fee, exit fees, exit charge, exit charges, exit load, redemption fee, redemption fees, redemption charge, back-end load, back end load, deferred sales charge, exit costs, redemption fee, droit de sortie]
     exclude: [souscription, subscription, entree, entry, front-end, retrocession, trailer]
     facets: {retention: not_retained, level: max}
@@ -1183,6 +1194,7 @@ concepts:
     type: enum
     vocab: frequency
     source: PI_OUT_Share.NAV_Frequency
+    doc: prospectus.nav_frequency
     terms: [frequence de valorisation, frequence de calcul de la vl, frequence de la vl, periodicite de la vl, periodicite de valorisation, frequence de publication de la vl, liquidite du fonds, frequence de liquidite, nav frequency, valuation frequency, dealing frequency, frequency of nav calculation, frequency of valuation, pricing frequency, liquidity frequency, frequency of dealing, liquidity, liquidite, subscriptions and redemptions frequency, dealing, periodicite de la vl, periodicite de calcul, periodicite & vl, periodicite & valeur liquidative, frequence & vl, frequence & valeur liquidative, publication de la valeur liquidative, periodicite de valorisation]
     exclude: [jour, day, heure, time, cut-off, cutoff, delai, settlement, reglement, preavis, notice, gate, swing, ratio, "%", portefeuille & liquidite, portfolio liquidity, risque, risk, stress, horizon, jours pour liquider, days to liquidate]
 
@@ -1191,6 +1203,7 @@ concepts:
     scope: share
     type: time
     source: PI_OUT_Share.Subscription_cut_off_time
+    doc: prospectus.cutoff
     terms: [heure limite, heure de centralisation, heure de cut-off, cut-off, cut off, cutoff, heure limite de reception des ordres, dealing cut-off, dealing deadline, cut-off time, order cut-off, centralisation des ordres]
     exclude: [jour, day & settlement, reglement, settlement, preavis, notice period, fuseau, time zone]
     facets: {direction: subscription}
@@ -1202,6 +1215,7 @@ concepts:
     scope: share
     type: time
     source: PI_OUT_Share.Redemption_cut_off_time
+    doc: prospectus.cutoff
     terms: [heure limite, heure de centralisation, heure de cut-off, cut-off, cut off, cutoff, heure limite de reception des ordres, dealing cut-off, dealing deadline, cut-off time, order cut-off, centralisation des ordres]
     exclude: [jour, day & settlement, reglement, settlement, preavis, notice period, fuseau, time zone]
     facets: {direction: redemption}
@@ -1211,6 +1225,7 @@ concepts:
     scope: share
     type: text
     source: PI_OUT_Share.Subscription_Settlement_Date
+    doc: prospectus.settlement
     terms: [date de reglement, delai de reglement, reglement livraison, date de valeur, reglement des souscriptions, settlement date, settlement period, settlement cycle, settlement, settlement delay, payment date, value date, reglement, reglement-livraison, delai de reglement-livraison, reglement / livraison, delai de reglement livraison]
     exclude: [heure, time, cut-off, cutoff, devise, currency, monnaie, mode de reglement, method of payment, compte, account, plateforme, platform, euroclear, clearstream]
     facets: {direction: subscription}
@@ -1222,6 +1237,7 @@ concepts:
     scope: share
     type: text
     source: PI_OUT_Share.Redemption_Settlement_Date
+    doc: prospectus.settlement
     terms: [date de reglement, delai de reglement, reglement livraison, date de valeur, reglement des rachats, settlement date, settlement period, settlement cycle, settlement, settlement delay, payment date, value date, reglement]
     exclude: [heure, time, cut-off, cutoff, devise, currency, monnaie, mode de reglement, method of payment, compte, account, plateforme, platform, euroclear, clearstream]
     facets: {direction: redemption}
@@ -1246,6 +1262,7 @@ concepts:
     scope: share
     type: bool
     source: PI_OUT_Share.Swing_Pricing
+    doc: prospectus.swing_pricing
     terms: [swing pricing, swing price, mecanisme d'ajustement de la vl, ajustement de la valeur liquidative, swing factor, dilution adjustment]
     exclude: [seuil, threshold, facteur maximal, maximum factor, "%", niveau, level, frequence, frequency, combien, how many, nombre, number, applique & fois]
 
@@ -1254,6 +1271,7 @@ concepts:
     scope: share
     type: bool
     source: PI_OUT_Share.Gate
+    doc: prospectus.gates
     terms: [gate, gates, plafonnement des rachats, mecanisme de plafonnement, redemption gate, redemption gates, gating, limitation des rachats, redemption limit]
     exclude: [seuil, threshold, "%", niveau, level, taux, rate, active, activated, declenche, triggered, historique, history, deja]
 
@@ -1804,6 +1822,7 @@ concepts:
     type: percent
     range: [-5, 10]
     source: fund:transaction_costs_kid
+    doc: kid.transaction_costs
     ambiguous_always: true
     terms: [couts de transaction, frais de transaction, frais de transactions, transaction costs, couts de transaction & kid, couts de transaction & dic, frais de transactions dic, transaction costs & kid, portfolio transaction costs]
     exclude: [explicite, explicit, implicite, implicit, ex post, ex-post, realise, realised, actual, hors frais de transaction, excluding transaction, methode, method, calcul, calculation]
