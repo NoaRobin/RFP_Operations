@@ -236,3 +236,61 @@ async def copilot_answers(doc_id: str, file: UploadFile = File(...), pid: str | 
         return read_answers(raw, result, load_ontology(s.data.catalog))
     except Exception as error:  # noqa: BLE001
         raise bad_request("Classeur Copilot illisible.", type(error).__name__) from error
+
+
+# ------------------------------------------------------------------ Copilot, voie simple : prompt à copier, réponse à coller
+def _copilot_context(s: AppState, doc_id: str, body: "AnswerRequest"):
+    from .documents import _names, service_for
+
+    store = _store(s)
+    try:
+        path, layout = load_layout(store, doc_id)
+    except FileNotFoundError as error:
+        raise not_found("Ce RFI n'est plus là.") from error
+    docs_service = service_for(s)
+    result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides,
+                     get_index(store.root), documents=docs_service, bindings=get_bindings(store.root))
+    fund, share = _names(s, body.isin) if body.isin else ("", "")
+    return result, fund, share, docs_service
+
+
+class CopilotPromptRequest(AnswerRequest):
+    include_auto: bool = False
+
+
+@router.post("/documents/{doc_id}/copilot-prompt")
+def copilot_prompt(doc_id: str, body: CopilotPromptRequest, s: AppState = Depends(state)):
+    """Le prompt prêt à coller dans Copilot (par lots si besoin) et les PDF à lui joindre."""
+    from ..rfi.copilot import build_prompts
+
+    result, fund, share, docs_service = _copilot_context(s, doc_id, body)
+    documents = []
+    if docs_service is not None and body.isin:
+        try:
+            documents = docs_service.describe(body.isin, fund, share)["documents"]
+        except Exception:  # noqa: BLE001 - sans PDF, le prompt reste utilisable (l'utilisateur les joint lui-même)
+            documents = []
+    out = build_prompts(result, fund, share, body.isin or "", documents, body.include_auto)
+    out["documents"] = [{"kind": d.get("kind"), "title": d.get("title"), "name": Path(d.get("path") or "").name,
+                         "download": f"/api/rfi/fund-documents/{body.isin}/file/{Path(d['path']).name}" if d.get("path") else "",
+                         "url": d.get("url") or ""} for d in documents]
+    out["fund"], out["share"] = fund, share
+    return out
+
+
+class CopilotReplyRequest(AnswerRequest):
+    text: str
+    labels: dict[str, str]
+
+
+@router.post("/documents/{doc_id}/copilot-reply")
+def copilot_reply(doc_id: str, body: CopilotReplyRequest, s: AppState = Depends(state)):
+    """La réponse de Copilot collée telle quelle : lue, contrôlée, et montrée ligne à ligne avant d'être appliquée."""
+    from ..rfi.copilot import parse_reply
+
+    result, *_ = _copilot_context(s, doc_id, body)
+    out = parse_reply(body.text, body.labels, result, load_ontology(s.data.catalog))
+    if out["read"] == 0:
+        raise bad_request("Aucune ligne « Q1 | réponse | source | confiance » trouvée dans le texte collé.",
+                          "Collez toute la réponse de Copilot (le tableau). Si Copilot a répondu autrement, redemandez-lui « Réponds avec le tableau demandé ».")
+    return out

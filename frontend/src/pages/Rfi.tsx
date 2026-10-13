@@ -3,9 +3,9 @@
  * télécharger le même fichier avec les cases quantitatives remplies. L'original n'est jamais modifié.
  */
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, Check, Download, FileQuestion, FileSpreadsheet, FileText, RotateCcw, Search, Sparkles, Wand2 } from 'lucide-react'
+import { ArrowRight, Check, Download, FileQuestion, FileSpreadsheet, FileText, RotateCcw, Search, Wand2 } from 'lucide-react'
 import { Dropzone } from '../components/atelier/Dropzone'
-import { CopilotPanel } from '../components/rfi/CopilotPanel'
+import { CopilotDialog } from '../components/rfi/CopilotDialog'
 import { FundDocuments } from '../components/rfi/FundDocuments'
 import { Workbench } from '../components/rfi/review/Workbench'
 import { PrecedentsPanel } from '../components/rfi/PrecedentsPanel'
@@ -118,6 +118,7 @@ export default function Rfi() {
   const [generating, setGenerating] = useState(false)
   const [result, setResult] = useState<RfiGenerated | null>(null)
   const [preview, setPreview] = useState<RfiPreview | null>(null)
+  const [copilot, setCopilot] = useState(false)
 
   useGSAP(() => {
     if (prefersReducedMotion()) return
@@ -179,6 +180,7 @@ export default function Rfi() {
     try {
       const r = await api.rfi.generate(doc.id, request())
       setResult(r)
+      window.setTimeout(() => document.getElementById('rfi-result')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'center' }), 50)
       window.dispatchEvent(new Event('rfp:shower'))
       toast('success', texts.rfi.done(r.written))
     } catch (e) {
@@ -209,7 +211,7 @@ export default function Rfi() {
   const toWrite = analysis ? analysis.stats.auto + reviewIds.filter((id) => accepted.has(id)).length + (overwrite ? analysis.stats.existing : 0) : 0
 
   return (
-    <div ref={root} className="mx-auto w-[min(100%-2rem,82rem)] pt-10 sm:pt-14">
+    <div ref={root} className={`mx-auto pt-10 sm:pt-14 ${analysis ? 'w-[min(100%-1.5rem,130rem)]' : 'w-[min(100%-2rem,82rem)]'}`}>
       <header data-enter className="max-w-3xl">
         <p className="eyebrow"><FileQuestion size={13} aria-hidden="true" />{texts.rfi.eyebrow}</p>
         <h1 className="mt-4 text-[clamp(2.4rem,6vw,4.5rem)] font-bold">{texts.rfi.title}</h1>
@@ -305,6 +307,7 @@ export default function Rfi() {
                   <h2 className="text-2xl">{texts.review.title}</h2>
                   <p className="mt-1 text-sm font-semibold text-fg-2">{texts.review.lead}</p>
                 </div>
+                {analysis.stats.existing > 0 && <Switch checked={overwrite} onChange={(v) => { setOverwrite(v); void analyze(doc, { overwrite: v }) }} label={texts.rfi.overwrite} />}
                 {analysis.decisions && Object.keys(analysis.decisions).length > 0 ? (
                   <p className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
                     <span className="text-fg-2">{texts.rfi.decisionsTitle} :</span>
@@ -319,37 +322,20 @@ export default function Rfi() {
                   {analysis.errors.map((e) => <li key={e}>{e}</li>)}
                 </ul>
               )}
-              {doc && (
-                <div className="mt-5">
-                  <CopilotPanel docId={doc.id} filename={doc.filename} request={() => request()}
-                    onAnswers={(r) => {
-                      const next = { ...overrides, ...r.overrides }
-                      setOverrides(next)
-                      void analyze(doc, { overrides: next })
-                    }} />
-                </div>
-              )}
               <div className={`mt-5 transition-opacity ${analyzing ? 'opacity-60' : ''}`}>
                 <Workbench analysis={analysis} preview={preview} facts={facts} overrides={overrides} accepted={accepted}
                   onAccept={(id, on) => setAccepted((a) => toggle(a, id, on))}
                   onAcceptMany={(ids) => setAccepted((a) => new Set([...a, ...ids]))}
-                  onOverride={setOverride} />
+                  onOverride={setOverride} toWrite={toWrite} generating={generating} onGenerate={generate} onCopilot={() => setCopilot(true)} />
               </div>
               <p className="mt-4 text-xs font-semibold text-fg-3">{texts.rfi.legal}</p>
             </section>
           )}
 
-          {analysis && (
-            <section data-enter className="mt-8 rounded-[var(--radius-card)] border-[2.5px] border-fg bg-sun-400 p-6 shadow-[var(--shadow-pop-lg)] sm:p-8">
+          {analysis && result && (
+            <section id="rfi-result" data-enter className="mt-8 rounded-[var(--radius-card)] border-[2.5px] border-fg bg-sun-400 p-6 shadow-[var(--shadow-pop-lg)] sm:p-8">
               <h2 className="text-2xl">{texts.rfi.step3}</h2>
-              {!result ? (
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-                  <Switch checked={overwrite} onChange={(v) => { setOverwrite(v); void analyze(doc, { overwrite: v }) }} label={texts.rfi.overwrite} />
-                  <Button size="lg" onClick={generate} loading={generating} disabled={toWrite === 0} icon={<Sparkles size={20} />} className="!bg-card">
-                    {generating ? texts.rfi.generating : `${texts.rfi.generate} (${toWrite})`}
-                  </Button>
-                </div>
-              ) : (
+              {(
                 <div className="mt-4 flex flex-wrap items-center gap-4">
                   <span className="grid size-14 place-items-center rounded-full border-[2.5px] border-fg bg-mint-400"><Check size={28} aria-hidden="true" /></span>
                   <div className="flex-1">
@@ -365,6 +351,13 @@ export default function Rfi() {
               )}
             </section>
           )}
+          <CopilotDialog open={copilot} onClose={() => setCopilot(false)} docId={doc.id} filename={doc.filename} request={() => request()}
+            onApply={(r) => {
+              const next = { ...overrides, ...r }
+              setOverrides(next)
+              void analyze(doc, { overrides: next })
+              setCopilot(false)
+            }} />
         </>
       )}
     </div>

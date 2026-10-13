@@ -6,7 +6,7 @@ import type { RfiFact, RfiQuestion } from '../../../lib/types'
 import { DecisionBadge } from '../Decision'
 import { STATE_STYLE, type Override, type ReviewState } from './state'
 
-export interface QuestionCardHandle { edit: () => void; source: () => void }
+export interface QuestionCardHandle { edit: () => void; editWith: (value: string) => void; source: () => void }
 
 const AUTO = '__auto__'
 
@@ -18,7 +18,7 @@ export const QuestionCard = forwardRef<QuestionCardHandle, {
   const [draft, setDraft] = useState('')
   const input = useRef<HTMLInputElement & HTMLSelectElement>(null)
   const source = useRef<HTMLSelectElement>(null)
-  useImperativeHandle(ref, () => ({ edit: () => setEditing(true), source: () => source.current?.focus() }))
+  useImperativeHandle(ref, () => ({ edit: () => setEditing(true), editWith: (value) => { setDraft(value); setEditing(true) }, source: () => source.current?.focus() }))
   useEffect(() => { setEditing(false); setDraft(typeof override === 'object' && override ? override.text : q.answer ?? '') }, [q.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (editing) input.current?.focus() }, [editing])
 
@@ -51,13 +51,14 @@ export const QuestionCard = forwardRef<QuestionCardHandle, {
                 {q.options.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             ) : (
-              <input ref={input} value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
-                className="flex-1 rounded-xl border-2 border-fg bg-card px-2 py-1.5 font-semibold text-fg" placeholder={texts.rfi.freeTextPlaceholder} />
+              <textarea ref={input as unknown as React.RefObject<HTMLTextAreaElement>} value={draft} onChange={(e) => setDraft(e.target.value)} rows={Math.min(8, Math.max(2, Math.ceil(draft.length / 60)))}
+                onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey || draft.length < 80)) { e.preventDefault(); save() } if (e.key === 'Escape') setEditing(false) }}
+                className="flex-1 resize-y rounded-xl border-2 border-fg bg-card px-2 py-1.5 font-semibold text-fg" placeholder={texts.rfi.freeTextPlaceholder} />
             )}
             <button onClick={save} className="rounded-full border-2 border-fg bg-card px-3 text-sm font-bold text-fg">{texts.review.save}</button>
           </div>
         ) : (
-          <p className="mt-1 font-display text-3xl font-bold leading-tight">{state === 'skipped' ? '—' : text ?? <span className="text-xl opacity-70">{q.suggestion ? `${q.suggestion} ?` : texts.review.none}</span>}</p>
+          <p className={`mt-1 whitespace-pre-line font-display font-bold leading-tight ${(text?.length ?? 0) > 120 ? 'text-lg' : 'text-3xl'}`}>{state === 'skipped' ? '—' : text ?? <span className="text-xl opacity-70">{q.suggestion ? `${q.suggestion} ?` : texts.review.none}</span>}</p>
         )}
         {q.precedent && <div className="mt-2"><DecisionBadge decision={q.precedent} /></div>}
       </div>
@@ -66,7 +67,7 @@ export const QuestionCard = forwardRef<QuestionCardHandle, {
       <div className="mt-4 flex flex-wrap gap-2">
         {q.answer != null && state === 'review' && (
           <button onClick={onAccept} className="inline-flex items-center gap-1.5 rounded-full border-[2.5px] border-fg bg-mint-400 px-4 py-1.5 font-bold shadow-[3px_3px_0_0_var(--color-fg)] transition-transform hover:-translate-y-0.5">
-            <Check size={16} aria-hidden="true" />{texts.review.accept} <kbd className="text-[0.65rem] opacity-70">A</kbd>
+            <Check size={16} aria-hidden="true" />{texts.review.acceptNext} <kbd className="text-[0.65rem] opacity-70">A</kbd>
           </button>
         )}
         <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1.5 rounded-full border-2 border-fg bg-card px-3.5 py-1.5 text-sm font-bold">

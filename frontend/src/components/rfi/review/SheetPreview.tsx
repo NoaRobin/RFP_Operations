@@ -3,9 +3,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RfiPreview, RfiQuestion } from '../../../lib/types'
 import { STATE_STYLE, type ReviewState } from './state'
 
-export function SheetPreview({ preview, questions, states, selected, onSelect }: {
+export function SheetPreview({ preview, questions, states, selected, onSelect, zoom = 14 }: {
   preview: RfiPreview; questions: Record<string, RfiQuestion>; states: Record<string, ReviewState>
-  selected: string | null; onSelect: (id: string) => void
+  selected: string | null; onSelect: (id: string) => void; zoom?: number
 }) {
   const sheets = preview.sheets
   const selectedSheet = useMemo(() => {
@@ -29,11 +29,11 @@ export function SheetPreview({ preview, questions, states, selected, onSelect }:
 
   if (preview.kind === 'docx' || sheets.length === 0) {
     return (
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-1.5" style={{ fontSize: `${zoom}px` }}>
         {preview.items.map((it) => (
           <li key={it.id}>
             <button data-q={it.id} onClick={() => onSelect(it.id)}
-              className={`w-full rounded-lg border-2 px-2.5 py-1.5 text-left text-sm font-semibold ${selected === it.id ? 'border-fg shadow-[3px_3px_0_0_var(--color-fg)]' : 'border-fg/20'} ${STATE_STYLE[states[it.id] ?? 'none']}`}>
+              className={`w-full rounded-lg border-2 px-3 py-2 text-left font-semibold ${selected === it.id ? 'border-fg shadow-[3px_3px_0_0_var(--color-fg)]' : 'border-fg/20'} ${STATE_STYLE[states[it.id] ?? 'none']}`}>
               <span className="text-[0.65rem] font-bold uppercase text-fg-3">{it.location}</span><br />{it.label}
             </button>
           </li>
@@ -56,11 +56,11 @@ export function SheetPreview({ preview, questions, states, selected, onSelect }:
         </div>
       )}
       <div ref={scroller} className="min-h-0 flex-1 overflow-auto rounded-xl border-2 border-fg bg-card">
-        <table className="border-collapse text-[0.72rem] leading-tight">
+        <table className="border-collapse leading-snug" style={{ fontSize: `${zoom}px` }}>
           <thead className="sticky top-0 z-10 bg-card-2">
             <tr>
               <th className="sticky left-0 z-20 w-8 border border-fg/15 bg-card-2" />
-              {sheet.columns.map((c, i) => <th key={c} style={{ minWidth: `${sheet.widths[i] * 6}px` }} className="border border-fg/15 px-1 font-bold text-fg-3">{c}</th>)}
+              {sheet.columns.map((c, i) => <th key={c} style={{ minWidth: `${sheet.widths[i] * zoom * 0.55}px` }} className="border border-fg/15 px-1 font-bold text-fg-3">{c}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -76,7 +76,7 @@ export function SheetPreview({ preview, questions, states, selected, onSelect }:
                   const shown = proposed ?? cell.v
                   return (
                     <td key={cell.ref} colSpan={span?.[0]} rowSpan={span?.[1]}
-                      className={`max-w-[22rem] border border-fg/15 px-1.5 py-1 align-top ${state ? `${STATE_STYLE[state]} cursor-pointer` : ''} ${cell.q && cell.q === selected ? 'outline outline-[3px] -outline-offset-2 outline-fg' : ''}`}>
+                      style={{ maxWidth: `${zoom * 32}px` }} className={`border border-fg/15 px-2 py-1.5 align-top ${state ? `${STATE_STYLE[state]} cursor-pointer` : ''} ${cell.q && cell.q === selected ? 'outline outline-[3px] -outline-offset-2 outline-fg' : ''}`}>
                       {cell.q ? (
                         <button data-q={cell.q} onClick={() => onSelect(cell.q!)} className={`block w-full text-left ${proposed ? 'font-bold italic' : ''}`}>
                           {shown || '·'}

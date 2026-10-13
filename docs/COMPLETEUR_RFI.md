@@ -148,10 +148,23 @@ avec lien, anciens RFI, liaison apprise, raisonnement) et « Utiliser cette vale
 (automatique / validée / à vérifier / à compléter), validations groupées (confirmées par un document, réponses société,
 visibles), clavier : J / K, A, E, S, X. `prefers-reduced-motion` respecté.
 
-## 7 bis. Deuxième avis Copilot
-Pack Excel + DIC + prospectus à ouvrir avec Copilot sur le poste, puis réimport des réponses : toujours « à vérifier »,
-source citée obligatoire, option de liste contrôlée, contradiction avec l'app signalée (`merlin/rfi/copilot.py`).
-Détail : `docs/OMNI_ET_DOCUMENTS.md` § 3.
+## 7 bis. Atelier v2 et deuxième avis Copilot
+**Atelier.** Le document s'affiche en grand (toute la largeur, zoom + / −, plein écran). À droite, un seul panneau :
+la question, puis toutes les **propositions** (app, Fabric, DIC / prospectus, Copilot, anciens RFI, autres données),
+chacune avec **« Choisir »**. Les réponses identiques sont fusionnées : on voit qui est d'accord (« 3 anciens RFI d'accord »).
+Une réponse d'ancien RFI qui cite un autre fonds s'ouvre en modification (« Choisir et adapter ») ; une réponse hors de la
+liste déroulante du client aussi. Après un choix ou une validation, l'atelier passe à la **suivante à traiter**.
+Barre fixe en bas : questions restantes, « Demander à Copilot », « Générer le fichier ».
+
+**Copilot (M365, sur le poste, sans API) en trois gestes** (`merlin/rfi/copilot.py`) :
+1. joindre le DIC et le prospectus (téléchargeables depuis la fenêtre) ;
+2. copier le prompt : questions numérotées Q1…Qn, réponse de l'app, choix autorisés, règles (documents joints
+   seulement, citation document + page, NON TROUVÉ plutôt qu'inventer) et **format de retour imposé** :
+   un tableau `| ID | Réponse | Source | Confiance |`. Découpé en lots pour les gros questionnaires ;
+3. coller la réponse : l'app lit le tableau (même mal formé), contrôle chaque ligne (source citée obligatoire, choix du
+   client respecté, NON TROUVÉ ignoré, écart avec l'app signalé) et montre ce qu'elle a compris avant d'appliquer.
+Tout revient « à vérifier », jamais en automatique, et une réponse Copilot n'entre pas dans la bibliothèque.
+Le classeur Excel reste disponible pour les très longs questionnaires. Détail : `docs/OMNI_ET_DOCUMENTS.md` § 3.
 
 ## 8. Mesurer et faire progresser
 

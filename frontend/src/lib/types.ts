@@ -493,7 +493,16 @@ export interface OmniOverview {
   reports: { file: string; periode: string; statut: string; date_arrete: string; alertes: string[]; holdings: number | null; controle_net: string | null }[]
 }
 
+export interface CopilotLine {
+  id: string; question: string; answer: string; citation: string; confidence: string; previous: string | null
+  verdict: 'ok' | 'not_found' | 'rejected'; reason: string; differs?: boolean
+}
 export interface CopilotAnswers {
   overrides: Record<string, { text: string; source: 'copilot'; citation: string; confidence: string; previous: string | null }>
   rejected: { id: string; question: string; reason: string }[]
+  lines?: CopilotLine[]; read?: number; unknown?: string[]
+}
+export interface CopilotPrompt {
+  batches: { prompt: string; labels: string[]; chars: number }[]; labels: Record<string, string>; count: number; fund: string; share: string
+  documents: { kind: string; title: string; name: string; download: string; url: string }[]
 }

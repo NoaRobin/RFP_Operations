@@ -59,4 +59,39 @@ def test_option_outside_client_list_is_refused(client):
     back = client.post(f"/api/rfi/documents/{doc['id']}/copilot-answers", params=body,
                        files={"file": ("q.xlsx", buf.getvalue(), "application/octet-stream")}).json()
     assert row[0].value not in back["overrides"]
-    assert any("liste du client" in x["reason"] for x in back["rejected"])
+    assert any("choix du client" in x["reason"] for x in back["rejected"])
+
+
+def test_copy_paste_flow_prompt_then_reply(client):
+    doc, body = _doc(client)
+    out = client.post(f"/api/rfi/documents/{doc['id']}/copilot-prompt", json=body).json()
+    assert out["count"] > 0 and out["batches"]
+    prompt = out["batches"][0]["prompt"]
+    # le format de retour est imposé, avec un exemple, et les règles anti-invention
+    assert "| ID | Réponse | Source | Confiance |" in prompt and "NON TROUVÉ" in prompt and "Q1 —" in prompt
+    labels = out["labels"]
+    q_free = next(lbl for lbl, qid in labels.items() if not _question(client, doc, body, qid)["options"])
+    q_opt = next((lbl for lbl, qid in labels.items() if _question(client, doc, body, qid)["options"]), None)
+    reply = "Voici le tableau :\n| ID | Réponse | Source | Confiance |\n|---|---|---|---|\n"
+    reply += f"| **{q_free}** | Réponse fictive | DIC p.2 | Haute |\n"
+    if q_opt:
+        reply += f"| {q_opt} | Option imaginaire | Prospectus p.9 | moyenne |\n"
+    reply += "| Q999 | x | y | z |\n"
+    r = client.post(f"/api/rfi/documents/{doc['id']}/copilot-reply", json={**body, "text": reply, "labels": labels}).json()
+    assert r["overrides"][labels[q_free]]["citation"] == "DIC p.2" and r["unknown"] == ["Q999"]
+    if q_opt:
+        assert any(x["verdict"] == "rejected" and "choix" in x["reason"] for x in r["lines"])
+    analysis = client.post(f"/api/rfi/documents/{doc['id']}/answers", json={**body, "overrides": r["overrides"]}).json()
+    row = next(q for q in analysis["questions"] if q["id"] == labels[q_free])
+    assert row["status"] == "review" and row["source"] == "Copilot"  # jamais automatique
+    bad = client.post(f"/api/rfi/documents/{doc['id']}/copilot-reply", json={**body, "text": "Je n'ai pas trouvé.", "labels": labels})
+    assert bad.status_code == 400 and "tableau" in bad.json()["detail"]["hint"]
+
+
+_cache: dict = {}
+
+
+def _question(client, doc, body, qid):
+    if doc["id"] not in _cache:
+        _cache[doc["id"]] = {q["id"]: q for q in client.post(f"/api/rfi/documents/{doc['id']}/answers", json=body).json()["questions"]}
+    return _cache[doc["id"]][qid]

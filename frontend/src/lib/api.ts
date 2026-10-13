@@ -2,6 +2,7 @@ import { getUserName } from './storage'
 import { texts } from '../content/texts'
 import type {
   CopilotAnswers,
+  CopilotPrompt,
   FundShopDiagnostic,
   FundShopProblem,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
@@ -125,6 +126,10 @@ export const api = {
       if (!response.ok) throw new ApiError(texts.errors.generic, '', response.status)
       return response.blob()
     },
+    copilotPrompt: (id: string, body: RfiRequest, includeAuto = false) =>
+      request<CopilotPrompt>(`/rfi/documents/${id}/copilot-prompt`, json({ ...body, include_auto: includeAuto })),
+    copilotReply: (id: string, body: RfiRequest, text: string, labels: Record<string, string>) =>
+      request<CopilotAnswers>(`/rfi/documents/${id}/copilot-reply`, json({ ...body, text, labels })),
     copilotAnswers: (id: string, file: File, body: RfiRequest) => {
       const form = new FormData()
       form.append('file', file)
