@@ -69,13 +69,16 @@ class PythonTransport:
             pass
         proxies = urllib.request.getproxies()  # sous Windows : lit aussi le proxy déclaré dans les paramètres Internet
         proxy = proxies.get("https") or proxies.get("http")
-        self._client = httpx.Client(timeout=timeout, follow_redirects=True, verify=verify, proxy=proxy or None, trust_env=not proxy,
-                                    headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,text/html;q=0.9,*/*;q=0.8"})
+        common = dict(timeout=timeout, follow_redirects=True, verify=verify,
+                      headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,text/html;q=0.9,*/*;q=0.8"})
+        self._client = httpx.Client(proxy=proxy or None, trust_env=not proxy, **common)
+        self._direct = httpx.Client(trust_env=False, **common) if proxy else self._client  # adresses exclues du proxy
 
     def get(self, url: str) -> Reply:
         host = urlparse(url).netloc
         try:
-            r = self._client.get(url)
+            client = self._direct if urllib.request.proxy_bypass(host.split(":")[0]) else self._client
+            r = client.get(url)
         except httpx.HTTPError as error:
             raise _classify(error, host) from error
         except ssl.SSLError as error:

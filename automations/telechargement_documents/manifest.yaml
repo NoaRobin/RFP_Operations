@@ -9,7 +9,7 @@ category: Documents
 type: python
 version: "1.0"
 tags: [DIC, prospectus, reporting, SFDR]
-estimated_minutes_saved: 40
+estimated_minutes_saved: 5
 requires: []
 steps:
   - Préparation de la liste

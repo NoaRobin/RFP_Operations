@@ -147,7 +147,7 @@ changent, fonds introuvables. L'app va droit à l'adresse du PDF.
    (reportings), document d'une autre part, page au lieu d'un PDF, fichier déjà présent, dossier inaccessible.
    Avant de lancer, l'app vérifie le dossier et le site : si le réseau bloque, une seule explication plutôt que 50 échecs.
    Le bouton « Tester la connexion » fait le même contrôle à la demande.
-5. **La liste** : dans l'app (recherche de part, enregistrement automatique), ou dans Excel avec la **liste vierge** :
+5. **La liste** : dans l'app, on choisit une part et l'app affiche **ce que le site publie réellement pour elle** (types, mois en ligne) : on coche, impossible de demander ce qui n'existe pas (enregistrement automatique), ou dans Excel avec la **liste vierge** :
    la part, le document et le mois se choisissent dans des listes déroulantes, l'ISIN se remplit tout seul ; onglet « Aide ».
    L'ancienne « Liste de courses » s'importe aussi. « Ma liste en Excel » exporte la liste actuelle dans le même format.
 6. **Une fois ou en boucle** : « Mois précédent » / « Il y a 2 mois » sont gardés relatifs ; « Programmer chaque mois »

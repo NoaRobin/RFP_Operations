@@ -86,7 +86,7 @@ def apply(doc_id: str, body: ApplyRequest, s: AppState = Depends(state), user: s
     s.db.create_run(
         target_type="mergecodes", target_id="mergecodes", target_name=f"Merge codes — {meta['filename']}", user=user,
         params={}, status="success", started_at=now_iso(), finished_at=now_iso(), duration_ms=0,
-        summary=f"{result['inseres']} merge code(s) inséré(s).", minutes_saved=result["inseres"], data_mode=s.data.mode,
+        summary=f"{result['inseres']} merge code(s) inséré(s).", minutes_saved=round(result["inseres"] * 0.3), data_mode=s.data.mode,
     )
     base = f"/api/mergecodes/documents/{doc_id}/fichiers"
     return {**result, "document_url": f"{base}/{result['document']}", "rapport_url": f"{base}/{result['rapport']}"}

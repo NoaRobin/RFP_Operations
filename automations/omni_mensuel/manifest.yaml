@@ -9,7 +9,7 @@ category: Consultants
 type: python
 version: "1.0"
 tags: [OMNI, holdings, performances, consultants]
-estimated_minutes_saved: 60
+estimated_minutes_saved: 20
 steps:
   - Période et dossiers
   - Holdings

@@ -8,7 +8,7 @@ category: Portefeuilles
 type: fabric
 version: "1.0"
 tags: [holdings, top 10, inventaire]
-estimated_minutes_saved: 20
+estimated_minutes_saved: 5
 params:
   - name: fonds
     label: Fonds

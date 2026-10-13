@@ -290,3 +290,20 @@ def test_site_search_api_then_share_menu(tmp_path):
     assert res.find(ident, doc_type("reporting mensuel"), Period(8, 2026)).url.endswith("_20260831.pdf")
     assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith(f"RASA_{PRODUCT_GUID}_FR_FR.pdf")
     assert res.memory.guid(OTHER, "share") == other_guid
+
+
+def test_available_lists_what_the_site_really_publishes(tmp_path):
+    from merlin.fundshop.resolver import available
+
+    page = "https://site.test/fr/nos-fonds/fonds-fictif/c-eur/"
+    html = f"""<a href="https://docs.test/DIPR_{SHARE_GUID}_FR_FR.pdf">DIC</a>
+      <a href="https://docs.test/REPM_{SHARE_GUID}_FR_FR_20260831.pdf">août</a><a href="https://docs.test/REPM_{SHARE_GUID}_FR_FR_20260930.pdf">sept</a>
+      <a href="https://docs.test/PROS_{PRODUCT_GUID}_FR_FR.pdf">Prospectus</a>""".encode()
+    res = resolver(tmp_path, {page: html}, data=None)
+    out = available(res, ISIN, "Fonds Fictif", "C EUR")
+    kinds = {d["kind"]: d for d in out["documents"]}
+    assert set(kinds) == {"dic", "prospectus", "reporting mensuel"} and out["problem"] is None
+    assert [m["value"] for m in kinds["reporting mensuel"]["months"]] == ["2026-09", "2026-08"]
+    assert res.memory.guid(ISIN, "share") == SHARE_GUID  # lu une fois, mémorisé
+    blocked = available(resolver(tmp_path, {}, data=None, down="proxy"), ISIN, "Fonds Fictif", "C EUR")
+    assert blocked["documents"] == [] and blocked["problem"]["code"] == "proxy"

@@ -21,7 +21,7 @@ from .deps import bad_request, current_user, not_found, state
 
 router = APIRouter(prefix="/api/rfi")
 MAX_UPLOAD = 25 * 1024 * 1024
-MINUTES_PER_ANSWER = 2
+MINUTES_PER_ANSWER = 0.5  # estimation prudente : une réponse vérifiée à la main prend rarement plus
 
 
 def _store(s: AppState) -> RfiStore:
@@ -145,7 +145,7 @@ def generate_version(doc_id: str, body: AnswerRequest, s: AppState = Depends(sta
         target_type="rfi", target_id="rfi", target_name=f"RFI — {meta['filename']}", user=user, params={
             "pid": body.pid, "isin": body.isin, "as_of": result["as_of"]}, status="success", started_at=now_iso(),
         finished_at=now_iso(), duration_ms=0, summary=f"{result['written']} réponse(s) remplie(s), version {result['version']}.",
-        minutes_saved=MINUTES_PER_ANSWER * result["written"], data_mode=s.data.mode,
+        minutes_saved=round(MINUTES_PER_ANSWER * result["written"]), data_mode=s.data.mode,
     )
     return {**result, "download": f"/api/rfi/documents/{doc_id}/versions/{result['file']}"}
 

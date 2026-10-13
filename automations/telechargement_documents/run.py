@@ -18,7 +18,7 @@ def run(ctx, mode: str = "missing", types: list[str] | None = None) -> None:
         dest = destination(settings)
         ctx.log.info("%d document(s) à traiter · dossier : %s", len(items), dest)
         if not items:
-            ctx.set_summary("Liste vide : ajoutez des documents dans « Documents des fonds ».", total=0)
+            ctx.set_summary("Liste vide : ajoutez des documents dans « Documents des fonds ».", total=0, minutes_saved=0)
             return
     with ctx.step("Vérification du réseau et du dossier"):
         res = resolver(settings, ctx.data)
@@ -39,7 +39,7 @@ def run(ctx, mode: str = "missing", types: list[str] | None = None) -> None:
         present = sum(r.status == "DÉJÀ PRÉSENT" for r in results)
         failed = sum(r.status == "ÉCHEC" for r in results)
         if blocked:
-            ctx.set_summary(f"Rien n'a pu être téléchargé : {blocked.title.lower()}. {blocked.fix}", ok=0, deja=present, echecs=failed)
+            ctx.set_summary(f"Rien n'a pu être téléchargé : {blocked.title.lower()}. {blocked.fix}", ok=0, deja=present, echecs=failed, minutes_saved=0)
         else:
             ctx.set_summary(f"{ok} téléchargé(s), {present} déjà présent(s), {failed} à regarder.", ok=ok, deja=present, echecs=failed,
-                            destination=str(dest))
+                            destination=str(dest), minutes_saved=ok)  # estimation prudente : 1 min par document réellement téléchargé

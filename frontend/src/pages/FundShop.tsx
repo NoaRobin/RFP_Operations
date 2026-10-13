@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, CalendarClock, Check, CheckCircle2, Download, ExternalLink, FileDown, FileSpreadsheet, FileText, Link2,
   Loader2, Search, Stethoscope, Trash2, Upload, Wand2, XCircle } from 'lucide-react'
+import { AvailablePanel, type Pick } from '../components/fundshop/AvailablePanel'
 import { ScheduleDialog } from '../components/ScheduleDialog'
 import { Button } from '../components/ui/Button'
 import { ErrorState, Loading } from '../components/ui/States'
@@ -139,6 +140,7 @@ export default function FundShop() {
   const [linkFor, setLinkFor] = useState<string | null>(null)
   const [previews, setPreviews] = useState<Record<string, FundShopProblem | 'ok' | 'testing'>>({})
   const [diag, setDiag] = useState<FundShopDiagnostic | 'loading' | null>(null)
+  const [browsing, setBrowsing] = useState<{ isin: string; fund: string; part: string } | null>(null)
   const saveTimer = useRef(0)
   const version = useRef(0)
 
@@ -174,8 +176,15 @@ export default function FundShop() {
     setPreviews((p) => { const n = { ...p }; delete n[id]; return n })
     persist(items.map((x) => (x.id === id ? { ...x, ...patch, result: null } : x)))
   }
-  const add = (fund: string, part: string, isin: string) =>
-    persist([...items, { id: `new-${Date.now()}`, isin, fund, part, kind: 'dic', month: '', filename: '', active: true, overwrite: false }])
+  const add = (fund: string, part: string, isin: string) => setBrowsing({ isin, fund, part })
+  const addPicks = (picks: Pick[], fund: string, part: string) => {
+    if (!browsing) return
+    const now = Date.now()
+    persist([...items, ...picks.map((p, i) => ({ id: `new-${now}-${i}`, isin: browsing.isin, fund, part, kind: p.kind, month: p.month,
+      filename: '', active: true, overwrite: false }))])
+    toast('success', T.added(picks.length))
+    setBrowsing(null)
+  }
 
   // Lancement : l'automatisation tourne en arrière-plan, la page se met à jour à la fin
   useEffect(() => {
@@ -277,6 +286,8 @@ export default function FundShop() {
           )}
         </div>
         <p className="mt-2 text-xs font-semibold text-fg-3">{T.blankHint}</p>
+        {browsing && <AvailablePanel {...browsing} existing={items.filter((i) => i.isin === browsing.isin).map((i) => ({ kind: i.kind, month: i.month }))}
+          onAdd={addPicks} onClose={() => setBrowsing(null)} />}
         {importErrors.length > 0 && (
           <div className="mt-3 rounded-2xl border-2 border-warning bg-sun-400/20 p-3 text-sm font-semibold">
             <p className="flex items-center gap-1 font-bold text-warning"><AlertTriangle size={15} aria-hidden="true" />{T.importErrors}</p>
@@ -330,6 +341,8 @@ export default function FundShop() {
                       </td>
                       <td className="py-2.5">
                         <div className="flex gap-1">
+                          <button onClick={() => setBrowsing({ isin: it.isin, fund: it.fund, part: it.part })} title={T.seeAvailable} aria-label={T.seeAvailable}
+                            className="rounded-full border-2 border-fg/40 p-1.5 hover:border-fg"><Search size={14} /></button>
                           <button onClick={() => test(it)} title={T.test} aria-label={T.test} className="rounded-full border-2 border-fg/40 p-1.5 hover:border-fg"><Wand2 size={14} /></button>
                           <button onClick={() => setLinkFor(linkFor === it.id ? null : it.id)} title={T.haveLink} aria-label={T.haveLink}
                             className="rounded-full border-2 border-fg/40 p-1.5 hover:border-fg"><Link2 size={14} /></button>

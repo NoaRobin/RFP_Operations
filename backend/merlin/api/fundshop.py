@@ -1,6 +1,7 @@
 """API « Documents des fonds » : la liste, l'Excel vierge (et l'export), l'import, le lien collé, le test de connexion."""
 from __future__ import annotations
 
+import re
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -161,6 +162,16 @@ def try_one(body: TryIn, s: AppState = Depends(state)) -> dict[str, Any]:
         return {"found": False, "problem": error.problem.to_dict()}
     res.memory.save()
     return {"found": True, "url": found.url, "size": len(found.content), "note": found.note}
+
+
+@router.get("/available/{isin}")
+def available_documents(isin: str, fund: str = "", part: str = "", s: AppState = Depends(state)) -> dict[str, Any]:
+    """Ce que le site propose vraiment pour cette part (comme la rubrique « Téléchargements »), mois disponibles compris."""
+    from ..fundshop.resolver import available
+
+    if not re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", isin.strip().upper()):
+        raise bad_request("ISIN invalide.")
+    return available(resolver(s.settings, s.data), isin, fund, part)
 
 
 @router.get("/diagnostic")

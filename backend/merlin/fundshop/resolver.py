@@ -439,3 +439,58 @@ class Resolver:
             self.memory.save()
             return "Lien enregistré pour ce document."
         raise ValueError("Ce lien n'est ni un PDF du site des fonds, ni une page de fonds.")
+
+
+# ------------------------------------------------------------------ ce que le site propose pour une part
+def kind_of(prefix: str, lang: str) -> str | None:
+    """Préfixe + langue d'un lien du site → type de document de l'app (None : type non géré)."""
+    from .catalog import DOC_TYPES
+
+    language = lang.split("_")[-1] if lang else "FR"
+    for d in DOC_TYPES.values():
+        if d.prefix == prefix and d.lang == language:
+            return d.key
+    return None
+
+
+def available(resolver: "Resolver", isin: str, fund: str = "", part: str = "") -> dict:
+    """Comme « Téléchargements » sur le site : la liste réelle des documents de la part (mois disponibles pour les reportings).
+    Tout ce qui est lu est mémorisé : le téléchargement ira ensuite droit au fichier."""
+    from .catalog import DOC_TYPES
+    from .period import MONTHS_FR
+
+    ident = resolver.identity(isin, fund, part)
+    seen = Attempts()
+    pages = resolver.pages(ident, "FR", seen)
+    found: dict[str, dict] = {}
+    page_used = ""
+    for page in pages:
+        links = resolver.links(page, seen)
+        if not any(ln.prefix for ln in links):
+            continue
+        page_used = page
+        for ln in links:
+            key = kind_of(ln.prefix, ln.lang) if ln.prefix else None
+            if not key:
+                continue
+            if DOC_TYPES[key].level == "share" or page == pages[0]:
+                resolver.memory.learn(ident.isin, ln.url)
+            entry = found.setdefault(key, {"kind": key, "label": DOC_TYPES[key].label, "needs_month": DOC_TYPES[key].needs_month,
+                                           "url": ln.url, "months": []})
+            if ln.date:
+                y, m = int(ln.date[:4]), int(ln.date[4:6])
+                entry["months"].append({"value": f"{y}-{m:02d}", "label": f"{MONTHS_FR[m - 1]} {y}", "url": ln.url})
+        break
+    resolver.memory.save()
+    for entry in found.values():
+        entry["months"] = sorted({m["value"]: m for m in entry["months"]}.values(), key=lambda m: m["value"], reverse=True)
+    problem_out = None
+    if not found:
+        worst = seen.worst()
+        from .problems import problem
+        problem_out = (problem(worst[0], host=worst[1].get("host", ""), detail=worst[1].get("detail", ""), status=worst[1].get("status", 0))
+                       if worst and worst[0] in {"proxy", "certificat", "hors-ligne", "delai", "reseau", "refuse"}
+                       else problem("adresse-inconnue", link=resolver.fund_page(ident))).to_dict()
+    order = list(DOC_TYPES)
+    return {"isin": ident.isin, "fund": ident.fund, "part": ident.share, "page": page_used,
+            "documents": sorted(found.values(), key=lambda e: order.index(e["kind"])), "problem": problem_out}

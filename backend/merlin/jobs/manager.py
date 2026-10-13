@@ -156,7 +156,9 @@ class JobManager:
             outputs = (run.get("outputs") or []) + [{k: event[k] for k in ("name", "kind", "label", "size")}]
             self.db.update_run(run_id, outputs=outputs)
         elif etype == "summary":
-            self.db.update_run(run_id, summary=event.get("text"))
+            minutes = (event.get("metrics") or {}).get("minutes_saved")
+            # une automatisation peut mesurer le temps gagné réel (ex. 1 min par document téléchargé) au lieu du forfait
+            self.db.update_run(run_id, summary=event.get("text"), **({"minutes_saved": int(minutes)} if isinstance(minutes, (int, float)) else {}))
         elif etype == "result":
             self.db.update_run(
                 run_id, status=event["status"], finished_at=now_iso(), duration_ms=event.get("duration_ms"),

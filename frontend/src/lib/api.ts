@@ -3,6 +3,7 @@ import { texts } from '../content/texts'
 import type {
   CopilotAnswers,
   CopilotPrompt,
+  FundShopAvailable,
   FundShopDiagnostic,
   FundShopProblem,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
@@ -96,6 +97,8 @@ export const api = {
     tryOne: (isin: string, kind: string, month: string, fund: string) =>
       request<{ found: boolean; url?: string; note?: string; problem?: FundShopProblem }>('/fundshop/try', json({ isin, kind, month, fund })),
     diagnostic: () => request<FundShopDiagnostic>('/fundshop/diagnostic'),
+    available: (isin: string, fund: string, part: string) =>
+      request<FundShopAvailable>(`/fundshop/available/${isin}?fund=${encodeURIComponent(fund)}&part=${encodeURIComponent(part)}`),
     fileUrl: (name: string) => `/api/fundshop/file/${encodeURIComponent(name)}`,
   },
 

@@ -9,7 +9,7 @@ category: Contrôles
 type: python
 version: "1.0"
 tags: [contrôle qualité, AUM]
-estimated_minutes_saved: 30
+estimated_minutes_saved: 10
 steps:
   - Chargement des VL
   - Analyse des variations

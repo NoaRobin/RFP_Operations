@@ -9,7 +9,7 @@ category: Encours & VL
 type: fabric
 version: "1.0"
 tags: [AUM, VL, consultants]
-estimated_minutes_saved: 25
+estimated_minutes_saved: 5
 params:
   - name: as_of
     label: Date d'arrêté
