@@ -303,7 +303,7 @@ export const texts = {
     sound: 'Son',
     fullscreen: 'Plein écran',
     hits: 'Coups au but',
-    stress: 'Stress RFI',
+    stress: 'Stress',
     help: 'Clic : lancer · Clic maintenu : rafale · Glisser : tourner autour · 1 à 8 : choisir · N : nettoyer · D : déguisement au hasard',
     loading: 'Chargement…',
     error: 'La tête n\'a pas pu être chargée.',
