@@ -18,7 +18,8 @@ from urllib.parse import urlparse
 
 import httpx
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) RFP-pas-envie-de-travailler/2.0 (documents reglementaires publics)"
+USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 Edg/124.0 "
+              "RFP-pas-envie-de-travailler/2.0")
 TIMEOUT = 30
 
 
@@ -70,7 +71,7 @@ class PythonTransport:
         proxies = urllib.request.getproxies()  # sous Windows : lit aussi le proxy déclaré dans les paramètres Internet
         proxy = proxies.get("https") or proxies.get("http")
         common = dict(timeout=timeout, follow_redirects=True, verify=verify,
-                      headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,text/html;q=0.9,*/*;q=0.8"})
+                      headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/json,application/pdf;q=0.9,*/*;q=0.8", "Accept-Language": "fr-FR,fr;q=0.9"})
         self._client = httpx.Client(proxy=proxy or None, trust_env=not proxy, **common)
         self._direct = httpx.Client(trust_env=False, **common) if proxy else self._client  # adresses exclues du proxy
 
@@ -85,6 +86,18 @@ class PythonTransport:
             raise NetError("certificat", str(error), host) from error
         if r.status_code == 407:
             raise NetError("proxy", "authentification proxy demandée (407)", host)
+        return Reply(r.status_code, r.content, r.headers.get("content-type", ""), str(r.url))
+
+    def post(self, url: str, form: dict[str, str]) -> Reply:
+        """Envoi d'un formulaire (ex. choix « Professionnels » du site) ; le cookie de session reste dans le client."""
+        host = urlparse(url).netloc
+        try:
+            client = self._direct if urllib.request.proxy_bypass(host.split(":")[0]) else self._client
+            r = client.post(url, data=form)
+        except httpx.HTTPError as error:
+            raise _classify(error, host) from error
+        except ssl.SSLError as error:
+            raise NetError("certificat", str(error), host) from error
         return Reply(r.status_code, r.content, r.headers.get("content-type", ""), str(r.url))
 
 
@@ -132,6 +145,24 @@ class WindowsTransport:
             raise NetError("proxy", "authentification proxy demandée (407)", host)
         return Reply(status, body, content_type, url)
 
+    def post(self, url: str, form: dict[str, str]) -> Reply:
+        """Formulaire envoyé par Windows : le cookie est rangé par Windows, comme dans Edge."""
+        from urllib.parse import urlencode
+
+        host = urlparse(url).netloc
+        try:
+            xhr = self._request()
+            xhr.open("POST", url, False)
+            xhr.setRequestHeader("User-Agent", USER_AGENT)
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+            xhr.send(urlencode(form))
+            status = int(xhr.status)
+            body = bytes(xhr.responseBody or b"")
+            content_type = str(xhr.getResponseHeader("Content-Type") or "")
+        except Exception as error:  # noqa: BLE001
+            raise _classify(error, host) from error
+        return Reply(status, body, content_type, url)
+
 
 class Network:
     """Essaie les transports dans l'ordre ; garde celui qui a répondu pour les demandes suivantes."""
@@ -148,9 +179,31 @@ class Network:
     def get(self, url: str) -> Reply:
         order = ([self._preferred] if self._preferred else []) + [t for t in self.transports if t is not self._preferred]
         last: NetError | None = None
+        refused: Reply | None = None
         for transport in order:
             try:
                 reply = transport.get(url)
+            except NetError as error:
+                last = error
+                continue
+            if reply.status in (403, 429, 503) and transport is not order[-1]:
+                refused = reply  # refus du site (pare-feu, robot) : on retente par l'autre chemin (connexion de Windows)
+                continue
+            with self._lock:
+                self._preferred = transport
+            return reply
+        if refused is not None:
+            return refused
+        raise last or NetError("reseau", "aucun transport disponible", urlparse(url).netloc)
+
+    def post(self, url: str, form: dict[str, str]) -> Reply:
+        order = ([self._preferred] if self._preferred else []) + [t for t in self.transports if t is not self._preferred]
+        last: NetError | None = None
+        for transport in order:
+            if not hasattr(transport, "post"):
+                continue
+            try:
+                reply = transport.post(url, form)
             except NetError as error:
                 last = error
                 continue

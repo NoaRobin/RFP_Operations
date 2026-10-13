@@ -336,3 +336,30 @@ def test_site_search_by_fund_name_when_results_carry_no_isin(tmp_path):
     ident = res.identity(ISIN, "Fonds Fictif", "C EUR")
     assert res.discover(ident, __import__("merlin.fundshop.resolver", fromlist=["Attempts"]).Attempts())[0].endswith("/fonds-fictif/")
     assert res.memory.guid(ISIN, "share") == SHARE_GUID
+
+
+def test_site_welcome_screen_is_passed_like_a_visitor(tmp_path):
+    """Sans profil choisi, le site renvoie son écran d'accueil : l'app choisit « Professionnels » (POST /fr/) puis relit la page."""
+    from merlin.fundshop.net import Reply
+    from merlin.fundshop.resolver import Attempts
+
+    page_url = "https://site.test/fr/nos-fonds/fonds-fictif/c-eur/"
+    welcome = b"<html><script>let user_type = '';</script>Particuliers / Professionnels</html>"
+    real = f"<script>let user_type = 'professional';</script><a href='https://docs.test/DIPR_{SHARE_GUID}_FR_FR.pdf'>DIC</a>".encode()
+    posted = []
+
+    class SiteWithGate(FakeNet):
+        def get(self, url):
+            if url == page_url:
+                return Reply(200, real if posted else welcome, "text/html", url)
+            return super().get(url)
+
+        def post(self, url, form):
+            posted.append((url, form))
+            return Reply(200, b"ok", "text/html", url)
+
+    res = resolver(tmp_path, {}, data=None)
+    res._net = SiteWithGate({})
+    links = res.links(page_url, Attempts())
+    assert posted and posted[0][0] == "https://site.test/fr/" and posted[0][1]["a"] == "change_user_type"
+    assert posted[0][1]["user_type"] == "professional" and [ln.prefix for ln in links] == ["DIPR"]

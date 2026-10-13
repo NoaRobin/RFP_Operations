@@ -134,6 +134,8 @@ class Resolver:
         self._pages: dict[str, str | None] = {}
         self._found: dict[str, list[str]] = {}
         self.trace: dict[str, list[str]] = {}
+        self.profile = "professional"  # écran d'accueil du site : « Professionnels » (équipe RFP) ; FUNDSHOP_PROFILE pour changer
+        self._session_ready = False
 
     @property
     def net(self) -> Network:
@@ -180,14 +182,48 @@ class Resolver:
             share = share[len(ident.fund):]
         return slug(share)
 
+    # ------------------------------------------------------------------ écran d'accueil du site (profil investisseur)
+    @staticmethod
+    def gated(reply) -> bool:
+        """Le site a renvoyé son écran d'accueil (« Particuliers / Professionnels ») au lieu de la page demandée."""
+        if "/disclaimer" in (reply.url or ""):
+            return True
+        head = reply.content[:200_000]
+        return b"let user_type = '';" in head or b'"status":"error"' in head[:200] and b"disclaimer" in head
+
+    def open_session(self) -> bool:
+        """Comme un visiteur : choisir pays, langue et profil sur l'écran d'accueil (formulaire POST /fr/). Le cookie de
+        session est gardé par le client réseau (Python) ou par Windows (comme dans Edge)."""
+        form = {"a": "change_user_type", "country": "fr", "lang": "fr", "user_type": self.profile, "node_id": "2", "fund_id": "0",
+                "news_id": "0"}
+        try:
+            reply = self.net.post(f"{self._root()}/fr/", form)
+        except (NetError, AttributeError):
+            return False
+        self._session_ready = reply.status < 400
+        return self._session_ready
+
+    def fetch(self, url: str):
+        """GET avec l'écran d'accueil franchi : session ouverte au premier passage, rouverte une fois si le site la redemande."""
+        if not self._session_ready:
+            self.open_session()
+        reply = self.net.get(url)
+        if self.gated(reply):
+            self.open_session()
+            reply = self.net.get(url)
+        return reply
+
     def _search(self, query: str, seen: "Attempts") -> list[dict]:
         """La recherche de la page « Nos fonds » (API data-fund) : une ligne par part trouvée."""
         lang = "fr"
         api = (f"{self._root()}/api/data-fund/?query={quote(query)}&type=&region=&range=&expertise=&period=&esg="
-               f"&country={lang}&language={lang}&user_type=individual")
+               f"&country={lang}&language={lang}&user_type={self.profile}")
         try:
-            r = self.net.get(api)
+            r = self.fetch(api)
             data = json.loads(r.content.decode("utf-8", "replace")) if r.status == 200 else {}
+            if isinstance(data, dict) and data.get("status") not in (None, "ok") and self.open_session():
+                r = self.net.get(api)  # recherche refusée sans profil : profil choisi, on recommence une fois
+                data = json.loads(r.content.decode("utf-8", "replace")) if r.status == 200 else {}
         except NetError as error:
             seen.add(error.code, host=error.host, detail=error.detail, link=api)
             return []
@@ -304,8 +340,12 @@ class Resolver:
         """Tous les PDF listés sur une page (adresses absolues ou /docs/…), avec le texte qui les entoure."""
         if page not in self._pages:
             try:
-                r = self.net.get(page)
-                self._pages[page] = r.content.decode("utf-8", "replace") if r.status == 200 else None
+                r = self.fetch(page)
+                gated = self.gated(r)
+                self._pages[page] = r.content.decode("utf-8", "replace") if r.status == 200 and not gated else None
+                if gated:
+                    seen.add("refuse", status=r.status, link=page)
+                    self.trace.setdefault("_site", []).append("le site affiche toujours son écran d'accueil (profil investisseur)")
             except NetError as error:
                 seen.add(error.code, host=error.host, detail=error.detail, link=page)
                 self._pages[page] = None
@@ -585,7 +625,8 @@ def check_line(resolver: "Resolver", text: str) -> dict:
             fund = fund or text
     ident = Identity(isin, fund, part)
     pages = resolver.discover(ident, seen)
-    steps = list(resolver.trace.get(isin, []))
+    steps = ([f"écran d'accueil du site : profil « {resolver.profile} » choisi" if resolver._session_ready else "écran d'accueil du site : choix du profil impossible"]
+             + list(resolver.trace.get(isin, [])) + list(dict.fromkeys(resolver.trace.get("_site", []))))
     resolver.trace.pop(isin, None)
     resolver._found.pop(isin, None)
     docs: Counter = Counter()

@@ -117,6 +117,11 @@ Le navigateur n'est donc **pas nécessaire** dès que l'on connaît le GUID.
   - préfixes (code source de la page R-co Valor) : `DIPR` (DIC), `REPM` (reporting mensuel), `PERFNAV` (performances) par part ;
     `PROS` (prospectus), `SFDR` (annexe), `SFDR10` (article 10), `RPSFDR` (rapport périodique SFDR), `RAAN` (rapport annuel),
     `RASA` (rapport semestriel) par fonds ;
+- **Écran d'accueil** : tant que le visiteur n'a pas choisi son profil (« Particuliers / Professionnels »), le site renvoie
+  cet écran (redirection `/disclaimer/`, `let user_type = ''`) au lieu des pages et la recherche ne répond pas. Le choix est
+  un formulaire `POST /fr/` (`a=change_user_type`, `country=fr`, `lang=fr`, `user_type=professional|individual`) qui pose
+  un cookie de session. L'app le fait au premier accès (profil : `FUNDSHOP_PROFILE`, « professional » par défaut) et le
+  refait si le site le redemande.
 - **Recherche du site** : `GET /api/data-fund/?query={ISIN}&country=fr&language=fr&user_type=individual` renvoie le fonds
   (`fund_rewrite`, `fund_title`), la part (`share_title`) et le nom du fichier DIC (`DIPR`). La page du fonds contient
   un menu « Part … » (`<option value="/fr/nos-fonds/{fonds}/{part}/">`) ; la part par défaut est la page du fonds elle-même.

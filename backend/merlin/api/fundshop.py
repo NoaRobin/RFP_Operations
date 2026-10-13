@@ -210,6 +210,16 @@ def diagnostic(s: AppState = Depends(state)) -> dict[str, Any]:
         else:
             p = problem(error.code, host=error.host or urlparse(url).netloc, detail=error.detail)
             checks.append({"label": label, "ok": False, "message": f"{p.title} : {p.why}", "fix": p.fix})
+    # Écran d'accueil (profil investisseur) : sans lui, le site ne montre ni les fonds ni les téléchargements
+    try:
+        opened = res.open_session()
+        page = res.fetch(res.site_base)
+        ok = opened and page.status == 200 and not res.gated(page)
+        checks.append({"label": "Écran d'accueil du site (profil)", "ok": ok,
+                       "message": f"profil « {res.profile} » accepté" if ok else "le site affiche toujours son écran « Particuliers / Professionnels »",
+                       **({} if ok else {"fix": "Ouvrez le site dans Edge et choisissez le profil ; si ça persiste, essayez FUNDSHOP_PROFILE=individual dans .env."})})
+    except Exception as error:  # noqa: BLE001
+        checks.append({"label": "Écran d'accueil du site (profil)", "ok": False, "message": str(error)[:160]})
     stats = res.memory.stats()
     checks.append({"label": "Adresses connues", "ok": True,
                    "message": f"{stats['shares']} part(s) et {stats['funds']} fonds mémorisés"

@@ -1,6 +1,7 @@
 """Assemblage : mémoire, liste, résolveur, dossier de destination (selon la configuration)."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from ..config import Settings
@@ -27,4 +28,6 @@ def memory(settings: Settings) -> Memory:
 
 
 def resolver(settings: Settings, data: DataAccess | None) -> Resolver:
-    return Resolver(data, memory(settings), docs_base=settings.fundshop.docs_base, site_base=settings.fundshop.site_base)
+    res = Resolver(data, memory(settings), docs_base=settings.fundshop.docs_base, site_base=settings.fundshop.site_base)
+    res.profile = os.environ.get("FUNDSHOP_PROFILE", "professional").strip().lower() or "professional"
+    return res
