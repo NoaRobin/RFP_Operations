@@ -5598,4 +5598,2208 @@ const vm = app.mount('#app');
 
 
 Intègre ce lot comme bibliothèque d'exemples de wording dans mon projet RFI existant, sans remplacer la base Product Info ni écraser les versions précédentes.
+Page sur laquelle on recherche les fonds : <!doctype html>
+<html lang="fr">
+<head>
 
+   <base href="https://am.eu.rothschildandco.com/">
+   <meta charset="utf-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, minimal-ui">
+   <meta name="apple-mobile-web-app-capable" content="yes">
+   <meta name="mobile-web-app-capable" content="yes">
+
+   <title>Rothschild & Co | Nos Fonds</title>
+   <meta name="description" content="Découvrez l&#039;ensemble des fonds de Rothschild &amp; Co et retrouvez toute l’information disponible sur notre offre de gestion." />
+
+   <script type="text/javascript">
+   let lang = 'fr';
+   </script>
+   <script type="text/javascript" src="js/fr.js"></script>
+
+   <link rel="stylesheet" href="css/bootstrap-4.6.0.min.css">
+   <script src="https://cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+   <script src="js/popper-1.16.1.min.js"></script>
+   <script src="js/bootstrap-4.6.0.min.js"></script>   
+
+   
+   <link rel="stylesheet" type="text/css" href="css/font-awesome-5.15.3.min.css">
+
+   <script src="https://cdn.jsdelivr.net/npm/lodash@4/lodash.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/vue@3.5/dist/vue.global.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>   
+   <script type="text/javascript">
+      axios.defaults.baseURL = '/api/';
+      axios.defaults.withCredentials = true;
+      axios.interceptors.response.use(
+         // status==2xx 
+         function (response) {
+            return response;
+         }, 
+         // status!=2xx
+         function (error) {
+            if(error.response.status=='403') {
+               console.log('403 Forbidden');
+               alert('API ERROR : Forbidden');
+            }
+            if(error.response.status=='404') {
+               console.log('404 Not Found');
+               alert('API ERROR : Module not Found');
+            }
+            return Promise.reject(error);        
+         }
+      );      
+   </script>   
+
+   <script src="js/alt_scripts-v23205.js"></script>
+
+   <link rel="stylesheet" type="text/css" href="js/slick/slick.css"/>
+   <link rel="stylesheet" type="text/css" href="js/slick/slick-theme.css"/>   
+   <script type="text/javascript" src="js/slick/slick.min.js"></script>   
+
+   <link rel="stylesheet" href="https://use.typekit.net/fak3jmr.css">
+   <link rel="stylesheet" type="text/css" href="css/index-v251023.css">
+
+   <link rel="apple-touch-icon" sizes="60x60" href="/img/favicon/apple-touch-icon.png" />
+   <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon/favicon-32x32.png" />
+   <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon/favicon-16x16.png" />
+   <link rel="manifest" href="/img/favicon/manifest.json" />
+   <link rel="mask-icon" href="/img/favicon/safari-pinned-tab.svg" color="#5bbad5" />
+   <link rel="shortcut icon" href="/img/favicon/favicon.ico" />       
+   
+   <meta name="msapplication-config" content="/img/favicon/browserconfig.xml" />
+   <meta name="theme-color" content="#ffffff" />   
+
+                     <link rel="image_src" href="https://am.eu.rothschildandco.com/stock/img/node/2/rt-funds.jpg" />
+      <meta property="og:image" content="https://am.eu.rothschildandco.com/stock/img/node/2/rt-funds.jpg" />
+         
+
+         <link rel="alternate" hreflang="fr" href="https://am.eu.rothschildandco.com/fr/nos-fonds/" />
+            <link rel="alternate" hreflang="en" href="https://am.eu.rothschildandco.com/en/our-funds/" />
+            <link rel="alternate" hreflang="de" href="https://am.eu.rothschildandco.com/de/unsere-fonds/" />
+            <link rel="alternate" hreflang="es" href="https://am.eu.rothschildandco.com/es/nuestros-fondos/" />
+            <link rel="alternate" hreflang="it" href="https://am.eu.rothschildandco.com/it/i-nostri-fondi/" />
+            <link rel="alternate" hreflang="nl" href="https://am.eu.rothschildandco.com/nl/onze-fondsen/" />
+   
+
+
+   <meta name="twitter:card" content="summary" />
+   <meta property="og:type"  content="website" />
+   <meta property="og:title" content="Rothschild & Co | Nos Fonds" />
+   <meta property="og:description" content="Découvrez l&#039;ensemble des fonds de Rothschild &amp; Co et retrouvez toute l’information disponible sur notre offre de gestion." />
+
+</head>
+<body id="app" class="fund_list">
+
+   <script type="text/javascript">
+      (function(window, document, dataLayerName, id) {
+      window[dataLayerName]=window[dataLayerName]||[],window[dataLayerName].push({start:(new Date).getTime(),event:"stg.start"});var scripts=document.getElementsByTagName('script')[0],tags=document.createElement('script');
+      function stgCreateCookie(a,b,c){var d="";if(c){var e=new Date;e.setTime(e.getTime()+24*c*60*60*1e3),d="; expires="+e.toUTCString()}document.cookie=a+"="+b+d+"; path=/"}
+      var isStgDebug=(window.location.href.match("stg_debug")||document.cookie.match("stg_debug"))&&!window.location.href.match("stg_disable_debug");stgCreateCookie("stg_debug",isStgDebug?1:"",isStgDebug?14:-1);
+      var qP=[];dataLayerName!=="dataLayer"&&qP.push("data_layer_name="+dataLayerName),isStgDebug&&qP.push("stg_debug");var qPString=qP.length>0?("?"+qP.join("&")):"";
+      tags.async=!0,tags.src="https://rothschildandco.containers.piwik.pro/"+id+".js"+qPString,scripts.parentNode.insertBefore(tags,scripts);
+      !function(a,n,i){a[n]=a[n]||{};for(var c=0;c<i.length;c++)!function(i){a[n][i]=a[n][i]||{},a[n][i].api=a[n][i].api||function(){var a=[].slice.call(arguments,0);"string"==typeof a[0]&&window[dataLayerName].push({event:n+"."+i+":"+a[0],parameters:[].slice.call(arguments,1)})}}(i[c])}(window,"ppms",["tm","cm"]);
+      })(window, document, 'dataLayer', '1fa6878c-a94c-41c9-8c06-10ed27ab2039');
+      
+   </script>
+
+
+<nav v-if="user_type!=''" :class="{ active: open_menu, freeze: open_auth || open_lead }">
+
+   <div class="logo">
+      <img src="img/logo-white.svg">
+   </div>
+
+   <div class="nav-container">
+
+      <section class="level0">
+
+         <article>
+
+            <a class="btn_close" href="" @click.prevent="open_menu=!open_menu">
+               <svg focusable="false" class="svg-close">
+                  <use href="img/svg.svg#svg-close"></use>
+               </svg>
+            </a>            
+
+            <ul>
+               <li>
+                  <a href="fr/">
+                     Accueil</a>
+               </li>
+
+                        
+                                       <li>
+                        <a href="fr/actualites/">
+                           Nos actualités</a>
+                     </li>
+                                          
+                                       <li>
+                        <a href="fr/nos-fonds/">
+                           Nos fonds</a>
+                     </li>
+                                          
+                                       <li>
+                        <a href="fr/fixed-income-by-rothschild-and-co-asset-management/">
+                           Fixed Income by Rothschild &amp; Co Asset Management</a>
+                     </li>
+                                          
+                                       <li>
+                        <a href="fr/la-gestion-sur-mesure/">
+                           La Gestion sur-Mesure</a>
+                     </li>
+                                          
+                                       <li>
+                        <a href="" :class="{selected : active_submenu==36}" @click.prevent="active_submenu=36">
+                           Notre philosophie d'investissement durable</a>
+                     </li>
+                                          
+                                       <li>
+                        <a href="" :class="{selected : active_submenu==47}" @click.prevent="active_submenu=47">
+                           Nous connaître</a>
+                     </li>
+                                          
+                                       <li>
+                        <a href="fr/contact/">
+                           Contactez-nous</a>
+                     </li>
+                                          
+                                          
+                                     
+               <li>
+                  <a href="https://linkedin.com/showcase/rothschild-&-co---asset-management-europe/" target="_blank" class="linkedin" rel="noopener noreferrer">
+                     Suivez nous<i class="fab fa-linkedin-in"></i>
+                  </a>
+               </li> 
+            </ul>
+
+
+         </article>
+
+         <div class="btn_login">
+            <template v-if="auth.connected">
+               <i class="fas fa-lock-open"></i>
+               <span>{{ auth.name }}</span>
+               <a href="" @click.prevent="auth_logout()">
+                  <i class="fas fa-sign-out-alt"></i></a>
+            </template>
+            <template v-else>
+               <svg focusable="false" class="svg-lock">
+                  <use href="img/svg.svg#svg-lock"></use>
+               </svg>
+               <a href="" @click.prevent="open_auth=!open_auth">
+                  Espace Privé</a>
+            </template>
+         </div>
+
+      </section>
+
+                                    <section class="submenu level1" :class="{active : active_submenu=='36', freeze: open_auth || open_lead}">
+         <article>
+
+            <a class="btn_back" href="" @click.prevent="active_submenu=0">
+               <svg focusable="false" class="svg-arrow">
+                  <use href="img/svg.svg#svg-arrow"></use>
+               </svg>
+            </a>
+
+            <ul>
+               <li>
+                  <a href="fr/investissement-responsable/">
+                     Notre philosophie d&#039;investissement durable</a>
+               </li>
+                                                                                                                                                                                                                                 
+                        <li>
+                           <a href="fr/investissement-responsable/nos-fonds-durables/">
+                              L&#039;intégration ESG au sein de notre gamme</a>
+                        </li>
+                                                                                                   
+                        <li>
+                           <a href="fr/investissement-responsable/partenariats-mecenat/">
+                              Partenariats &amp; Mécénat</a>
+                        </li>
+                                                                                                   
+                        <li>
+                           <a href="fr/investissement-responsable/documents-ressources/">
+                              Documents et ressources externes</a>
+                        </li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+            </ul>
+         </article>
+      </section>
+                                 <section class="submenu level1" :class="{active : active_submenu=='47', freeze: open_auth || open_lead}">
+         <article>
+
+            <a class="btn_back" href="" @click.prevent="active_submenu=0">
+               <svg focusable="false" class="svg-arrow">
+                  <use href="img/svg.svg#svg-arrow"></use>
+               </svg>
+            </a>
+
+            <ul>
+               <li>
+                  <a href="fr/nous-connaitre/">
+                     Nous connaître</a>
+               </li>
+                                                                                                                                                                                                                                                                                                                                                                     
+                        <li>
+                           <a href="fr/nous-connaitre/gestion-directes/">
+                              Gestion directe</a>
+                        </li>
+                                                                                                   
+                        <li>
+                           <a href="fr/nous-connaitre/architecture-ouverte/">
+                              Architecture ouverte</a>
+                        </li>
+                                                                                                   
+                        <li>
+                           <a href="fr/nous-connaitre/nos-recompenses/">
+                              Nos récompenses</a>
+                        </li>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+            </ul>
+         </article>
+      </section>
+                                                                                                            
+
+   </div>
+
+   <div class="locale">
+      <div class="country">
+         <i class="fas fa-globe-europe"></i>
+         <a href="" @click.prevent="show_disclaimer()">
+            France / Particuliers</a>         
+      </div>
+      <div class="languages">
+                     <a class="active" href="fr/nos-fonds/">
+               FR</a>
+                     <a  href="en/our-funds/">
+               EN</a>
+         
+      </div>
+   </div>
+
+</nav>
+
+<section class="search" :class="{ active: open_search }">
+   <div class="container-xxl">
+      <div class="bar row">
+         
+         <div class="left_bar">
+            <a class="btn_close" href="" @click.prevent="open_search=!open_search">
+               <svg v-if="open_search" focusable="false" class="svg-close">
+                  <use href="img/svg.svg#svg-close"></use>
+               </svg>
+            </a>
+         </div>
+
+         <div class="input">
+            <form id="search_form" action="fr/recherche/">
+               <input name="q" class="form-control" placeholder="Recherche">
+               <a class="btn_search" href="" @click.prevent="search_load()">
+                  <svg v-if="open_search" focusable="false" class="svg-search">
+                     <use href="img/svg.svg#svg-search"></use>
+                  </svg>
+               </a>
+            </form>
+         </div>
+         
+      </div>
+   </div>
+</section>
+<section class="search_backdrop" :class="{ active: open_search }"></section>
+
+<section class="auth container-fluid" :class="{ active: open_auth }">
+   <a class="btn_close" href="" @click.prevent="open_auth=!open_auth">
+      <i class="fas fa-times"></i></a>
+   <div class="row justify-content-center align-items-center h-100">
+      <div class="form col-sm-10 col-md-8 col-lg-6 col-xl-4">
+
+         <div class="logo">
+            <img src="img/logo.svg">   
+         </div>
+
+         <form v-if="auth.form.mode=='login'" action="" @submit.prevent="auth_login()">
+
+            <h3>Connexion</h3>
+            
+            <p></p>
+
+            <div class="form-group">
+               <label id="email" class="form-label">Email</label>
+               <input v-model="auth.form.email" name="email" class="form-control">
+            </div>
+
+            <div class="form-group">
+               <label id="password" class="form-label">Mot de passe</label>
+               <input v-model="auth.form.password" name="password" class="form-control" type="password">
+            </div>
+
+            <div v-if="auth.form.login_alert" v-html="auth.form.login_alert_message"></div>
+
+            <div class="form-group">
+               <input type="submit" value="Valider" class="btn btn-primary btn-block">
+            </div>
+
+            <a @click.prevent="auth_switch_mode('recovery')" href="" class="more">
+               Mot de passe oublié ?</a>         
+
+         </form>
+
+         <form v-else-if="auth.form.mode=='code'" action="" @submit.prevent="auth_code()">
+
+            <h3>Code d'accès</h3>
+            <p>Merci de renseigner le code à 5 chiffres, que vous venez de recevoir sur votre boite mail.</p>
+
+            <div class="form-group">
+               <label id="code" class="form-label">Code</label>
+               <input v-model="auth.form.code" name="code" class="form-control">
+            </div>
+
+            <div v-if="auth.form.code_alert" v-html="auth.form.code_alert_message"></div>
+
+            <div class="form-group">
+               <input type="submit" value="Valider" class="btn btn-primary btn-block">
+            </div>
+
+            <a @click.prevent="auth_switch_mode('login')" href="" class="more">
+               Connexion</a>         
+
+         </form>         
+
+         <form v-else-if="auth.form.mode=='recovery'" action="" @submit.prevent="auth_recovery()">
+
+            <h3>Mot de passe oublié ?</h3>
+            <p></p>
+
+            <div class="form-group">
+               <label id="email" class="form-label">Email</label>
+               <input v-model="auth.form.email" name="email" class="form-control">
+            </div>
+
+            <div v-if="auth.form.recovery_alert" v-html="auth.form.recovery_alert_message"></div>
+
+            <div class="form-group">
+               <input type="submit" value="Envoyer" class="btn btn-primary btn-block">
+            </div>
+            
+            <a @click.prevent="auth_switch_mode('login')" href="" class="more">
+               Connexion</a>
+            
+         </form>         
+
+      </div>
+   </div>
+</section>
+
+
+<div class="root_container" :class="{ freeze: open_menu || open_search || open_auth || open_lead }">
+
+   <div class="top_container">
+
+      <header class="container-xxl header-nav">
+   <section class="row">
+
+      <div class="left_bar">
+                     <a class="btn_menu" href="" @click.prevent="open_menu=!open_menu">
+               <svg focusable="false" class="svg-menu">
+                  <use href="img/svg.svg#svg-menu"></use>
+               </svg>
+            </a>
+                           <a class="btn_search" href="" @click.prevent="open_search=!open_search">
+                  <svg focusable="false" class="svg-search">
+                     <use href="img/svg.svg#svg-search"></use>
+                  </svg>
+               </a>
+                           </div>
+
+      <div class="logo">
+                     <a href="fr/">
+               <img src="img/logo.svg"></a>   
+               </div>
+
+      <div class="right_bar">
+
+         <a v-if="user_type!=''" class="btn_country" :class="{ active: open_language }" href="" @click.prevent="open_disclaimer=!open_disclaimer">
+            France / Particuliers</a>
+            
+                     <ul class="languages" :class="{ active: open_language }">
+                                                                                       <li>
+                        <a href="en/our-funds/">
+                           EN</a>
+                     </li>
+                                 
+            </ul>
+                  <a class="btn_language" href="" @click.prevent="open_language=!open_language">
+            FR</a>
+
+            
+            <a class="btn_search" href="" @click.prevent="open_search=!open_search">
+               <svg v-if="open_search" focusable="false" class="svg-close">
+                  <use href="img/svg.svg#svg-close"></use>
+               </svg>
+               <svg v-else focusable="false" class="svg-search">
+                  <use href="img/svg.svg#svg-search"></use>
+               </svg>
+            </a>
+
+         
+      </div>
+
+   </section>
+   <div class="overlay-backdrop"></div>
+</header>
+      
+               <section class="breadcrumbs container-xxl">
+   <ul>
+            <li>
+         <a href="fr/">Accueil</a>
+      </li>   
+                     <li>
+                           <span>Nos fonds</span>
+                     </li>   
+      
+   </ul>   
+</section>
+      
+      <main>    
+
+
+<section class="page_header">
+         <div class="banner" style="background-image:url('stock/img/node/2/rt-funds_2.jpg');"></div>
+      <div class="container">
+      <h1>Nos fonds</h1>
+   </div>
+</section>
+
+
+
+<div class="container">
+
+   <mod-fund-list></mod-fund-list>
+
+   <script>
+   
+   let fund_types = {}
+         fund_types['equity'] = "Actions";
+         fund_types['fixed_income'] = "Taux";
+         fund_types['diversified'] = "Diversifiés";
+         fund_types['alternative'] = "Alternatif";
+         fund_types['monetary'] = "Monétaire";
+   
+
+   let fund_regions = [];
+         fund_regions.push("Emergents");
+         fund_regions.push("Etats-Unis");
+         fund_regions.push("Europe");
+         fund_regions.push("France");
+         fund_regions.push("Monde");
+         fund_regions.push("Zone euro");
+   
+
+   let fund_ranges = [];
+         fund_ranges.push("4Change");
+         fund_ranges.push("Conviction");
+         fund_ranges.push("OPAL");
+         fund_ranges.push("RMM");
+         fund_ranges.push("Thematic");
+         fund_ranges.push("Valor");
+   
+
+   let fund_expertises = {}
+         fund_expertises['direct_wealth'] = "Gestion Directe";
+         fund_expertises['open'] = "Architecture Ouverte";
+   
+
+   let fund_periods = [];
+         fund_periods.push("1 an");
+         fund_periods.push("1 mois");
+         fund_periods.push("2 ans");
+         fund_periods.push("3 ans");
+         fund_periods.push("3 mois");
+         fund_periods.push("3-5 ans");
+         fund_periods.push("4 ans");
+         fund_periods.push("5 ans");
+         fund_periods.push("6 mois");
+         fund_periods.push("7 ans");
+         fund_periods.push("8 ans");
+         fund_periods.push("Jusqu'au 31 Décembre 2027");
+         fund_periods.push("Jusqu'au 31 Décembre 2028");
+         fund_periods.push("Jusqu'au 31 Décembre 2029");
+         fund_periods.push("Jusqu'au 31 Décembre 2030");
+         fund_periods.push("Jusqu'au 31 Décembre 2031");
+         fund_periods.push("Jusqu'au 31 Décembre 2032");
+   
+
+
+   function filter() {
+
+      const event = new Event('input', { bubbles: true });
+      let filter_fields = [
+         'type',
+         'region',
+         'range',
+         'expertise',
+         'period',
+      ];
+
+      for(const field of filter_fields) {
+         $('#'+field).val($('#filter_'+field).val());
+         $('#'+field).get(0).dispatchEvent(event);
+      }
+
+      $('#filtered').val(parseInt($('#filtered').val())+1);
+      $('#filtered').get(0).dispatchEvent(event);
+   }
+
+   </script>
+
+</div>
+
+</main>
+
+   </div>
+
+         <footer>
+   <div class="menu container">
+
+      <div class="row">
+
+         <div class="col-sm-6 col-md-6 col-lg-7">
+                        <ul class="primary" style="max-height:400px">
+               <li>
+                  <a href="fr/">
+                     Accueil</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/actualites/">
+                     Nos actualités</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/nos-fonds/">
+                     Nos fonds</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/fixed-income-by-rothschild-and-co-asset-management/">
+                     Fixed Income by Rothschild &amp; Co Asset Management</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/la-gestion-sur-mesure/">
+                     La Gestion sur-Mesure</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/investissement-responsable/">
+                     Notre philosophie d&#039;investissement durable</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/nous-connaitre/">
+                     Nous connaître</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/contact/">
+                     Contactez-nous</a>
+               </li>
+                        
+               <li>
+                  <a href="fr/target/">
+                     </a>
+               </li>
+                        
+               <li>
+                  <a href="fr/target-be/">
+                     </a>
+               </li>
+                   
+            </ul>
+         </div>
+
+         <div class="col-sm-6 col-md-5 col-lg-4">
+            <ul class="secondary">
+                              <li>
+                  <a href="fr/mentions-legales/">
+                     Mentions légales</a>
+               </li>
+                              <li>
+                  <a href="fr/informations-reglementaires/">
+                     Informations Réglementaires</a>
+               </li>
+                              <li>
+                  <a href="fr/sitemap/">
+                     Plan du site</a>
+               </li>
+                              <li>
+                  <a href="fr/glossaire/">
+                     Glossaire</a>
+               </li>
+               
+            </ul>
+         </div>
+
+         <div class="linkedin d-md-block col-md-1">
+            <a href="https://linkedin.com/showcase/rothschild-&-co---asset-management-europe/" target="_blank" rel="noopener noreferrer">
+               <i class="fab fa-linkedin-in"></i>
+            </a>
+         </div>
+
+      </div>
+
+
+   </div>
+   <div class="copyright">
+      <div class="container">
+         <div class="row">
+            <div class="col-12 col-md-6"><a class="ot-sdk-show-settings"></a></div>
+            <div class="col-12 col-md-6 text-md-right">2018&ndash;2026 Rothschild & Co &copy;</div>
+         </div>
+      </div>
+   </div>
+</footer>
+   
+   <mod-disclaimer :open="open_disclaimer" :open_lead="open_lead" :init_country="disclaimer_country" :init_language="lang" :init_user_type="user_type" :country_languages="country_languages" :init_user_types="user_types" :country_user_types="country_user_types" @close="open_disclaimer=false"></mod-disclaimer>
+
+</div>
+
+<script type="text/javascript">
+
+let country = 'fr';
+let disclaimer_country = '';
+let language = 'fr';
+let user_type = 'individual';
+let user_types = {};
+   user_types["individual"] = "Particuliers";
+   user_types["professional"] = "Professionnels";
+
+
+let country_languages = {};
+         country_languages["fr-fr"] = "France - Français";
+         country_languages["fr-en"] = "France - English";
+   
+         country_languages["at-de"] = "Österreich - Deutsch";
+   
+         country_languages["be-fr"] = "Belgique - Français";
+         country_languages["be-en"] = "Belgium - English";
+         country_languages["be-nl"] = "België - Nederlands";
+   
+         country_languages["de-de"] = "Deutschland - Deutsch";
+   
+         country_languages["it-it"] = "Italia - Italiano";
+   
+         country_languages["lu-fr"] = "Luxembourg - Français";
+         country_languages["lu-en"] = "Luxembourg - English";
+   
+         country_languages["nl-nl"] = "Nederland - Nederlands";
+   
+         country_languages["pt-pt"] = "Portugal - Português";
+   
+         country_languages["es-es"] = "España - Español";
+   
+         country_languages["ch-fr"] = "Suisse - Français";
+         country_languages["ch-de"] = "Schweiz - Deutsch";
+         country_languages["ch-it"] = "Svizzera - Italiano";
+         country_languages["ch-en"] = "Switzerland - English";
+   
+
+
+let country_user_types = {};
+   country_user_types["fr-fr"] = {};
+         country_user_types["fr-fr"]["individual"] = "Particuliers";
+         country_user_types["fr-fr"]["professional"] = "Professionnels";
+   
+   country_user_types["fr-en"] = {};
+         country_user_types["fr-en"]["individual"] = "Private investor";
+         country_user_types["fr-en"]["professional"] = "Professional investor";
+   
+   country_user_types["at-de"] = {};
+         country_user_types["at-de"]["individual"] = "Privatanleger";
+         country_user_types["at-de"]["professional"] = "Professioneller Anleger";
+   
+   country_user_types["be-fr"] = {};
+         country_user_types["be-fr"]["individual"] = "Particuliers";
+         country_user_types["be-fr"]["professional"] = "Professionnels";
+   
+   country_user_types["be-en"] = {};
+         country_user_types["be-en"]["individual"] = "Private Investors";
+         country_user_types["be-en"]["professional"] = "Professional investor";
+   
+   country_user_types["be-nl"] = {};
+         country_user_types["be-nl"]["individual"] = "Individuele beleggers";
+         country_user_types["be-nl"]["professional"] = "Professionele belegger";
+   
+   country_user_types["de-de"] = {};
+         country_user_types["de-de"]["individual"] = "Privatanleger";
+         country_user_types["de-de"]["professional"] = "Professioneller Anleger";
+   
+   country_user_types["it-it"] = {};
+         country_user_types["it-it"]["individual"] = "Privato";
+         country_user_types["it-it"]["professional"] = "Investitore professionale";
+   
+   country_user_types["lu-fr"] = {};
+         country_user_types["lu-fr"]["individual"] = "Particuliers";
+         country_user_types["lu-fr"]["professional"] = "Professionnels";
+   
+   country_user_types["lu-en"] = {};
+         country_user_types["lu-en"]["individual"] = "Private investor";
+         country_user_types["lu-en"]["professional"] = "Professional investor";
+   
+   country_user_types["nl-nl"] = {};
+         country_user_types["nl-nl"]["individual"] = "Individuele beleggers";
+         country_user_types["nl-nl"]["professional"] = "Professionele belegger";
+   
+   country_user_types["pt-pt"] = {};
+         country_user_types["pt-pt"]["individual"] = "Investidor individual";
+         country_user_types["pt-pt"]["professional"] = "Investidor profissional";
+   
+   country_user_types["es-es"] = {};
+         country_user_types["es-es"]["individual"] = "Inversor particular";
+         country_user_types["es-es"]["professional"] = "Inversor profesional";
+   
+   country_user_types["ch-fr"] = {};
+         country_user_types["ch-fr"]["individual"] = "Particuliers";
+         country_user_types["ch-fr"]["professional"] = "Investisseurs qualifiés";
+   
+   country_user_types["ch-de"] = {};
+         country_user_types["ch-de"]["individual"] = "Privatanleger";
+         country_user_types["ch-de"]["professional"] = "Qualifizierte Anleger";
+   
+   country_user_types["ch-it"] = {};
+         country_user_types["ch-it"]["individual"] = "Privato";
+         country_user_types["ch-it"]["professional"] = "Investitore qualificato";
+   
+   country_user_types["ch-en"] = {};
+         country_user_types["ch-en"]["individual"] = "Private investor";
+         country_user_types["ch-en"]["professional"] = "Qualified investors";
+   
+
+
+   let lead_mode = '';
+   let lead = {};
+
+   let auth_connected = false;
+   let auth_id = 0;
+   let auth_name = "";
+
+const NumberUnit = {
+   props : ['value','unit'],
+
+   props : {
+      value : {
+         type : String,
+         default : '',
+      },
+      unit : {
+         type : String,
+         default : '',
+      },
+   },
+
+   /*html*/
+   template : `
+      <template v-if="value!=0">
+
+         <template v-if="unit=='to_percents'">          
+
+            {{ parseFloat(parseFloat(100*value).toFixed(2)) }}%
+
+         </template>
+         <template v-else>
+
+
+            <template v-if="unit=='EUR' || unit=='&euro;'">
+               {{ parseInt(value) }} 
+               &euro;
+            </template>
+            <template v-else>
+               {{ parseFloat(value).toFixed(2) }} 
+               {{ unit }}
+            </template>
+
+         </template>
+
+      </template>
+      <template v-else>&mdash;</template>
+   `,
+}
+
+const DateFormatted = {
+
+   props : {
+      date : {
+         type : String,
+         default : '',
+      },
+      format : {
+         type : String,
+         default : 'd/m/Y H:i:s',
+      },
+   },   
+
+   data() {
+      return {
+         display_format : [],
+         display : false,
+
+         year : '',
+         year_compact : '',
+         month : '',
+         day : '',
+         hour : '',
+         minute : '',
+         second : '',
+      }
+   },
+
+   methods : {
+
+      update() {
+         let pattern = /([0-9]{4})\-([0-9]{2})\-([0-9]{2})\s([0-9]{2}):([0-9]{2}):([0-9]{2})/;
+         let m = pattern.exec(this.date);
+         if(m) {
+            this.year = m[1];
+            this.year_compact = this.year.substring(2);
+            this.month = m[2];
+            this.day = m[3];
+            this.hour = m[4];
+            this.minute = m[5];
+            this.second = m[6];
+            this.display = true;
+         }      
+         else {
+            let pattern = /([0-9]{4})\-([0-9]{2})\-([0-9]{2})/;
+            let m = pattern.exec(this.date);
+            if(m) {
+               this.year = m[1];
+               this.year_compact = this.year.substring(2);
+               this.month = m[2];
+               this.day = m[3];
+               this.display = true;
+            }
+         }
+      },
+
+   },
+
+   created(){
+      this.display_format = this.format.split('');
+      this.update();
+   },
+
+   updated(){
+      this.update();
+   },
+
+   /*html*/
+   template : `
+      <template v-if="display">
+         <template v-for="(place,i) in display_format">
+            <template v-if="place=='d'">{{ this.day }}</template>
+            <template v-else-if="place=='m'">{{ this.month }}</template>
+            <template v-else-if="place=='y'">{{ this.year_compact }}</template>
+            <template v-else-if="place=='Y'">{{ this.year }}</template>
+            <template v-else-if="place=='H'">{{ this.hour }}</template>
+            <template v-else-if="place=='i'">{{ this.minute }}</template>
+            <template v-else-if="place=='s'">{{ this.second }}</template>
+            <template v-else>{{ place }}</template>
+         </template>
+      </template>
+   `,
+}
+const ModDisclaimer = {
+
+   props : {
+      open : {
+         type : Boolean,
+         default : false,
+      },
+      open_lead : {
+         type : Boolean,
+         default : false,
+      },
+      init_country : {
+         type : String,
+         default : '',
+      },
+      init_language : {
+         type : String,
+         default : 'fr',
+      },      
+      init_user_type : {
+         type : String,
+         default : '',
+      },      
+      country_languages : {
+         type : Object,
+         default : {},
+      },
+      init_user_types : {
+         type : Object,
+         default : {},
+      },
+      country_user_types : {
+         type : Object,
+         default : {},
+      },
+   },
+
+
+   data() {
+      return {
+         country : '',
+         language : 'fr',
+         user_type : '',
+
+         loading : true,
+         country_language : '',
+         user_types : {},
+         i_agree : false,
+         intro : {},
+         labels : {},
+         alerts : {},
+         conditions : '',
+         show_conditions : true,
+         available_conditions : false,
+      }
+   },      
+
+   created() {
+      this.country = this.init_country;
+      this.language = this.init_language;
+      this.user_type = this.init_user_type;
+      if(this.country) {
+         this.init_country_language = this.country+'-'+this.language;
+      }
+      else {
+         this.init_country_language = '';
+      }
+      this.user_types = this.init_user_types;
+      this.country_language = this.init_country_language;
+      this.show_modal = _.debounce(this.show_modal,100);
+      this.get_intro();      
+   },    
+
+   mounted() {
+      if(this.open) {
+         this.show_modal();
+         if(this.user_type) {
+            this.get_conditions();
+         }
+      }
+   },
+
+   watch: {
+
+      open(open) {
+         if(open) {
+            this.show_modal();
+            if(this.user_type) {
+               this.get_conditions();
+            }
+         }
+      },
+
+      country_language(country_language) {
+         if(this.open) {
+            let country_language_parts = country_language.split('-');
+            let new_country = country_language_parts[0];
+            let new_language = country_language_parts[1];
+            if(new_language!=this.language) {
+               this.language = new_language;
+               if(this.language) {
+                  this.get_intro();
+               }   
+            }
+            this.country = new_country;
+            this.set_type_labels();               
+            if(this.user_type) {
+               this.get_conditions();
+            }
+         }
+      },
+
+      user_type() {
+         if(this.open && this.user_type && this.country_language) {
+            this.get_conditions();
+         }
+      },
+
+   },      
+
+   emits : ['close'],   
+
+   methods : {
+
+      to_upper(str) {
+         return str.toUpperCase();
+      },
+
+      get_intro() {
+         axios.get(
+            'disclaimer/intro/',
+            { 
+               params : { 
+                  language : this.language, 
+               } 
+            }
+         ).then(function(response) {
+            if(response.data.status=='ok') {
+               this.intro   = response.data.intro;
+               this.labels  = response.data.labels;
+               this.alerts  = response.data.alerts;
+               this.loading = false;
+               if(!this.user_type) {
+                  $('#styled_filter_user_type p').text(this.labels.select_user_type);
+               }
+            }
+         }.bind(this));         
+      },
+
+      get_conditions() {
+         axios.get(
+            'disclaimer/conditions/',
+            { 
+               params : { 
+                  country : this.country,
+                  language : this.language, 
+                  user_type : this.user_type,
+               } 
+            }
+         ).then(function(response) {
+            if(response.data.status=='ok') {
+               this.conditions = response.data.conditions;
+               this.available_conditions = true;
+            }
+         }.bind(this));            
+
+      },
+
+      set_type_labels() {
+         if(this.country_language) {
+            this.user_types = this.country_user_types[this.country_language];
+            for(const user_type in this.user_types) {
+               $('li[rel="'+user_type+'"]').text(this.user_types[user_type]);
+               if(user_type==this.user_type) {
+                  $('#styled_filter_user_type p').text(this.user_types[user_type]);
+               }
+            }
+         }
+      },
+
+      show_modal() {
+         $('#modal_disclaimer').modal('show'); 
+         style_selects();
+      },
+
+      close_modal() {
+         $('#modal_disclaimer').modal('hide'); 
+         this.$emit('close');
+      },
+
+      nl2br(txt) {
+         return txt.split("\n").join("<br>");
+      },
+
+   },
+
+   template : `<template v-if="open && !open_lead">
+
+   <section class="modal" id="modal_disclaimer" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+         <div class="modal-content">
+
+            <form :action="'/'+language+'/'" method="post">
+
+            <input name="a" value="change_user_type" type="hidden">
+            <input name="country" v-model="country" type="hidden">
+            <input name="lang" v-model="language" type="hidden">
+            <input name="user_type" v-model="user_type" type="hidden">
+
+            <input name="node_id" value="2" type="hidden">
+            <input name="fund_id" value="0" type="hidden">
+            <input name="news_id" value="0" type="hidden">
+
+            <div class="modal-header">
+               <img src="img/logo.svg">
+               <button v-if="init_user_type" @click="close_modal()" type="button" class="close" aria-label="Fermer">
+                  <svg focusable="false" class="svg-close">
+                     <use href="img/svg.svg#svg-close"></use>
+                  </svg>
+               </button>
+            </div>
+
+
+            <div class="modal-body container-fluid global_disclaimer content" id="modal_content"> 
+               <h2 v-if="intro.title" v-html="nl2br(intro.title)"></h2>
+               <article v-html="intro.content"></article>
+
+               <div class="row">
+                  <div class="form-group col-lg-6">
+                     <input id="country_language" v-model="country_language" type="hidden">
+                     <select id="filter_country_language" v-model="init_country_language" class="styled" data-update="country_language">
+                        <option value="">Sélectionner votre pays / langue</option>
+                        <option :id="'cl'+i" v-for="(ttl,vl,i) in country_languages" :value="vl">{{ ttl }}</option>
+                     </select>
+                  </div>
+                  <div class="form-group col-lg-6">
+                     <input id="user_type" v-model="user_type" type="hidden">
+                     <select id="filter_user_type" v-model="init_user_type" class="styled" data-update="user_type">
+                        <option value="">Sélectionner votre profil</option>
+                        <option :id="'ut'+i" v-for="(ttl,vl,i) in user_types" :value="vl">{{ ttl }}</option>
+                     </select>
+                  </div>                  
+               </div>
+                              
+               <a href="#" @click.prevent="show_conditions=!show_conditions" class="terms mb-3" :class="{active : show_conditions}">
+                  {{ labels.terms }}
+               </a>   
+               
+               <article class="conditions" v-html="conditions"></article>
+
+               <div class="form-group form-check">
+                  <input name="i_agree" id="i_agree" v-model="i_agree" value="1" type="checkbox" class="form-check-input" :disabled="country_language=='' || user_type==''">
+                  <label for="i_agree" class="form-check-label ml-4">{{ labels.i_agree }}</label>
+               </div>  
+                              
+            </div>
+
+            <div class="modal-footer">
+               <button v-if="init_user_type" type="button" class="btn btnCancel mr-3" @click.prevent="close_modal">{{ labels.cancel }}</button>
+               <button type="submit" class="btn btnSubmit" :disabled="!i_agree">{{ labels.submit }}</button>
+            </div>     
+
+            </form>
+
+         </div>
+      </div>
+      <div class="overlay-backdrop"></div>
+   </section>
+
+</template>`
+
+}
+
+const app = Vue.createApp({
+
+   data() {
+      return { 
+
+         disclaimer_country : '',
+         country : '',
+         lang : '',
+         country_languages : {},
+         country_user_types : {},
+         
+         open_language : false,
+         open_disclaimer : false,
+         
+         open_menu : false,
+         open_search : false,
+         active_submenu : 0,
+         active_subsubmenu : 0,
+
+         open_lead :false,
+         lead_mode : '',
+         lead : {},
+
+         open_auth : false,
+         auth : {
+            mode : '',
+            connected : false,
+            id : 0,
+            name : '',
+            form : {
+               email : '',
+               password : '',
+               code : '',
+               mode : 'login',
+               login_alert : false,
+               login_alert_message : '',
+               code_alert : false,
+               code_alert_message : '',
+               recovery_alert : false,
+               recovery_alert_message : '',   
+            }
+         },
+
+         active_subpages : [],
+      }
+   },
+
+   components : {
+      'mod-disclaimer' : ModDisclaimer,
+   },     
+
+   watch : {
+
+      open_menu(status) {
+         if(!status) {
+            this.active_submenu = 0;
+            this.active_subsubmenu = 0;
+         }
+      },
+
+      active_submenu() {
+         this.active_subsubmenu = 0;
+      },
+
+   },   
+
+   created() {
+      this.country_languages = country_languages;
+      this.country_user_types = country_user_types;
+      this.country = country;
+      this.disclaimer_country = disclaimer_country;
+      this.lang = lang;
+      this.user_types = user_types;
+      this.user_type = user_type;
+      if(this.user_type=='') {
+         this.show_disclaimer();
+      }
+
+      this.auth.connected = auth_connected;
+      this.auth.id = auth_id;
+      this.auth.name = auth_name;
+
+      this.lead_mode = lead_mode;
+      this.lead = lead;
+      if(this.lead_mode!='') {
+         this.open_lead = true;
+      }
+      
+   },
+
+   methods : {
+
+      show_disclaimer(){
+         this.open_menu = false;
+         this.open_disclaimer = true;
+      },
+
+      open_subpage(subpage_id) {
+         if(this.active_subpages.indexOf(subpage_id)==-1) {
+            this.active_subpages.push(subpage_id);
+         }
+      },
+
+      close_subpage(subpage_id) {
+         if(this.active_subpages.indexOf(subpage_id)!=-1) {
+            this.active_subpages.splice(this.active_subpages.indexOf(subpage_id),1);
+         }
+      },
+
+      change_user_type(user_type) {
+         axios.post(
+            'control-panel/', 
+            {
+               country : this.country,
+               user_type : user_type,
+            }
+         ).then(function(response) {
+            if(response.data.status=='ok') {
+               location.reload();
+            }
+            else {
+               window.location = 'https://am.eu.rothschildandco.com/disclaimer/';
+            }
+         }.bind(this));
+      },
+
+      change_country(country) {
+         axios.post(
+            'control-panel/', 
+            {
+               country : country,
+            }
+         ).then(function(response) {
+            window.location = 'https://am.eu.rothschildandco.com/'+this.lang+'/';
+         }.bind(this));
+      },  
+
+      auth_switch_mode(mode) {
+         this.auth.form.mode = mode;
+         if(mode=='recovery') {
+            this.auth.form.login_alert = false;
+            this.auth.form.login_alert_message = '';
+            this.auth.form.code_alert = false;
+            this.auth.form.code_alert_message = '';
+         }
+         else if(mode=='code') {
+            this.auth.form.login_alert = false;
+            this.auth.form.login_alert_message = '';
+            this.auth.form.recovery_alert = false;
+            this.auth.form.recovery_alert_message = '';
+         }
+         else {
+            this.auth.form.code_alert = false;
+            this.auth.form.code_alert_message = '';
+            this.auth.form.recovery_alert = false;
+            this.auth.form.recovery_alert_message = '';
+         }
+      },
+
+      auth_login() {
+
+         if(this.auth.form.email && this.auth.form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/i) && this.auth.form.password) {
+            this.auth.form.login_alert = false;
+            this.auth.form.login_alert_message = '';
+            axios.post(
+               'auth/login/', 
+               {
+                  email : this.auth.form.email, 
+                  password  : this.auth.form.password, 
+                  country  : this.country,
+                  lang  : this.lang,
+               }
+            ).then(function(response) {
+               console.log(response.data);
+               if(response.data.status=='ok') {
+                  this.auth_switch_mode('code');
+               }
+               else {
+                  this.auth.form.login_alert_message = '<div class="alert alert-danger fade show" role="alert">'+response.data.status_text+'</div>';
+                  this.auth.form.login_alert = true;
+               }
+            }.bind(this));
+         }     
+          
+      },
+
+      auth_code() {
+
+         if(this.auth.form.code) {
+            this.auth.form.code_alert = false;
+            this.auth.form.code_alert_message = '';
+            axios.post(
+               'auth/code/', 
+               {
+                  code : this.auth.form.code, 
+                  country  : this.country,
+                  lang  : this.lang,
+               }
+            ).then(function(response) {
+               console.log(response.data);
+               if(response.data.status=='ok') {
+                  this.auth.connected = true;
+                  this.auth.id = response.data.client.id;
+                  this.auth.name = response.data.client.name;
+                  window.location = '/'+this.lang+'/';
+                  this.open_auth = false;
+               }
+               else {
+                  this.auth.form.code_alert_message = '<div class="alert alert-danger fade show" role="alert">'+response.data.status_text+'</div>';
+                  this.auth.form.code_alert = true;
+               }
+            }.bind(this));
+         }     
+          
+      },      
+
+      auth_recovery() {
+
+         if(this.auth.form.email && this.auth.form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/i)) {
+            this.auth.form.recovery_alert = false;
+            this.auth.form.recovery_alert_message = '';
+            axios.post(
+               'auth/recovery/', 
+               {
+                  email : this.auth.form.email, 
+                  country  : this.country,
+                  lang  : this.lang,
+               }
+            ).then(function(response) {
+               if(response.data.status=='ok') {
+                  this.auth.form.recovery_alert_message = '<div class="alert alert-success fade show" role="alert">'+response.data.status_text+'</div>';
+               }
+               else {
+                  this.auth.form.recovery_alert_message = '<div class="alert alert-danger fade show" role="alert">'+response.data.status_text+'</div>';
+               }
+               this.auth.form.recovery_alert = true;
+            }.bind(this));
+         }
+
+      },      
+
+      auth_logout() {
+         axios.get(
+            'auth/logout/'
+         ).then(function(response) {
+            console.log(response.data);
+            if(response.data.status=='ok') {
+               this.auth.connected = false;
+               this.auth.id = 0;
+               this.auth.name = '';
+               window.location.reload();
+            }
+         }.bind(this));
+
+      },
+
+      search_load(event) {
+         $('#search_form').submit();
+      },
+
+   },
+
+
+});
+
+const ModTeamExecutiveList = {
+
+   methods : {
+      
+      view_bio(person_id) {
+         $('#team_person_bio_'+person_id).modal();
+      },
+
+      close_bio(person_id) {
+         $('#team_person_bio_'+person_id).modal('hide'); 
+      },
+
+   },
+
+   template : ``
+
+}
+app.component('mod-team-executive-list',ModTeamExecutiveList);
+
+const ModTeamManagementList = {
+
+   data() {
+      return {
+         dir_id : 0
+      }
+   },
+
+   methods : {
+      
+      change_dir(dir_id) {
+         this.dir_id = this.dir_id==dir_id ? 0 : dir_id;
+      },
+
+      view_bio(person_id) {
+         $('#team_person_bio_'+person_id).modal();
+      },
+
+      close_bio(person_id) {
+         $('#team_person_bio_'+person_id).modal('hide'); 
+      },
+
+   },
+
+   template : ``
+
+}
+app.component('mod-team-management-list',ModTeamManagementList);
+
+const ModTeamDirList = {
+
+   props : {
+      dir_id : {
+         type : Number,
+         default : 0,
+      }
+   },
+
+   methods : {
+      
+      view_bio(person_id) {
+         $('#team_person_bio_'+person_id).modal();
+      },
+
+      close_bio(person_id) {
+         $('#team_person_bio_'+person_id).modal('hide'); 
+      },
+
+   },
+
+   template : ``
+
+}
+app.component('mod-team-dir-list',ModTeamDirList);
+
+const ModDownloadList = {
+
+   data() {
+      return {
+         dir_id : 0
+      }
+   },
+
+   methods : {
+      
+      change_dir(dir_id) {
+         this.dir_id = this.dir_id==dir_id ? 0 : dir_id;
+      }
+
+   },
+
+   template : ``
+
+}
+app.component('mod-download-list',ModDownloadList);
+
+const ModRegulatoryList = {
+
+   data() {
+      return {
+         dir_id : 0
+      }
+   },
+
+   methods : {
+      
+      change_dir(dir_id) {
+         this.dir_id = this.dir_id==dir_id ? 0 : dir_id;
+      }
+
+   },
+
+   template : ``
+
+}
+app.component('mod-regulatory-list',ModRegulatoryList);
+
+   const ModFundList = {
+
+   components : {
+      'date'   : DateFormatted,
+   },  
+
+   data() {
+      return {
+
+         types : {},
+         regions : [],
+         ranges : [],
+         expertises : {},
+         periods : [],
+         
+         search : {
+            global_params : {
+               country : country,
+               language : language,
+               user_type : user_type,
+            },
+            params : {
+               query : '',
+               type : '',
+               region : '',
+               range : '',   
+               expertise : '',
+               period : '',
+               esg : '',
+            },
+            init_params : {},
+         },       
+         filtered : 0,  
+
+         sort_field : 'share',
+         sort_dir : 'asc',
+
+         loading : true,
+         query_focus : false,
+         tree : {},
+
+      }
+   },      
+
+   watch: {
+
+      'search.params.esg'() {
+         this.change_hash();
+      },
+
+      filtered() {
+         this.change_hash();
+      },
+
+   }, 
+
+   created() {
+      this.search.init_params = Object.assign({},this.search.params);
+      this.load_tree = _.debounce(this.load_tree,50);
+      this.set_selects = _.debounce(this.set_selects,500);
+      this.change_query_focus = _.debounce(this.change_query_focus,200);
+      this.types = fund_types;
+      this.regions = fund_regions;
+      this.ranges = fund_ranges;
+      this.expertises = fund_expertises;
+      this.periods = fund_periods;
+   },
+
+   mounted() {
+      this.route();
+      this.set_selects();
+      window.addEventListener('hashchange',this.route);
+   },     
+
+   methods : {
+
+      route() {
+         this.search.params = Object.assign({},this.search.init_params);
+         let hash = window.location.hash;
+         if(hash.length>3 && hash.substring(0,3)=='#!/') {
+            hash = hash.replace('#!/','');
+            let list_params = _.chain(hash).split('/').map(_.partial(_.split,_,':',2)).fromPairs().value();
+            for(const param in list_params) {
+               if(param && this.search.params.hasOwnProperty(param)) {
+                  this.search.params[param] = decodeURI(list_params[param]);
+               }
+            }
+         }     
+         this.load_tree();
+      },    
+      
+      change_hash() {
+         let hash = '';
+         for(const param in this.search.params) {
+            if(this.search.params[param]) {
+               hash += param+':'+this.search.params[param]+'/';
+            }
+         }
+         window.location.hash = '#!/'+hash;
+      },      
+
+      set_selects() {
+         for(const param in this.search.params) {
+            if(this.search.params[param]) {
+               let $styled_select = $('#styled_filter_'+param);
+               if($styled_select) {
+                  let $list = $styled_select.next('ul.select-options');
+                  let $option = $list.children('[rel="'+this.search.params[param]+'"]');
+                  if($option) {
+                     $styled_select.html('<p>'+$option.text()+'</p>');      
+                     $styled_select.addClass('filled');
+                     $option.addClass('active');
+                  }
+               }
+               let $select = $('#filter_'+param);
+               if($select) {
+                  $select.val(this.search.params[param]).trigger('change');
+               }
+            }
+            else {
+               let $select = $('#filter_'+param);
+               let $styled_select = $('#styled_filter_'+param);
+               if($select && $styled_select) {
+                  let $list = $styled_select.next('ul.select-options');
+                  $styled_select.html('<p>'+$list.children('li').eq(0).text()+'</p>');
+                  $styled_select.removeClass('filled');
+                  $list.children('.active').removeClass('active');
+                  $select.val('').trigger('change');
+               }
+            }
+         }
+      },      
+
+
+      load_tree() {
+         axios.get(
+            'data-fund/',
+            {
+               params : Object.assign({},this.search.params,this.search.global_params),
+            }
+         ).then(function(response) {
+            if(response.data.status=='ok') {
+               this.tree = response.data.tree;
+            }
+            this.loading = false;
+         }.bind(this));
+      },      
+
+      do_search() {
+         let query = this.search.params.query;
+         this.search.params = Object.assign({},this.search.init_params);
+         this.search.params.query = query;
+         this.change_hash();
+         this.set_selects();
+         $('#query_field').blur();
+      },
+
+      change_query_focus(focus) {
+         this.query_focus = focus;
+      },
+
+      clear_search() {
+         this.search.params = Object.assign({},this.search.init_params);
+         this.change_hash();
+         this.set_selects();
+         $('#query_field').blur();
+      },
+
+      sort(field) {
+         if(this.sort_field==field) {
+            this.sort_dir = this.sort_dir=='desc' ? 'asc' : 'desc';
+         }
+         else {
+            this.sort_dir = 'asc';
+         }
+         this.sort_field=field;
+
+         for(const type in this.tree) {
+            for(const expertise in this.tree[type]) {
+               for(const fund_id in this.tree[type][expertise]) {
+                  this.tree[type][expertise][fund_id] = _.orderBy(this.tree[type][expertise][fund_id], [this.sort_field], [this.sort_dir]);
+               }
+            }
+         }
+      },
+
+   },
+
+   destroyed: function() {
+      window.removeEventListener('hashchange', this.route);
+   },   
+
+   template : `<section class="fund_search">
+   <form class="search_form" @submit.prevent="do_search()">
+      <input type="text" v-model="search.params.query" placeholder="Rechercher par nom ou code ISIN" @focus="change_query_focus(true)" @blur="change_query_focus(false)" autocomplete="on" id="query_field" class="search_input">
+      <button v-if="search.params.query!='' && !query_focus" type="button" class="clear_button" @click="clear_search()">
+         <svg focusable="false" class="svg-close">
+            <use href="img/svg.svg#svg-close"></use>
+         </svg>         
+      </button>
+      <button v-else type="submit" class="search_button">
+         <svg focusable="false" class="svg-search">
+            <use href="img/svg.svg#svg-search"></use>
+         </svg>         
+      </button>   
+   </form>
+</section>
+
+<section class="fund_filters">
+   <h3>Filtrer par</h3>
+   <input id="filtered" v-model="filtered" type="hidden">
+
+   <div class="filters">
+
+      <article class="filter_class fr">
+         <input id="type" v-model="search.params.type" type="hidden">
+         <select id="filter_type" class="styled" data-filter="true">
+            <option value="">Classe d'actifs</option>
+            <option v-for="(type_title,type,i) in types" :value="type">{{ type_title }}</option>
+         </select>
+      </article>
+
+      <article class="filter_region fr">
+         <input id="region" v-model="search.params.region" type="hidden">
+         <select id="filter_region" class="styled" data-filter="true">
+            <option value="">Régions</option>
+            <option v-for="(region,i) in regions" :value="region">{{ region }}</option>
+         </select>
+      </article>
+
+      <article class="filter_range fr">
+         <input id="range" v-model="search.params.range" type="hidden">
+         <select id="filter_range" class="styled" data-filter="true">
+            <option value="">Gamme</option>
+            <option v-for="(range,i) in ranges" :value="range">{{ range }}</option>
+         </select>
+      </article>
+
+      <article class="filter_expertise fr">
+         <input id="expertise" v-model="search.params.expertise" type="hidden">
+         <select id="filter_expertise" class="styled" data-filter="true">
+            <option value="">Type de gestion</option>
+            <option v-for="(expertise_title,expertise,i) in expertises" :value="expertise">{{ expertise_title }}</option>
+         </select>
+      </article>
+
+      <article class="filter_period fr">
+         <input id="period" v-model="search.params.period" type="hidden">
+         <select id="filter_period" class="styled" data-filter="true">
+            <option value="">Détention recommandée</option>
+            <option v-for="(period,i) in periods" :value="period">{{ period }}</option>
+         </select>
+      </article>
+
+      <article class="filter_esg fr">
+         <div class="form-check">
+            <label for="filter_esg" class="form-check-label">Labelisé ESG</label>
+            <input id="filter_esg" v-model="search.params.esg" value="1" type="checkbox" class="form-check-input">
+         </div>         
+      </article>
+
+      <article class="filter_reset fr">
+         <button type="reset" class="button-reset" @click="do_search()">Tout réinitialiser</button>
+      </article>
+
+   </div>
+
+</section>
+
+<section class="funds">
+   <div class="table_container">
+      <table cellspacing="0" cellpadding="0">
+         <thead>
+            <tr>
+               <td></td>
+               <td>
+                  <a href="#" @click.prevent="sort('share_title')" :class="{active:sort_field=='share_title'}" :class="{desc:sort_dir=='desc'}">
+                     Part</a>
+               </td>
+               <td>
+                  <a href="#" @click.prevent="sort('date')" :class="{active:sort_field=='date'}" :class="{desc:sort_dir=='desc'}">
+                     Date</a>
+               </td>
+               <td>
+                  <a href="#" @click.prevent="sort('nav')" :class="{active:sort_field=='nav'}" :class="{desc:sort_dir=='desc'}">
+                     VL</a>
+               </td>
+               <td>
+                  <a href="#" @click.prevent="sort('net')" :class="{active:sort_field=='net'}" :class="{desc:sort_dir=='desc'}">
+                     Encours</a>
+               </td>
+               <td>
+                  <a href="#" @click.prevent="sort('perf_cumul_ytd')" :class="{active:sort_field=='perf_cumul_ytd'}" :class="{desc:sort_dir=='desc'}">
+                     Performance YTD</a>
+               </td>
+               <td>
+                  <a href="#" @click.prevent="sort('fund_sfdr')" :class="{active:sort_field=='fund_sfdr'}" :class="{desc:sort_dir=='desc'}">
+                     SFDR</a>
+               </td>
+               <td>Label ESG</td>
+               <td>
+                  <a href="#" @click.prevent="sort('fund_risk_scale')" :class="{active:sort_field=='fund_risk_scale'}" :class="{desc:sort_dir=='desc'}">
+                     Niveau de risque</a>
+               </td>
+               <td>DIC</td>
+               <td>Rapport mensuel</td>
+            </tr>
+         </thead>
+         <tbody v-if="loading">
+            <tr>
+               <td class="loading" colspan="100"><img src="img/loading.gif"></td>
+            </tr>
+         </tbody>
+         <tbody v-else>
+            <template v-for="(list_expertises,type,i) in tree">
+
+               <tr>
+                  <th colspan="100"><h3>{{ types[type] }}</h3></th>
+               </tr>
+
+               <template v-for="(funds,expertise,j) in list_expertises">
+
+                  <tr>
+                     <td colspan="100"><h4>{{ expertises[expertise] }}</h4></td>
+                  </tr>
+
+                  <template v-for="(shares,fund_id,k) in funds">
+
+                     <template v-for="(record,l) in shares">
+
+                        <tr :class="{'fund_first' : l==0}"  :class="{'fund_last' : l==shares.length-1}">
+
+                           <td>
+                              <a v-if="l==0" :href="'fr/nos-fonds/'+record.fund_rewrite+'/'">
+                                 {{ record.fund_title }}</a>
+                           </td>
+                           <td>{{ record.share_title }}</td>
+                           <td><date v-if="record.date" :date="record.date" format="d/m/y"></date></td>
+                           <td>  
+                              <template v-if="record.nav">{{ record.nav }}&nbsp;{{ record.share_currency }}</template>
+                              <template v-else>&mdash;</template>
+                           </td>
+                           <td>  
+                              <template v-if="record.net">{{ record.net }}M</template>
+                              <template v-else>&mdash;</template>
+                           </td>
+                           <td>  
+                              <template v-if="record.perf_cumul_ytd">{{ record.perf_cumul_ytd }}%</template>
+                              <template v-else>&mdash;</template>
+                           </td>
+                           <td>  
+                              <template v-if="record.fund_sfdr=='Article 8'">Art. 8</template>
+                              <template v-else-if="record.fund_sfdr=='Article 9'">Art. 9</template>
+                              <template v-else>&mdash;</template>
+                           </td>
+                           <td>
+                              <div class="esg_labels">
+                                 <img v-if="record.fund_label_isr && record.fund_label_isr!=''" src="img/esg/isr.png">
+                                 <img v-if="record.fund_label_towards==1" src="img/esg/towards.jpg">
+                                 <img v-if="record.fund_label_fng==1" src="img/esg/fng.jpg">
+                                 <img v-if="record.fund_label_finansol==1" src="img/esg/finansol.jpg">
+                              </div>
+                           </td>
+                           <td>  
+                              <template v-if="record.fund_risk_scale">{{ record.fund_risk_scale }}/7</template>
+                              <template v-else>&mdash;</template>
+                           </td>
+                           <td>
+                              <a v-if="record.DIPR" class="download" :href="'https://docs.am.eu.rothschildandco.com/'+record.DIPR">
+                                 <img src="img/download-blue.svg"></a>
+                              <template v-else>&mdash;</template>
+                           </td>
+                           <td>
+                              <a v-if="record.REPM" class="download" :href="'https://docs.am.eu.rothschildandco.com/'+record.REPM">
+                                 <img src="img/download-blue.svg"></a>
+                              <template v-else>&mdash;</template>
+                           </td>   
+                        </tr>
+
+                     </template>
+
+                  </template>
+
+               </template>
+
+            </template>
+         </tbody>
+      </table>
+   </div>
+</section>
+`
+
+}
+
+   app.component('mod-fund-list',ModFundList);
+   const ModFundScenarios = {
+
+   data() {
+      return {
+
+         index : 0,
+         records : [],
+         
+      }
+   },
+
+   computed : {
+
+      scenario() {
+         return this.records.length==0 ? {} : this.records[this.index];
+      },
+
+      min_colspan() {
+         return 1 + (this.records[this.index].fav_1y_amount ? 1 : 0) + (this.records[this.index].hrhp_years ? 1 : 0) + (this.records[this.index].rhp_label ? 1 : 0);
+      },
+      
+   },
+   
+   watch: {
+      'scenario.rhp_years'(period) {
+         //$('#scenario_period1').text(period);
+         //$('#scenario_period2').text(period);
+      },
+   },       
+   
+   components : {
+      'number' : NumberUnit,
+      'date' : DateFormatted,
+   },     
+
+
+   created() {
+      this.records = fund_scenarios;
+   },   
+
+
+   methods : {
+
+   },
+
+   template : `<template v-if="records.length">
+
+   <h2>Scénarios de performance</h2>
+   <h5><strong>Ce tableau montre les sommes que vous pourriez obtenir sur la durée de détention recommandée en fonction des différents scénarios, en supposant que vous investissez 10 000 EUR.
+Les différents scénarios montrent comment votre investissement pourrait se comporter. Vous pouvez les comparer avec les scénarios d’autres produits. 
+Les scénarios présentés sont une estimation de performances futures à partir des données du passé relatives aux variations de la valeur de cet investissement. Ils ne constituent pas un 
+indicateur exact. Ce que vous obtiendrez dépendra de l’évolution du marché et de la durée pendant laquelle vous conserverez l’investissement ou le produit.
+Le scénario de tensions montre ce que vous pourriez obtenir dans des situations de marché extrêmes, et ne tient pas compte du cas où nous ne pourrions pas vous payer.
+Les chiffres indiqués comprennent tous les coûts du produit lui-même, mais pas nécessairement tous les frais dus à votre conseiller ou distributeur. Ces chiffres ne tiennent pas compte de votre situation fiscale personnelle, qui peut également influer sur les montants que vous recevrez.</strong></h5>
+
+   <div class="row mt-5">
+      <div class="col-12 col-lg-6">
+         <input id="scenario_index" v-model="index" type="hidden">
+         <select id="scenario_index_select" class="styled" data-filter="true">
+            <option v-for="(record,i) in records" :value="i">
+               <date :date="record.date" format="d/m/Y">
+            </option>
+         </select>      
+      </div>
+   </div>
+
+   <p class="scenario_date">
+      Période d’investissement recommandée :
+
+      <date v-if="scenario.rhp_label=='date'" :date="scenario.rhp_period" format="d/m/Y"></date>
+      <template v-else>{{ scenario.rhp_period }}</template>
+      
+      <span v-if="scenario.rhp_label=='years'">
+         ans
+      </span>
+      <span v-else-if="scenario.rhp_label=='months'">
+         mois
+      </span>
+      <span v-else-if="scenario.rhp_label=='weeks'">
+         semaines
+      </span>
+      <span v-else-if="scenario.rhp_label=='days'">
+         jours
+      </span>
+      <br>
+      Exemple d’investissement :
+      <span><number :value="scenario.investment" :unit="scenario.currency"></span>
+   </p>
+
+   <table class="scenario">
+      <thead>
+         <tr>
+            <th>Scénarios</th>
+            <td>&nbsp;</td>
+            <th v-if="scenario.fav_1y_amount">Si vous sortez après 1 an</th>
+            <th v-if="scenario.hrhp_years!=''">
+               Si vous sortez après [x]
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               Si vous sortez après <date v-if="scenario.rhp_label=='date'" :date="scenario.rhp_period" format="d/m/Y"></date><template v-else>{{ scenario.rhp_period }}</template>
+               <template v-if="scenario.rhp_label=='years'">
+                  ans
+               </template>
+               <template v-else-if="scenario.rhp_label=='months'">
+                  mois
+               </template>
+               <template v-else-if="scenario.rhp_label=='weeks'">
+                  semaines
+               </template>
+               <template v-else-if="scenario.rhp_label=='days'">
+                  jours
+               </template>
+            </th>
+         </tr>
+      </thead>
+      <tbody>
+
+         <tr>
+            <th>Minimum</th>
+            <td :colspan="min_colspan">Il n’existe aucun rendement minimal garanti. Vous pourriez perdre tout ou partie de votre investissement.</td>
+         </tr>
+
+         <tr>
+            <th rowspan="2">Tensions</th>
+            <td>Ce que vous pourriez obtenir après déduction des coûts</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.stress_1y_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.stress_hrhp_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.stress_rhp_amount" :unit="scenario.currency">
+            </th>
+         </tr>
+         <tr>
+            <td>Rendement annuel moyen</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.stress_1y_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.stress_hrhp_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.stress_rhp_perf" unit="to_percents">
+            </th>
+         </tr>
+
+         <tr>
+            <th rowspan="2">Défavorable</th>
+            <td>Ce que vous pourriez obtenir après déduction des coûts</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.unfav_1y_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.unfav_hrhp_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.unfav_rhp_amount" :unit="scenario.currency">
+            </th>
+         </tr>
+         <tr>
+            <td>Rendement annuel moyen</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.unfav_1y_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.unfav_hrhp_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.unfav_rhp_perf" unit="to_percents">
+            </th>
+         </tr>
+         <tr>
+            <th rowspan="2">Modéré</th>
+            <td>Ce que vous pourriez obtenir après déduction des coûts</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.mod_1y_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.mod_hrhp_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.mod_rhp_amount" :unit="scenario.currency">
+            </th>
+         </tr>
+         <tr>
+            <td>Rendement annuel moyen</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.mod_1y_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.mod_hrhp_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.mod_rhp_perf" unit="to_percents">
+            </th>            
+         </tr>
+
+         <tr>
+            <th rowspan="2">Favorable</th>
+            <td>Ce que vous pourriez obtenir après déduction des coûts</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.fav_1y_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.fav_hrhp_amount" :unit="scenario.currency">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.fav_rhp_amount" :unit="scenario.currency">
+            </th>
+         </tr>
+         <tr>
+            <td>Rendement annuel moyen</td>
+            <th v-if="scenario.fav_1y_amount">
+               <number :value="scenario.fav_1y_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.hrhp_years!=''">
+               <number :value="scenario.fav_hrhp_perf" unit="to_percents">
+            </th>
+            <th v-if="scenario.rhp_label!=''">
+               <number :value="scenario.fav_rhp_perf" unit="to_percents">
+            </th>
+         </tr>
+
+      </tbody>
+   </table>
+
+</template>`
+
+}
+   app.component('mod-fund-scenarios',ModFundScenarios);
+
+const vm = app.mount('#app');
+
+</script>
+
+
+         <script type="text/javascript">
+         var _paq = window._paq = window._paq || [];
+         _paq.push(['trackPageView','Nos fonds']);
+      </script>
+   
+</body>
+</html> voici le lien de la page ou on recherche les fonds : https://am.eu.rothschildandco.com/fr/nos-fonds/#!/query:r-co%20valor%20/
