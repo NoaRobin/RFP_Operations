@@ -139,3 +139,51 @@ def sharepoint_import(body: ImportRequest, s: AppState = Depends(state)) -> dict
             results.append({"file": item.name, "imported": 0, "error": getattr(error, "hint", "") or type(error).__name__})
     return {"final_path": listing["final_path"], "documents": results, "imported": sum(r.get("imported", 0) for r in results),
             "hint": listing.get("hint", "")}
+
+
+# ------------------------------------------------------------------ liaisons apprises
+def _bindings(s: AppState):
+    from ..rfi.precedents import get_bindings
+
+    return get_bindings(_root(s))
+
+
+@router.get("/precedents/bindings")
+def bindings_list(s: AppState = Depends(state)) -> list[dict[str, Any]]:
+    return [b.to_dict() for b in _bindings(s).all()]
+
+
+@router.post("/precedents/bindings/build")
+def bindings_build(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Apprend, sur les anciens RFI, quelle colonne Fabric (ou quel champ du DIC) avait été répondue pour chaque question."""
+    from collections import Counter
+
+    from ..data.access import DataError
+    from ..rfi.precedents.advisor import FundResolver
+    from ..rfi.precedents.bindings import BindingMiner
+    from ..rfi.service import fund_directory
+    from .documents import service_for
+
+    try:
+        miner = BindingMiner(s.data, load_ontology(s.data.catalog), get_index(_root(s)).store, FundResolver(fund_directory(s.data)),
+                             service_for(s))
+        built = miner.build()
+    except DataError as error:
+        raise bad_request(str(error), error.hint) from error
+    _bindings(s).save(built)
+    return {"total": len(built), "by_status": dict(Counter(b.status for b in _bindings(s).all()))}
+
+
+class BindingStatus(BaseModel):
+    id: str
+    status: str
+
+
+@router.post("/precedents/bindings/status")
+def bindings_status(body: BindingStatus, s: AppState = Depends(state)) -> dict[str, Any]:
+    if body.status not in {"validated", "rejected", "candidate"}:
+        raise bad_request("Statut inconnu.", "validated, rejected ou candidate")
+    b = _bindings(s).set_status(body.id, body.status)
+    if b is None:
+        raise bad_request("Liaison introuvable.", "Reconstruisez les liaisons.")
+    return b.to_dict()

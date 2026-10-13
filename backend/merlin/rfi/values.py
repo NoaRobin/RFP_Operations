@@ -26,6 +26,8 @@ from .understand import Period, Understanding
 LABEL_COLUMNS = {"RSI_french_label": "ISR", "Belgium_Towards_Sustainability_label": "Towards Sustainability", "Finansol_Label": "Finansol"}
 # Coûts de transaction du DIC (PRIIPs) = explicites + implicites, moyennes 3 ans ex ante — À CONFIRMER avec l'équipe Data
 KID_TRANSACTION_COLUMNS = ("Explicit_Transaction_costs_ex_ante_3_years_mean", "Implicit_trans_costs_ex_ante3Y_mean")
+# Colonnes lues en plus de celles de l'ontologie (liaisons apprises sur les anciens RFI)
+EXTRA_COLUMNS: dict[str, set[str]] = {}
 PRODUCT, SHARE, REGISTRATION = "pi_out_product_active", "PI_OUT_Share", "PI_OUT_CountryOfRegistration"
 
 
@@ -114,6 +116,7 @@ class Values:
         cols |= {concept.asof.split(".", 1)[1] for concept in self.ontology.usable() if concept.asof and concept.asof.startswith(table + ".")}
         if table == SHARE:
             cols |= {"pi_shareid", "ProductID", "ISIN_Code", "Subscription_Currency", "First_NAV_Date", "Swing_Pricing", "ADL"}
+        cols |= EXTRA_COLUMNS.get(table, set())
         if table == PRODUCT:
             cols |= set(LABEL_COLUMNS) | set(KID_TRANSACTION_COLUMNS) | {"First_NAV_Date", "Creation_Date", "Start_date_Portfolio_manager"}
         return sorted(cols)

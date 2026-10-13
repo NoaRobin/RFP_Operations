@@ -21,7 +21,8 @@ from .render import Rendered, render
 from .understand import Understanding, understand
 from .documents.service import DocumentService
 from .precedents.compare import same
-from .values import PRODUCT, SHARE, Raw, Values, to_date
+from .precedents.bindings import BindingIndex, pseudo_concept
+from .values import EXTRA_COLUMNS, PRODUCT, SHARE, Raw, Values, to_date
 from .writer import write
 
 ALLOWED = {".xlsx", ".xlsm", ".docx"}
@@ -150,7 +151,7 @@ def _share_fund(data: DataAccess, isin: str) -> str | None:
 def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: str | None, isin: str | None,
             as_of: str | None, lang: str | None = None, overrides: dict[str, Any] | None = None,
             precedents: PrecedentIndex | None = None, precedent_isin: str | None = None,
-            documents: "DocumentService | None" = None) -> dict[str, Any]:
+            documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None) -> dict[str, Any]:
     """Propose une réponse par case. overrides[id] = id de concept | None (ne pas remplir) | {"text": …}.
 
     Avec des précédents, chaque case reçoit aussi une décision justifiée (repris de l'ancien, modèle d'ontologie,
@@ -174,6 +175,10 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
         return values_by_entity[key]
 
     advisor = _advisor(data, ontology, precedents, pid, precedent_isin or isin, as_of_d, lang)
+    if bindings is not None:
+        for table, columns in bindings.columns().items():  # colonnes apprises : lues avec le reste de la fiche
+            EXTRA_COLUMNS.setdefault(table, set()).update(c for c in columns if (t := data.catalog.table(table)) and t.column(c))
+    similar = (lambda q: [h.precedent.question for h in precedents.search(q, k=5, min_similarity=0.9)]) if precedents else None
     decisions: dict[str, int] = {}
     rows: list[dict[str, Any]] = []
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}
@@ -182,7 +187,8 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
                        number_format=slot.number_format, as_of=as_of_d, entity_scope="share" if slot.entity.get("isin") else None,
                        parent=slot.parent)
         vals = values_for(slot)
-        row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, overrides.get(slot.id, "__none__"))
+        binding = bindings.lookup(f"{slot.parent} {slot.question}" if slot.parent else slot.question, similar) if bindings else None
+        row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, overrides.get(slot.id, "__none__"), binding)
         if advisor is not None and row["status"] not in {"skipped", "existing"} and row["source"] in {"ontologie", "bibliothèque"}:
             row = _apply_decision(row, advisor.advise(slot, u, row))
             decisions[row["precedent"]["kind"]] = decisions.get(row["precedent"]["kind"], 0) + 1
@@ -262,7 +268,7 @@ def _candidate_answer(ontology, cand: Candidate, u: Understanding, vals: Values,
 
 
 def _analyze_slot(ontology, library: Library, slot: Slot, u: Understanding, vals: Values, lang: str, as_of: date,
-                  override: Any) -> dict[str, Any]:
+                  override: Any, binding=None) -> dict[str, Any]:
     base = {**slot.to_dict(), "understanding": u.describe(), "concept": None, "concept_label": None, "confidence": 0.0,
             "answer": None, "value": None, "evidence": None, "issues": [], "reasons": [], "alternatives": [],
             "source": "ontologie", "option": None}
@@ -297,11 +303,31 @@ def _analyze_slot(ontology, library: Library, slot: Slot, u: Understanding, vals
             cand = Candidate(concept, 0.97 * sim, "bibliothèque", [f"correspondance validée précédemment ({entry.by or '—'}, {entry.at[:10]})"])
             return _finish(ontology, base, slot, u, vals, lang, as_of, [cand], source="bibliothèque")
 
-    # 3. Ontologie
+    # 3. Ontologie, recoupée avec la liaison apprise sur les anciens RFI (quelle colonne avait été répondue)
     cands = match(ontology, u)
+    source = "ontologie"
+    concept = _binding_concept(ontology, binding) if binding is not None else None
+    if concept is not None:
+        proof = f"liaison apprise : pour cette question, {binding.support} fonds sur {binding.compared} avaient reçu la valeur de {binding.target}"
+        if cands and (cands[0].concept.id == concept.id or cands[0].concept.source == concept.source):
+            cands[0].reasons.append(proof)  # l'ontologie et les anciens RFI désignent la même donnée
+        elif cands and cands[0].score >= AUTO:
+            cands[0].flags.append(f"les anciens RFI désignaient une autre donnée : {concept.label(lang)} ({binding.support} fonds)")
+        else:
+            flags = [] if binding.strong else ["liaison apprise sur les anciens RFI : à vérifier"]
+            cands = [Candidate(concept, 0.8 if binding.strong else 0.6, "liaison apprise", [proof], flags)] + cands
+            source = "liaison apprise"
     if not cands:
         return {**base, "status": "unmatched", "issues": base["issues"] + (["question qualitative"] if u.qualitative else [])}
-    return _finish(ontology, base, slot, u, vals, lang, as_of, cands, source="ontologie")
+    return _finish(ontology, base, slot, u, vals, lang, as_of, cands, source=source)
+
+
+def _binding_concept(ontology, binding) -> Concept | None:
+    if binding.target.startswith("doc:"):
+        name = binding.target[4:]
+        return next((c for c in ontology.usable() if name in c.doc), None)  # champ de document → concept qui le recoupe
+    concept = pseudo_concept(binding.target, binding.type, ontology)
+    return None if concept.problems else concept
 
 
 def _finish(ontology, base: dict, slot: Slot, u: Understanding, vals: Values, lang: str, as_of: date,
@@ -427,11 +453,11 @@ def _jsonable(value: Any) -> Any:
 def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, isin: str | None, as_of: str | None,
              lang: str | None, overrides: dict[str, Any], overwrite: bool, accept: list[str] | None, user: str,
              remember: bool = True, reusable: list[str] | None = None, precedents: PrecedentIndex | None = None,
-             documents: "DocumentService | None" = None) -> dict[str, Any]:
+             documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None) -> dict[str, Any]:
     """Écrit les réponses « auto » + celles acceptées par l'utilisateur dans une nouvelle version du fichier."""
     path = store.original(doc_id)
     layout = detect(path)
-    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents, documents=documents)
+    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents, documents=documents, bindings=bindings)
     accepted = set(accept or [])
     slots = {s.id: s for s in layout.slots}
     answers = []

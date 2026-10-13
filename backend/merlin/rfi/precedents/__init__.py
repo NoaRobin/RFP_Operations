@@ -26,3 +26,13 @@ def get_index(root: _Path) -> PrecedentIndex:
 
 
 __all__ += ["PrecedentIndex", "get_index"]
+
+
+@_lru_cache
+def get_bindings(root: _Path):
+    from .bindings import BindingIndex
+
+    return BindingIndex(root / "bindings.json")
+
+
+__all__ += ["get_bindings"]

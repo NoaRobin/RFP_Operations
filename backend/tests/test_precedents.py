@@ -290,3 +290,53 @@ def test_computed_seniority_and_anti_dilution(client):
     assert v.get(o.concepts["fonds.track_record"], understand(o, q), "fr").value in {"yes", "no"}
     raw = v.get(o.concepts["part.mecanisme_anti_dilution"], understand(o, "Mécanisme anti-dilution ?"), "fr")
     assert raw.value in {"yes", "no", None} and "Swing_Pricing" in raw.evidence
+
+
+def test_bindings_learn_which_column_was_answered(tmp_path, client):
+    """Question que l'ontologie ne lit pas, répondue pour 5 fonds avec la valeur d'une même colonne Fabric."""
+    from datetime import date
+
+    from merlin.rfi.layout import detect
+    from merlin.rfi.precedents import PrecedentIndex, PrecedentStore
+    from merlin.rfi.precedents.advisor import FundResolver
+    from merlin.rfi.precedents.bindings import BindingIndex, BindingMiner
+    from merlin.rfi.precedents.importers import import_lot02
+    from merlin.rfi.ontology import load_ontology
+    from merlin.rfi.service import RfiStore, analyze, fund_directory
+    from merlin.state import get_state
+
+    data = get_state().data
+    directory = fund_directory(data)
+    tickers = data.query("SELECT s.ISIN_Code, s.Bloomberg_Ticker FROM dbo.PI_OUT_Share s", {})
+    by_isin = dict(zip(tickers["ISIN_Code"], tickers["Bloomberg_Ticker"]))
+    funds = [(f["pid"], f["shares"][0]["isin"], f["name"]) for f in directory if f["shares"] and by_isin.get(f["shares"][0]["isin"])][:6]
+    current, others = funds[0], funds[1:]
+    examples = [_example(i, "Code maison du support", by_isin[f[1]], f, ref=f"t{i}") for i, f in enumerate(others, start=1)]
+    examples += [_example(10 + i, "Le support est-il suivi par l'équipe ?", "Oui", f, ref=f"u{i}") for i, f in enumerate(others, start=1)]
+    store = PrecedentStore(tmp_path / "p.sqlite")
+    import_lot02(store, {"answer_examples": examples, "identity_issues": []})
+    ontology = load_ontology(data.catalog)
+    built = BindingMiner(data, ontology, store, FundResolver(directory)).build()
+    by_q = {b.question: b for b in built}
+    code = by_q["Code maison du support"]
+    assert code.target == "PI_OUT_Share.Bloomberg_Ticker" and code.support == 5 and code.rate == 1.0 and code.status == "candidate"
+    weak = by_q.get("Le support est-il suivi par l'équipe ?")
+    assert weak is None or not weak.usable  # même réponse partout : rien ne prouve la colonne
+
+    index = BindingIndex(tmp_path / "bindings.json")
+    index.save(built)
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["Question", "Réponse"])
+    ws.append(["Code maison du support", None])
+    path = tmp_path / "rfi.xlsx"
+    wb.save(path)
+    r = analyze(data, RfiStore(tmp_path / "rfi"), path, detect(path), current[0], current[1], date.today().isoformat(), None, None,
+                PrecedentIndex(store), bindings=index)
+    q = r["questions"][0]
+    assert q["answer"] == by_isin[current[1]] and q["status"] == "auto" and q["source"] == "liaison apprise"
+    assert any("5 fonds sur 5" in reason for reason in q["reasons"])
+    index.set_status(code.id, "rejected")
+    again = analyze(data, RfiStore(tmp_path / "rfi"), path, detect(path), current[0], current[1], date.today().isoformat(), None, None,
+                    PrecedentIndex(store), bindings=index)
+    assert again["questions"][0]["source"] != "liaison apprise"  # une liaison rejetée n'est plus utilisée
