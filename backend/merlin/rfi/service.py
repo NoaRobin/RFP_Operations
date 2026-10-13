@@ -222,7 +222,7 @@ def _document_facts(data: DataAccess, documents, vals: Values, pid: str | None, 
     except Exception as error:  # noqa: BLE001
         errors.append(f"Documents officiels : {type(error).__name__}")
         return {}
-    for p in problems[:3]:
+    for p in [x for x in problems if "aucun DIC ni prospectus" not in x][:3]:  # l'absence est visible dans le panneau Documents
         message = f"Documents officiels ({isin}) : {p}"
         if message not in errors:
             errors.append(message)
@@ -246,6 +246,10 @@ def _advisor(data: DataAccess, ontology, precedents: PrecedentIndex | None, pid:
 def _apply_decision(row: dict[str, Any], decision: Decision) -> dict[str, Any]:
     """Fusion : la décision complète la case (justification) et peut en changer le statut, jamais en silence."""
     row = {**row, "precedent": decision.to_public()}
+    row["sources"] = list(row.get("sources") or []) + [
+        {"kind": "precedent", "label": p.get("provenance", ""), "value": p.get("answer", ""), "check": p.get("check"),
+         "url": p.get("url", ""), "blocked": p.get("blocked", False), "detail": p.get("fabric")}
+        for p in decision.precedents[:4]]
     if decision.kind == "incoherence":
         row["issues"] = row["issues"] + ["incohérence avec un ancien RFI (voir la justification)"]
         if row["status"] == "auto":

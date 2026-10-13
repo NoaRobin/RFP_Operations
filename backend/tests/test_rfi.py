@@ -212,3 +212,22 @@ def test_computed_sources_use_catalog_columns_only():
 def test_choose_option_matches_combined_choices_in_any_order():
     option, _ = choose_option(["Aucun", "ISR", "Finansol", "ISR/Finansol", "Greenfin"], texts=["Finansol, ISR"])
     assert option == "ISR/Finansol"
+
+
+def test_preview_maps_answer_cells_to_questions(client):
+    doc = client.post("/api/rfi/demo/xlsx").json()
+    p = client.get(f"/api/rfi/documents/{doc['id']}/preview").json()
+    assert p["kind"] == "xlsx" and p["sheets"]
+    linked = [c for s in p["sheets"] for row in s["rows"] for c in row["cells"] if c["q"]]
+    assert len(linked) >= 20
+
+
+def test_short_uppercase_section_title_is_not_a_question(tmp_path):
+    wb = Workbook()
+    ws = wb.active
+    for row in [["GESTION", None], ["Nom du gérant", None], ["SRI", None]]:
+        ws.append(row)
+    path = tmp_path / "t.xlsx"
+    wb.save(path)
+    questions = [s.question for s in detect(path).slots]
+    assert "GESTION" not in questions and "SRI" in questions

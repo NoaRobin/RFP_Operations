@@ -109,7 +109,46 @@ interchangeables derrière le même contrat : **dossier synchronisé OneDrive** 
 `SHAREPOINT_LOCAL_DIR`) et **Microsoft Graph** (MSAL interactif, client public `SHAREPOINT_CLIENT_ID` fourni par l'IT,
 droits délégués `Sites.Read.All`, aucun secret). Lecture seule.
 
-## 5. Mesurer et faire progresser
+## 5. Documents officiels (DIC PRIIPs, prospectus)
+
+`backend/merlin/rfi/documents/` : pour la part choisie, l'app cherche le DIC et le prospectus (dépôt manuel, dossier
+`FUND_DOCS_DIR`, puis site public `FUND_SITE_URL` : page du fonds → pages de parts qui portent l'ISIN → liens PDF), les
+garde en cache (`data/rfi/documents/<ISIN>/`, rafraîchi après 30 jours ou si `Last_DIC_Modification_Date` est plus
+récente) et les lit **sans IA** (gabarit PRIIPs réglementé, expressions régulières FR / EN) :
+SRI, durée de détention, coûts d'entrée / sortie / récurrents / de transaction, commission de performance, objectif,
+date ; prospectus : cut-off, règlement J+N, fréquence de VL, frais maximum, swing pricing, gates, dépositaire,
+commissaire aux comptes — **dans la section du compartiment seulement**. Un DIC dont l'ISIN n'est pas celui de la part
+est refusé.
+
+Chaque concept porte ses champs de document (`doc:` dans `concepts.yaml`). Fusion :
+
+| Fabric | Document | Résultat |
+|---|---|---|
+| valeur | même valeur | automatique, preuve double, réserves légères levées |
+| valeur | autre valeur | **incohérence** affichée, jamais automatique |
+| vide | valeur | proposée « à vérifier », citée (« DIC du JJ/MM/AAAA, p. N ») |
+
+En mode `FUND_DOCS=auto` le site n'est interrogé qu'avec Fabric (fonds réels). À valider sur le poste : URL des pages
+fonds (`FUND_SITE_FUND_PATH`) et repérage des sections de vos prospectus.
+
+## 6. Liaisons apprises
+
+`python -m merlin.rfi.precedents.bindings` (ou bouton « Apprendre à partir des anciens RFI ») : pour chaque question
+posée à ≥ 3 fonds, la réponse historique est comparée à **toutes les colonnes Product Info du catalogue** du fonds
+concerné et aux champs de ses documents en cache. Liaison retenue si ≥ 90 % de concordance, sans colonne concurrente
+(« ambiguë ») ni réponses toutes identiques (« non probante »). À l'analyse : la liaison confirme l'ontologie, la
+contredit (réserve) ou répond quand l'ontologie ne lit pas la question — automatique seulement si ≥ 5 fonds à 100 %
+ou validée par l'équipe. Les décisions (valider / rejeter) survivent aux reconstructions ; `data/rfi/bindings.json`.
+
+## 7. Atelier de revue
+
+Trois zones : le document tel que le client l'a construit (cases colorées par état, clic = sélection) ou la liste par
+section ; la question en grand avec ses actions ; les preuves (incohérences en tête, Fabric, extrait du DIC / prospectus
+avec lien, anciens RFI, liaison apprise, raisonnement) et « Utiliser cette valeur » pour trancher. Anneau de complétion
+(automatique / validée / à vérifier / à compléter), validations groupées (confirmées par un document, réponses société,
+visibles), clavier : J / K, A, E, S, X. `prefers-reduced-motion` respecté.
+
+## 8. Mesurer et faire progresser
 
 - `python -m merlin.rfi.replay <bibliothèque>` : couverture et concordance sur de vrais questionnaires (voir plus haut).
 

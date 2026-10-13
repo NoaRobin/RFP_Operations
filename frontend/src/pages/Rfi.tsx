@@ -2,52 +2,27 @@
  * Remplir un RFI : déposer un Excel ou un Word, choisir le fonds, vérifier les réponses trouvées dans Fabric,
  * télécharger le même fichier avec les cases quantitatives remplies. L'original n'est jamais modifié.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Check, Download, FileQuestion, FileSpreadsheet, FileText, RotateCcw, Search, Sparkles, Wand2 } from 'lucide-react'
 import { Dropzone } from '../components/atelier/Dropzone'
-import { DecisionBadge, DecisionDetail } from '../components/rfi/Decision'
+import { FundDocuments } from '../components/rfi/FundDocuments'
+import { Workbench } from '../components/rfi/review/Workbench'
 import { PrecedentsPanel } from '../components/rfi/PrecedentsPanel'
 import { Button } from '../components/ui/Button'
 import { Field, Select, Switch, TextInput } from '../components/ui/Field'
-import { EmptyState, ErrorState, Loading } from '../components/ui/States'
+import { ErrorState, Loading } from '../components/ui/States'
 import { useToast } from '../components/ui/Toast'
 import { texts } from '../content/texts'
 import { api, ApiError } from '../lib/api'
 import { formatRelative, todayIso } from '../lib/format'
 import { useAsync } from '../lib/hooks'
-import type { FundEntry, RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiQuestion, RfiRequest, RfiStatus } from '../lib/types'
+import type { FundEntry, RfiAnalysis, RfiDocument, RfiGenerated, RfiPreview, RfiRequest } from '../lib/types'
 import { gsap, useGSAP } from '../motion/gsap'
 import { d, ease, prefersReducedMotion } from '../motion/tokens'
 
 const ACCEPT = '.xlsx,.xlsm,.docx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-const AUTO = '__auto__'
-const SKIP = '__skip__'
-const TEXT = '__text__'
 
-const STATUS_STYLE: Record<RfiStatus, string> = {
-  auto: 'bg-mint-400',
-  review: 'bg-sun-400',
-  existing: 'bg-card-3',
-  no_value: 'bg-[#ffd6dc]',
-  unmatched: 'bg-card',
-  skipped: 'bg-card',
-}
-
-type Filter = 'review' | 'auto' | 'all' | 'none'
 type Override = string | null | { text: string }
-
-function ConfidenceBar({ value }: { value: number }) {
-  const pct = Math.round(value * 100)
-  const color = value >= 0.7 ? 'bg-mint-400' : value >= 0.45 ? 'bg-sun-400' : 'bg-bubble-400'
-  return (
-    <span className="inline-flex items-center gap-2" title={`${pct} %`}>
-      <span className="relative h-2.5 w-16 overflow-hidden rounded-full border-2 border-fg bg-card">
-        <span className={`absolute inset-y-0 left-0 ${color}`} style={{ width: `${pct}%` }} />
-      </span>
-      <span className="text-xs font-bold tabular-nums text-fg-2">{pct}%</span>
-    </span>
-  )
-}
 
 /** Choix du fonds et de la part : suggestions issues du document + recherche dans l'annuaire Fabric. */
 function FundPicker({ doc, pid, isin, onPick }: { doc: RfiDocument; pid: string | null; isin: string | null; onPick: (pid: string, isin: string | null) => void }) {
@@ -121,95 +96,6 @@ function FundPicker({ doc, pid, isin, onPick }: { doc: RfiDocument; pid: string 
   )
 }
 
-function QuestionRow({ q, facts, override, onOverride, accepted, onAccept, reusable, onReusable }: {
-  q: RfiQuestion; facts: RfiFact[]; override: Override | undefined; onOverride: (value: Override | undefined) => void
-  accepted: boolean; onAccept: (v: boolean) => void; reusable: boolean; onReusable: (v: boolean) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState(typeof override === 'object' && override ? override.text : '')
-  const isText = typeof override === 'object' && override !== null
-  const selectValue = override === undefined ? AUTO : override === null ? SKIP : isText ? TEXT : (override as string)
-  return (
-    <tr data-row className="border-t-2 border-dashed border-fg/15 align-top">
-      <td className="py-3 pr-4">
-        <p className="font-semibold text-fg">{q.question}</p>
-        <p className="mt-0.5 text-xs font-semibold text-fg-3">
-          {q.location}{q.entity?.isin ? ` · ${q.entity.isin}` : ''}{q.context && q.layout === 'list' ? ` · ${q.context}` : ''}
-        </p>
-        {q.hint && <p className="mt-1 inline-block rounded-lg border border-fg/20 bg-card-2 px-2 py-0.5 text-xs font-semibold text-fg-2">{texts.rfi.hint} : « {q.hint} »</p>}
-        {q.options.length > 0 && <p className="mt-1 text-xs font-semibold text-magic-300">{texts.rfi.options} : {q.options.slice(0, 8).join(' · ')}{q.options.length > 8 ? '…' : ''}</p>}
-      </td>
-      <td className="py-3 pr-4">
-        {q.answer ? (
-          <p className={`font-display text-lg font-semibold ${q.status === 'existing' ? 'text-fg-3' : 'text-fg'}`}>{q.answer}</p>
-        ) : (
-          <p className="text-fg-3">{q.suggestion ? `(${q.suggestion} ?)` : texts.rfi.noAnswer}</p>
-        )}
-        {q.status === 'existing' && q.existing && <p className="text-xs font-semibold text-fg-2">Déjà : {q.existing}</p>}
-        {q.issues.length > 0 && (
-          <ul className="mt-1 space-y-0.5 text-xs font-semibold text-warning">{q.issues.slice(0, 3).map((i) => <li key={i}>⚠ {i}</li>)}</ul>
-        )}
-        {q.precedent && (q.precedent.precedents.length > 0 || q.precedent.kind !== 'ontologie') && <DecisionDetail decision={q.precedent} />}
-        {q.status === 'review' && q.answer && (
-          <button onClick={() => onAccept(!accepted)} aria-pressed={accepted}
-            className={`mt-2 inline-flex items-center gap-1 rounded-full border-2 border-fg px-3 py-0.5 text-xs font-bold transition-[transform,box-shadow] hover:-translate-y-0.5 ${accepted ? 'bg-mint-400 shadow-[2px_2px_0_0_var(--color-fg)]' : 'bg-card'}`}>
-            <Check size={12} aria-hidden="true" />{accepted ? texts.rfi.accepted : texts.rfi.accept}
-          </button>
-        )}
-      </td>
-      <td className="py-3 pr-4 min-w-[14rem]">
-        <label className="sr-only" htmlFor={`ov-${q.id}`}>{texts.rfi.change} — {q.question}</label>
-        <select id={`ov-${q.id}`} value={selectValue}
-          onChange={(e) => onOverride(e.target.value === AUTO ? undefined : e.target.value === SKIP ? null : e.target.value === TEXT ? { text: draft } : e.target.value)}
-          className="w-full rounded-xl border-2 border-fg bg-card px-2.5 py-1.5 text-sm font-semibold focus:shadow-[3px_3px_0_0_var(--color-magic-500)] focus:outline-none">
-          <option value={AUTO}>{q.concept_label && override === undefined ? `Auto : ${q.concept_label}` : 'Auto'}</option>
-          <option value={SKIP}>{texts.rfi.ignore}</option>
-          <option value={TEXT}>{texts.rfi.freeText}</option>
-          {q.alternatives.length > 0 && (
-            <optgroup label="Autres lectures">
-              {q.alternatives.map((a) => <option key={`alt-${a.concept}`} value={a.concept}>{a.label}{a.answer ? ` = ${a.answer}` : ''}</option>)}
-            </optgroup>
-          )}
-          {(['fund', 'share'] as const).map((scope) => (
-            <optgroup key={scope} label={scope === 'fund' ? 'Fonds' : 'Part'}>
-              {facts.filter((f) => f.scope === scope).map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
-            </optgroup>
-          ))}
-        </select>
-        {isText && (
-          <div className="mt-2 flex flex-col gap-1.5">
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} onBlur={() => onOverride({ text: draft })}
-              placeholder={texts.rfi.freeTextPlaceholder}
-              className="w-full rounded-xl border-2 border-fg bg-card px-2.5 py-1.5 text-sm font-semibold focus:outline-none focus:shadow-[3px_3px_0_0_var(--color-magic-500)]" />
-            <label className="flex items-center gap-1.5 text-xs font-semibold text-fg-2">
-              <input type="checkbox" checked={reusable} onChange={(e) => onReusable(e.target.checked)} className="accent-[var(--color-magic-500)]" />
-              {texts.rfi.reusable}
-            </label>
-          </div>
-        )}
-        {q.concept && <div className="mt-1.5"><ConfidenceBar value={q.confidence} /></div>}
-        {(q.evidence || q.reasons.length > 0) && (
-          <button onClick={() => setOpen((o) => !o)} className="mt-1 text-xs font-bold text-magic-300 underline decoration-2 underline-offset-2">{texts.rfi.why}</button>
-        )}
-        {open && (
-          <div className="mt-1 rounded-lg border-2 border-fg/20 bg-card-2 p-2 text-xs font-semibold text-fg-2">
-            {q.evidence && <p><b>{texts.rfi.evidence} :</b> {q.evidence}{q.data_date ? ` (${q.data_date})` : ''}</p>}
-            {q.reasons.length > 0 && <p className="mt-0.5">{q.reasons.join(' · ')}</p>}
-            {q.understanding.length > 0 && <p className="mt-0.5 text-fg-3">{q.understanding.join(' · ')}</p>}
-          </div>
-        )}
-      </td>
-      <td className="py-3">
-        <span className={`inline-block whitespace-nowrap rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${STATUS_STYLE[q.status]}`}>
-          {texts.rfi.status[q.status]}
-        </span>
-        <p className="mt-1 text-[0.65rem] font-bold uppercase tracking-wider text-fg-3">{q.source}</p>
-        {q.precedent && <div className="mt-1.5"><DecisionBadge decision={q.precedent} /></div>}
-      </td>
-    </tr>
-  )
-}
-
 export default function Rfi() {
   const toast = useToast()
   const root = useRef<HTMLDivElement>(null)
@@ -230,7 +116,7 @@ export default function Rfi() {
   const [analyzing, setAnalyzing] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [result, setResult] = useState<RfiGenerated | null>(null)
-  const [filter, setFilter] = useState<Filter>('review')
+  const [preview, setPreview] = useState<RfiPreview | null>(null)
 
   useGSAP(() => {
     if (prefersReducedMotion()) return
@@ -250,6 +136,8 @@ export default function Rfi() {
     try {
       const d = await loader
       setDoc(d)
+      setPreview(null)
+      api.rfi.preview(d.id).then(setPreview).catch(() => setPreview(null))
       setLanguage(d.language ?? 'fr')
       const first = d.suggestions?.[0]
       setPid(first?.pid ?? null)
@@ -316,10 +204,6 @@ export default function Rfi() {
   }
 
   const facts = factsQuery.data ?? []
-  const visible = useMemo(() => (analysis?.questions ?? []).filter((q) =>
-    filter === 'all' ? true : filter === 'none' ? q.status === 'unmatched' || q.status === 'no_value'
-      : filter === 'auto' ? q.status === 'auto' || q.status === 'existing' : q.status === 'review'),
-  [analysis, filter])
   const reviewIds = (analysis?.questions ?? []).filter((q) => q.status === 'review' && q.answer).map((q) => q.id)
   const toWrite = analysis ? analysis.stats.auto + reviewIds.filter((id) => accepted.has(id)).length + (overwrite ? analysis.stats.existing : 0) : 0
 
@@ -389,7 +273,10 @@ export default function Rfi() {
 
             <h2 className="mt-8 text-2xl">{texts.rfi.step1}</h2>
             <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <FundPicker doc={doc} pid={pid} isin={isin} onPick={(p, i) => { setPid(p); setIsin(i) }} />
+              <div className="flex flex-col gap-4">
+                <FundPicker doc={doc} pid={pid} isin={isin} onPick={(p, i) => { setPid(p); setIsin(i) }} />
+                <FundDocuments isin={isin} />
+              </div>
               <div className="flex flex-col gap-4">
                 <Field label={texts.rfi.asOf}>
                   {({ id }) => <TextInput id={id} type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />}
@@ -411,71 +298,31 @@ export default function Rfi() {
           </section>
 
           {analysis && (
-            <section data-enter className="glass mt-8 rounded-[var(--radius-card)] p-6 sm:p-8" aria-busy={analyzing}>
-              <div className="flex flex-wrap items-end justify-between gap-4">
+            <section data-enter className="glass mt-8 rounded-[var(--radius-card)] p-5 sm:p-7" aria-busy={analyzing}>
+              <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl">{texts.rfi.step2}</h2>
-                  <p className="mt-1 flex flex-wrap gap-2 text-sm font-bold">
-                    {(Object.keys(analysis.stats) as RfiStatus[]).filter((k) => analysis.stats[k] > 0).map((k) => (
-                      <span key={k} className={`rounded-full border-2 border-fg px-2.5 py-0.5 ${STATUS_STYLE[k]}`}>{analysis.stats[k]} {texts.rfi.status[k]}</span>
+                  <h2 className="text-2xl">{texts.review.title}</h2>
+                  <p className="mt-1 text-sm font-semibold text-fg-2">{texts.review.lead}</p>
+                </div>
+                {analysis.decisions && Object.keys(analysis.decisions).length > 0 ? (
+                  <p className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                    <span className="text-fg-2">{texts.rfi.decisionsTitle} :</span>
+                    {Object.entries(analysis.decisions).map(([k, n]) => (
+                      <span key={k} className="rounded-full border-2 border-fg bg-card px-2 py-0.5">{n} · {texts.rfi.decision[k] ?? k}</span>
                     ))}
                   </p>
-                </div>
-                <div role="group" aria-label="Filtrer les questions" className="flex gap-2">
-                  {(['review', 'auto', 'none', 'all'] as Filter[]).map((f) => (
-                    <button key={f} onClick={() => setFilter(f)} aria-pressed={filter === f}
-                      className={`rounded-full border-2 px-3.5 py-1.5 text-sm font-bold transition-colors ${filter === f ? 'border-fg bg-magic-500 text-white' : 'border-fg/30 hover:border-fg'}`}>
-                      {texts.rfi.filters[f]}
-                    </button>
-                  ))}
-                </div>
+                ) : <p className="text-xs font-semibold text-fg-3">{texts.rfi.noPrecedent}</p>}
               </div>
               {analysis.errors.length > 0 && (
                 <ul className="mt-4 rounded-xl border-2 border-warning bg-sun-400/20 p-3 text-sm font-semibold text-warning">
                   {analysis.errors.map((e) => <li key={e}>{e}</li>)}
                 </ul>
               )}
-              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border-2 border-fg bg-card-2 px-4 py-3">
-                <span className="font-display text-xl font-bold">{texts.rfi.coverageRate(analysis.coverage.rate)}</span>
-                <span className="text-sm font-semibold text-fg-2">{texts.rfi.coverage(analysis.coverage.auto, analysis.coverage.review, analysis.coverage.total)}</span>
-                {reviewIds.length > 0 && (
-                  <Button size="sm" className="ml-auto" icon={<Check size={14} />} onClick={() => setAccepted(new Set(reviewIds))}>{texts.rfi.acceptAll(reviewIds.length)}</Button>
-                )}
-                <p className="w-full text-xs font-semibold text-fg-3">{texts.rfi.sentence}</p>
-                {analysis.decisions && Object.keys(analysis.decisions).length > 0 ? (
-                  <p className="flex w-full flex-wrap items-center gap-1.5 text-xs font-bold">
-                    <span className="text-fg-2">{texts.rfi.decisionsTitle} :</span>
-                    {Object.entries(analysis.decisions).map(([k, n]) => (
-                      <span key={k} className="rounded-full border-2 border-fg bg-card px-2 py-0.5">{n} · {texts.rfi.decision[k] ?? k}</span>
-                    ))}
-                  </p>
-                ) : (
-                  <p className="w-full text-xs font-semibold text-fg-3">{texts.rfi.noPrecedent}</p>
-                )}
-              </div>
-              {filter === 'none' && <p className="mt-4 text-sm font-semibold text-fg-2">{texts.rfi.unmatchedHint}</p>}
-              <div className={`mt-4 overflow-x-auto transition-opacity ${analyzing ? 'opacity-60' : ''}`}>
-                {visible.length === 0 ? (
-                  <EmptyState title="Rien dans ce filtre." body="Essayez « Toutes »." />
-                ) : (
-                  <table className="w-full min-w-[46rem] text-left">
-                    <thead>
-                      <tr className="text-xs font-bold uppercase tracking-wider text-fg-3">
-                        <th className="pb-2 pr-4">{texts.rfi.columns.question}</th>
-                        <th className="pb-2 pr-4">{texts.rfi.columns.answer}</th>
-                        <th className="pb-2 pr-4">{texts.rfi.columns.source}</th>
-                        <th className="pb-2"><span className="sr-only">Statut</span></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visible.map((q) => (
-                        <QuestionRow key={q.id} q={q} facts={facts} override={q.id in overrides ? overrides[q.id] : undefined} onOverride={(v) => setOverride(q.id, v)}
-                          accepted={accepted.has(q.id)} onAccept={(v) => setAccepted((a) => toggle(a, q.id, v))}
-                          reusable={reusable.has(q.id)} onReusable={(v) => setReusable((r) => toggle(r, q.id, v))} />
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+              <div className={`mt-5 transition-opacity ${analyzing ? 'opacity-60' : ''}`}>
+                <Workbench analysis={analysis} preview={preview} facts={facts} overrides={overrides} accepted={accepted}
+                  onAccept={(id, on) => setAccepted((a) => toggle(a, id, on))}
+                  onAcceptMany={(ids) => setAccepted((a) => new Set([...a, ...ids]))}
+                  onOverride={setOverride} />
               </div>
               <p className="mt-4 text-xs font-semibold text-fg-3">{texts.rfi.legal}</p>
             </section>

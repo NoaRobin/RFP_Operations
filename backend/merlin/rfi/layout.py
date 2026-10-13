@@ -461,12 +461,17 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
         layout.slots.append(slot)
 
 
+DATA_ACRONYMS = {"ISIN", "SRI", "SRRI", "SFDR", "LEI", "NAV", "VL", "TER", "OCF", "AUM", "KID", "KIID", "DIC", "DICI", "PEA", "GIIN",
+                 "WKN", "SEDOL", "RIC", "CUSIP", "VALOR", "CIC", "BCE", "AMF", "UCITS", "OPCVM", "FIA", "AIF", "ETF", "PRI", "ESG",
+                 "EET", "EMT", "EPT", "LABEL", "FATCA", "GIPS", "HWM"}
+
+
 def _looks_like_title(text: str) -> bool:
     t = text.strip()
     # Titre de section : MAJUSCULES, ou numérotation romaine / lettre (« II. Frais », « B) Gestion »).
     # Un libellé court (« Forme juridique ») suivi d'une case vide est une question, pas un titre.
-    if re.fullmatch(r"[A-Z0-9/&.\-]{2,8}", t):
-        return False  # sigle seul (ISIN, SRI, SFDR, LEI, NAV, TER…) : c'est une donnée demandée, pas un titre
+    if t.upper().strip(" :") in DATA_ACRONYMS:
+        return False  # sigle seul (ISIN, SRI, SFDR…) : c'est une donnée demandée, pas un titre de section
     return len(t) < 70 and not t.endswith(("?", ":")) and (t.isupper() or bool(re.match(r"^(?:[IVX]{1,4}|[A-H])[.)]\s", t)))
 
 

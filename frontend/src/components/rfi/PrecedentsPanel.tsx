@@ -11,6 +11,7 @@ import type { DueDiligenceList, FinalListing, PrecedentInventory } from '../../l
 import { Button } from '../ui/Button'
 import { Field, Select, TextInput } from '../ui/Field'
 import { Loading } from '../ui/States'
+import { BindingsPanel } from './BindingsPanel'
 import { useToast } from '../ui/Toast'
 
 const T = texts.precedents
@@ -228,6 +229,7 @@ export function PrecedentsPanel() {
       <div className="mt-5 grid items-start gap-5 lg:grid-cols-2">
         <SharePoint onImported={refresh} />
         {inv && inv.total > 0 && <Inventory inv={inv} />}
+        <BindingsPanel />
       </div>
     </section>
   )

@@ -162,6 +162,17 @@ def download(doc_id: str, name: str, s: AppState = Depends(state)):
     return FileResponse(path, filename=name)
 
 
+@router.get("/documents/{doc_id}/preview")
+def preview_document(doc_id: str, s: AppState = Depends(state)):
+    from ..rfi.preview import preview
+
+    try:
+        path, layout = load_layout(_store(s), doc_id)
+    except FileNotFoundError as error:
+        raise not_found("Ce RFI n'est plus là.") from error
+    return preview(path, layout)
+
+
 @router.get("/documents/{doc_id}/original")
 def original(doc_id: str, s: AppState = Depends(state)):
     store = _store(s)

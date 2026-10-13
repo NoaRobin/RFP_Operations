@@ -3,7 +3,7 @@ import { texts } from '../content/texts'
 import type {
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
-  DueDiligenceList, FinalListing, SharePointImport, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  DueDiligenceList, FinalListing, SharePointImport, RfiPreview, FundDocuments, Binding, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -92,6 +92,16 @@ export const api = {
     answers: (id: string, body: RfiRequest) => request<RfiAnalysis>(`/rfi/documents/${id}/answers`, json(body)),
     generate: (id: string, body: RfiRequest) => request<RfiGenerated>(`/rfi/documents/${id}/generate`, json(body)),
     originalUrl: (id: string) => `/api/rfi/documents/${id}/original`,
+    preview: (id: string) => request<RfiPreview>(`/rfi/documents/${id}/preview`),
+    fundDocuments: (isin: string, refresh = false) => request<FundDocuments>(`/rfi/fund-documents/${isin}${refresh ? '?refresh=true' : ''}`),
+    uploadFundDocument: (isin: string, file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<FundDocuments>(`/rfi/fund-documents/${isin}`, { method: 'POST', body: form })
+    },
+    bindings: () => request<Binding[]>('/rfi/precedents/bindings'),
+    buildBindings: () => request<{ total: number; by_status: Record<string, number> }>('/rfi/precedents/bindings/build', { method: 'POST' }),
+    bindingStatus: (id: string, status: string) => request<Binding>('/rfi/precedents/bindings/status', json({ id, status })),
     precedents: () => request<PrecedentStats>('/rfi/precedents'),
     inventory: () => request<PrecedentInventory>('/rfi/precedents/inventory'),
     importWording: (file: File) => {

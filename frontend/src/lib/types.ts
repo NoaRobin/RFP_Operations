@@ -279,6 +279,33 @@ export interface RfiQuestion {
   suggestion?: string | null
   alternatives: { concept: string; label: string; score: number; answer: string | null }[]
   precedent?: RfiDecision
+  sources?: RfiSource[]
+  option?: string | null
+}
+
+export interface RfiSource {
+  kind: 'fabric' | 'kid' | 'prospectus' | 'document' | 'precedent' | string
+  label: string
+  value?: string | null
+  date?: string | null
+  snippet?: string
+  url?: string
+  check?: 'match' | 'mismatch' | 'unknown' | 'fill' | null
+  blocked?: boolean
+  detail?: string | null
+}
+
+export interface PreviewCell { ref: string; v: string; q: string | null }
+export interface PreviewSheet {
+  name: string; columns: string[]; widths: number[]; rows: { r: number; cells: PreviewCell[] }[]
+  merged: Record<string, [number, number]>; hidden: string[]; questions: number
+}
+export interface RfiPreview { kind: 'xlsx' | 'docx'; sheets: PreviewSheet[]; items: { id: string; label: string; location: string }[] }
+
+export interface FundDocumentFact { field: string; value: unknown; page: number; snippet: string; citation: string; url: string; kind: string }
+export interface FundDocuments {
+  isin: string; fund?: string; share?: string; problems: string[]; facts: FundDocumentFact[]
+  documents: { kind: string; title: string; url: string; path: string; lang: string; source: string; doc_date: string; fetched_at: string }[]
 }
 
 export type RfiDecisionKind = 'precedent_confirme' | 'precedent_liaison' | 'precedent_constant' | 'precedent_habituel'
@@ -435,4 +462,9 @@ export interface MergeResult {
   journal: string
   document_url: string
   rapport_url: string
+}
+
+export interface Binding {
+  id: string; question: string; target: string; label: string; type: string; support: number; compared: number; rate: number
+  status: 'candidate' | 'validated' | 'rejected' | 'ambiguous' | 'weak'; runner_up: string; examples: string[]; usable: boolean; strong: boolean
 }
