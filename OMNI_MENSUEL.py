@@ -555,11 +555,7 @@ def targets_for(
         performance_dir=performance_dir,
         holdings=(
     holdings_dir
-    / (
-        f"Holdings "
-        f"{1 if period.month == 12 else period.month + 1}_"
-        f"{period.year + 1 if period.month == 12 else period.year}.xlsx"
-    )
+    / f"Holdings {period.month}_{period.year}.xlsx"
 ),
         net=(
             performance_dir
