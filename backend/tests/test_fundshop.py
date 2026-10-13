@@ -363,3 +363,24 @@ def test_site_welcome_screen_is_passed_like_a_visitor(tmp_path):
     links = res.links(page_url, Attempts())
     assert posted and posted[0][0] == "https://site.test/fr/" and posted[0][1]["a"] == "change_user_type"
     assert posted[0][1]["user_type"] == "professional" and [ln.prefix for ln in links] == ["DIPR"]
+
+
+def test_bundle_zip_of_last_run(client, tmp_path):
+    """Les documents du dernier lancement, en un zip pour le dossier Téléchargements du navigateur."""
+    import io
+    import zipfile
+
+    from merlin.config import get_settings
+    from merlin.fundshop.runner import Result, save_last_run
+    from merlin.fundshop.service import destination, root
+
+    settings = get_settings()
+    dest = destination(settings)
+    dest.mkdir(parents=True, exist_ok=True)
+    (dest / "Fonds Fictif - DIC.pdf").write_bytes(b"%PDF-1.4 fictif")
+    save_last_run(root(settings), [Result("1", ISIN, "Fonds Fictif", "C EUR", "DIC", "", "OK", file="Fonds Fictif - DIC.pdf")], dest, "test", None)
+    r = client.get("/api/fundshop/bundle.zip")
+    assert r.status_code == 200 and "attachment" in r.headers["content-disposition"]
+    assert zipfile.ZipFile(io.BytesIO(r.content)).namelist() == ["Fonds Fictif - DIC.pdf"]
+    one = client.get("/api/fundshop/file/Fonds Fictif - DIC.pdf")
+    assert one.status_code == 200 and "attachment" in one.headers["content-disposition"]

@@ -13,8 +13,15 @@ import { DecalGeometry } from 'three/examples/jsm/geometries/DecalGeometry.js'
 import { accessory, SLOTS, type Costume, type Slot } from './costume'
 import { Sounds } from './sounds'
 
-export type Weapon = 'peinture' | 'verre' | 'tomate' | 'oeuf' | 'tarte' | 'tasse' | 'classeur'
-export const WEAPONS: Weapon[] = ['peinture', 'verre', 'tomate', 'oeuf', 'tarte', 'tasse', 'classeur']
+export type Weapon = 'peinture' | 'verre' | 'tomate' | 'oeuf' | 'tarte' | 'tasse' | 'classeur' | 'melon'
+export const WEAPONS: Weapon[] = ['peinture', 'verre', 'tomate', 'oeuf', 'tarte', 'tasse', 'classeur', 'melon']
+export type Character = 'homme' | 'femme'
+export interface Shape { height: number; build: number; head: number }
+export const DEFAULT_SHAPE: Shape = { height: 1, build: 1, head: 1 }
+const FEMME_H = 1.72 // taille de base du personnage en pied (m)
+// Repère de la tête du bonhomme (pivot) sur lequel les accessoires ont été dessinés : centre et hauteur menton → sommet
+const LEE_HEAD_CENTER = new THREE.Vector3(0, 1.225, 0.02)
+const LEE_HEAD_HEIGHT = 0.95
 export const RAINBOW = 'arc-en-ciel'
 const PALETTE = ['#ff3d7f', '#ffd23f', '#3ddc97', '#4cc9f0', '#9b5de5', '#ff7b00']
 
@@ -54,8 +61,11 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a)
 const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)]
 
 export class Defouloir {
-  weapon: Weapon | 'hasard' = 'peinture'
+  weapon: Weapon | 'hasard' | 'postit' = 'peinture'
   paint = RAINBOW
+  note = { text: 'Je fais ce que je veux', color: '#ffe066' }
+  character: Character = 'homme'
+  shape: Shape = { ...DEFAULT_SHAPE }
   readonly sounds = new Sounds()
 
   private renderer: THREE.WebGLRenderer
@@ -67,6 +77,13 @@ export class Defouloir {
   private raycaster = new THREE.Raycaster()
   private pivot = new THREE.Group() // base du cou : la tête oscille autour
   private head: THREE.Mesh | null = null
+  private costumeRoot = new THREE.Group() // repère des accessoires : identité pour le bonhomme, recalé sur la tête de la femme
+  private subjectBody: CANNON.Body | null = null
+  private pedestal: THREE.Mesh | null = null
+  private pedestalBody: CANNON.Body | null = null
+  private notes: THREE.Mesh[] = []
+  private loading = 0
+  private melonTexture: THREE.CanvasTexture | null = null
   private targets: THREE.Mesh[] = []
   private decals: THREE.Mesh[] = []
   private decalMaterials = new Map<string, THREE.MeshPhongMaterial>()
@@ -121,6 +138,7 @@ export class Defouloir {
     this.decalTextures = { map: tex.load(`${ASSETS}decal-diffuse.png`), normal: tex.load(`${ASSETS}decal-normal.jpg`) }
     this.decalTextures.map.colorSpace = THREE.SRGBColorSpace
     this.binderTexture = binderLabel()
+    this.pivot.add(this.costumeRoot)
     void this.loadHead()
 
     const el = this.renderer.domElement
@@ -159,6 +177,7 @@ export class Defouloir {
     pedestal.castShadow = pedestal.receiveShadow = true
     pedestal.name = 'socle'
     s.add(pedestal)
+    this.pedestal = pedestal
     this.targets.push(floor, pedestal)
     this.pivot.position.set(0, PED_H, 0)
     s.add(this.pivot)
@@ -175,9 +194,11 @@ export class Defouloir {
     base.addShape(new CANNON.Cylinder(0.42, 0.52, PED_H, 16))
     base.position.set(0, PED_H / 2, 0)
     w.addBody(base)
+    this.pedestalBody = base
   }
 
   private async loadHead() {
+    const ticket = ++this.loading
     try {
       const tex = new THREE.TextureLoader()
       const [gltf, map, normal] = await Promise.all([
@@ -185,7 +206,7 @@ export class Defouloir {
         tex.loadAsync(`${ASSETS}Map-COL.jpg`),
         tex.loadAsync(`${ASSETS}Infinite-Level_02_Tangent_SmoothUV.jpg`),
       ])
-      if (this.disposed) return
+      if (this.disposed || ticket !== this.loading) return
       map.colorSpace = THREE.SRGBColorSpace
       const head = gltf.scene.children[0] as THREE.Mesh
       head.material = new THREE.MeshPhongMaterial({ map, normalMap: normal, specular: 0x222222, shininess: 22 })
@@ -215,7 +236,10 @@ export class Defouloir {
       body.addShape(new CANNON.Cylinder(r * 0.5, r * 0.55, size.y * 0.35, 12), new CANNON.Vec3(0, size.y * 0.17, 0))
       body.position.set(0, PED_H, 0)
       this.world.addBody(body)
-      if (this.costume) this.setCostume(this.costume)
+      this.subjectBody = body
+      this.costumeRoot.position.set(0, 0, 0)
+      this.costumeRoot.scale.setScalar(1)
+      if (this.costume) this.setCostume(this.costume, true)
       this.opts.onReady()
     } catch (error) {
       this.opts.onError(error instanceof Error ? error.message : String(error))
@@ -232,7 +256,7 @@ export class Defouloir {
     this.pointer = { x: e.clientX, y: e.clientY }
     window.clearTimeout(this.holdTimer)
     this.holdTimer = window.setTimeout(() => {
-      if (!this.down || this.down.moved) return
+      if (!this.down || this.down.moved || this.weapon === 'postit') return
       this.down.fired = true
       this.controls.enabled = false
       const fire = () => this.throwAt(this.pointer.x, this.pointer.y)
@@ -255,13 +279,14 @@ export class Defouloir {
   }
 
   throwAt(clientX: number, clientY: number, weapon?: Weapon) {
+    if (!weapon && this.weapon === 'postit') { this.stick(clientX, clientY); return }
     const rect = this.renderer.domElement.getBoundingClientRect()
     const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
     this.raycaster.setFromCamera(ndc, this.camera)
     this.raycaster.far = 60
     const hit = this.raycaster.intersectObjects(this.targets, false)[0]
     const target = hit ? hit.point : this.raycaster.ray.at(14, new THREE.Vector3())
-    this.launch(weapon ?? (this.weapon === 'hasard' ? pick(WEAPONS) : this.weapon), target)
+    this.launch(weapon ?? (this.weapon === 'hasard' || this.weapon === 'postit' ? pick(WEAPONS) : this.weapon), target)
   }
 
   /** Lance un objet de la « main » (bas droite de la caméra) vers la cible, en cloche. */
@@ -349,6 +374,12 @@ export class Defouloir {
         g.add(handle, coffee)
         return { mesh: shadow(g), shape: new CANNON.Cylinder(0.085, 0.075, 0.15, 10), mass: 0.35, color: '#4b2e1e' }
       }
+      case 'melon': {
+        this.melonTexture ??= melonStripes()
+        const m = new THREE.Mesh(new THREE.SphereGeometry(0.17, 32, 20), new THREE.MeshStandardMaterial({ map: this.melonTexture, roughness: 0.5 }))
+        m.scale.set(1, 0.9, 1.15)
+        return { mesh: shadow(m), shape: new CANNON.Sphere(0.17), mass: 1.8, color: '#e63946' }
+      }
       case 'classeur': {
         const color = pick(['#4cc9f0', '#9b5de5', '#ff3d7f', '#3ddc97'])
         const side = std(color)
@@ -377,6 +408,12 @@ export class Defouloir {
     switch (o.kind) {
       case 'peinture': splat(rand(0.45, 0.7), o.color, 5); this.sounds.splat(); break
       case 'tomate': splat(rand(0.35, 0.5), o.color, 4); this.sounds.splat(0.8); break
+      case 'melon':
+        splat(rand(0.8, 1.0), o.color, 7)
+        this.shatter(hit.point, velocity, 0x2d6a4f, this.opts.reduced ? 5 : 12, 0.09)
+        this.sprinkle(hit.point, velocity.clone().normalize().negate(), velocity, '#1b1530', this.opts.reduced ? 0 : 10)
+        this.sounds.splat(1.5)
+        break
       case 'oeuf':
         this.decal(hit.object as THREE.Mesh, hit.point, normal, 0.42, '#fff6dc')
         splat(0.22, o.color, 2)
@@ -435,6 +472,7 @@ export class Defouloir {
 
   /** Tache projetée sur le maillage cible, puis rattachée à lui (elle suit la tête quand elle bouge). */
   private decal(target: THREE.Mesh, point: THREE.Vector3, normal: THREE.Vector3, size: number, color: string) {
+    if (this.character === 'femme') size *= 0.5  // personnage en pied : taches à l'échelle du corps
     const helper = new THREE.Object3D()
     helper.position.copy(point)
     helper.lookAt(point.clone().add(normal))
@@ -527,6 +565,160 @@ export class Defouloir {
     this.live = this.live.filter((o) => !o.done)
   }
 
+  // ------------------------------------------------------------------ personnage
+  /** Change de personnage : la tête sur socle (« homme ») ou une femme en pied (« femme »), réglable (taille, corpulence, tête). */
+  setCharacter(kind: Character, shape: Shape = this.shape) {
+    this.character = kind
+    this.shape = { ...shape }
+    this.removeSubject()
+    const femme = kind === 'femme'
+    if (this.pedestal) this.pedestal.visible = !femme
+    if (this.pedestalBody) {
+      if (femme) this.world.removeBody(this.pedestalBody)
+      else if (!this.world.bodies.includes(this.pedestalBody)) this.world.addBody(this.pedestalBody)
+    }
+    this.targets = this.targets.filter((t) => t !== this.pedestal)
+    if (!femme && this.pedestal) this.targets.push(this.pedestal)
+    this.pivot.position.set(0, femme ? 0 : PED_H, 0)
+    this.controls.target.set(0, femme ? 1.1 : PED_H + HEAD_H * 0.62, 0)
+    this.camera.position.set(0.35, femme ? 1.45 : 2.35, femme ? 3.3 : 3.9)
+    this.controls.update()
+    if (femme) void this.loadWoman()
+    else void this.loadHead()
+  }
+
+  /** Taille, corpulence, tête (femme) : le personnage est recuit dans sa nouvelle silhouette. */
+  setShape(shape: Shape) {
+    this.shape = { ...shape }
+    if (this.character === 'femme') { this.removeSubject(); void this.loadWoman() }
+  }
+
+  private removeSubject() {
+    for (const n of this.notes) { n.removeFromParent(); n.geometry.dispose() }
+    this.notes = []
+    if (this.head) {
+      this.decals = this.decals.filter((d) => d.parent !== this.head)
+      this.targets = this.targets.filter((t) => t !== this.head)
+      this.head.removeFromParent()
+      disposeTree(this.head)
+      this.head = null
+    }
+    if (this.subjectBody) { this.world.removeBody(this.subjectBody); this.subjectBody = null }
+  }
+
+  private async loadWoman() {
+    const ticket = ++this.loading
+    try {
+      const gltf = await new GLTFLoader().loadAsync(`${ASSETS}Michelle.glb`)
+      if (this.disposed || ticket !== this.loading) return
+      const scene = gltf.scene
+      let skinned: THREE.SkinnedMesh | null = null
+      scene.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh && !skinned) skinned = o as THREE.SkinnedMesh })
+      if (!skinned) throw new Error('personnage introuvable dans le fichier')
+      const sk = skinned as THREE.SkinnedMesh
+      // Pose figée (début de l'animation, debout), tête réglable, puis « cuisson » en maillage statique :
+      // taches, accessoires et post-its se posent alors exactement sur la silhouette affichée.
+      const clip = gltf.animations.find((a) => a.name === 'SambaDance') ?? gltf.animations[0]
+      if (clip) {
+        const mixer = new THREE.AnimationMixer(scene)
+        mixer.clipAction(clip).play()
+        mixer.setTime(0.05)
+      }
+      const headBone = sk.skeleton.bones.find((b) => b.name.endsWith('Head'))
+      const topBone = sk.skeleton.bones.find((b) => b.name.endsWith('HeadTop_End'))
+      if (headBone) headBone.scale.setScalar(this.shape.head)
+      scene.updateMatrixWorld(true)
+      sk.skeleton.update()
+      const src = sk.geometry
+      const count = src.attributes.position.count
+      const positions = new Float32Array(count * 3)
+      const v = new THREE.Vector3()
+      for (let i = 0; i < count; i++) {
+        sk.getVertexPosition(i, v)
+        v.applyMatrix4(sk.matrixWorld)
+        positions.set([v.x, v.y, v.z], i * 3)
+      }
+      const geo = new THREE.BufferGeometry()
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      if (src.attributes.uv) geo.setAttribute('uv', src.attributes.uv.clone())
+      if (src.index) geo.setIndex(src.index.clone())
+      geo.computeVertexNormals()
+      // Mise à l'échelle : pieds au sol, centrée, taille et corpulence réglables
+      geo.computeBoundingBox()
+      const box0 = geo.boundingBox!
+      const k = (FEMME_H * this.shape.height) / (box0.max.y - box0.min.y)
+      const c0 = box0.getCenter(new THREE.Vector3())
+      const sx = k * this.shape.build
+      const matrix = new THREE.Matrix4().makeScale(sx, k, sx).multiply(new THREE.Matrix4().makeTranslation(-c0.x, -box0.min.y, -c0.z))
+      geo.applyMatrix4(matrix)
+      geo.computeBoundingBox()
+      geo.computeBoundingSphere()
+      const material = (Array.isArray(sk.material) ? sk.material[0] : sk.material) as THREE.MeshStandardMaterial
+      const mesh = new THREE.Mesh(geo, material)
+      mesh.castShadow = true
+      mesh.name = 'personnage'
+      this.pivot.add(mesh)
+      this.head = mesh
+      this.targets.unshift(mesh)
+      // Repère des accessoires : la tête du bonhomme → la tête de la femme
+      const toLocal = (b?: THREE.Bone) => (b ? b.getWorldPosition(new THREE.Vector3()).applyMatrix4(matrix) : null)
+      const neck = toLocal(headBone)
+      const top = toLocal(topBone)
+      if (neck && top) {
+        const chin = neck.y - (top.y - neck.y) * 0.25
+        const headH = top.y - chin
+        const center = new THREE.Vector3(neck.x, (top.y + chin) / 2, neck.z + headH * 0.06)
+        const scale = headH / LEE_HEAD_HEIGHT
+        this.costumeRoot.scale.setScalar(scale)
+        this.costumeRoot.position.copy(center).sub(LEE_HEAD_CENTER.clone().multiplyScalar(scale))
+      }
+      // Collision approchée : corps + tête
+      const size = geo.boundingBox!.getSize(new THREE.Vector3())
+      const body = new CANNON.Body({ mass: 0, collisionFilterGroup: ENV, collisionFilterMask: OBJ | SHARD })
+      // centre réel du torse (le maillage n'est pas centré en z : la pose déporte bras et hanches)
+      const p = geo.attributes.position
+      const torso = new THREE.Vector3()
+      let n = 0
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i)
+        if (y > size.y * 0.5 && y < size.y * 0.75 && Math.abs(p.getX(i)) < 0.15 * this.shape.build) { torso.x += p.getX(i); torso.z += p.getZ(i); n++ }
+      }
+      if (n) torso.divideScalar(n)
+      const headPos = neck ?? new THREE.Vector3(0, size.y * 0.9, 0)
+      body.addShape(new CANNON.Cylinder(0.11 * this.shape.build, 0.13 * this.shape.build, size.y * 0.8, 12), new CANNON.Vec3(torso.x, size.y * 0.4, torso.z))
+      body.addShape(new CANNON.Sphere(0.1 * this.shape.head * this.shape.height), new CANNON.Vec3(headPos.x, headPos.y + 0.08 * this.shape.height, headPos.z))
+      this.world.addBody(body)
+      this.subjectBody = body
+      if (this.costume) this.setCostume(this.costume, true)
+      this.opts.onReady()
+    } catch (error) {
+      this.opts.onError(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  // ------------------------------------------------------------------ post-its
+  /** Colle un post-it (texte et couleur choisis) là où l'on clique sur le personnage ; il suit ses mouvements. */
+  private stick(clientX: number, clientY: number) {
+    const rect = this.renderer.domElement.getBoundingClientRect()
+    const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1)
+    this.raycaster.setFromCamera(ndc, this.camera)
+    this.raycaster.far = 60
+    const hit = this.raycaster.intersectObjects(this.targets, false)[0]
+    if (!hit || !hit.face) return
+    const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
+    const size = this.character === 'femme' ? 0.16 : 0.24
+    const note = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshStandardMaterial({
+      map: noteTexture(this.note.text, this.note.color), roughness: 0.9, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2,
+    }))
+    note.position.copy(hit.point).addScaledVector(normal, 0.012)
+    note.lookAt(hit.point.clone().add(normal))
+    note.rotateZ(rand(-0.3, 0.3))
+    note.castShadow = true
+    hit.object.attach(note)
+    this.notes.push(note)
+    this.sounds.thud(0.15)
+  }
+
   /** Pose le déguisement : seuls les emplacements modifiés sont reconstruits. */
   setCostume(costume: Costume, force = false) {
     this.costume = costume
@@ -541,7 +733,7 @@ export class Defouloir {
       if (!obj) continue
       const meshes: THREE.Mesh[] = []
       obj.traverse((o) => { if ((o as THREE.Mesh).isMesh) meshes.push(o as THREE.Mesh) })
-      this.pivot.add(obj)
+      this.costumeRoot.add(obj)
       this.targets.push(...meshes)
       this.worn[slot] = { key, obj, meshes }
     }
@@ -584,6 +776,8 @@ export class Defouloir {
   }
 
   clean() {
+    for (const n of this.notes) { n.removeFromParent(); n.geometry.dispose() }
+    this.notes = []
     for (const d of this.decals) { d.removeFromParent(); d.geometry.dispose() }
     this.decals = []
     for (const o of this.live) this.removeLive(o)
@@ -609,7 +803,7 @@ export class Defouloir {
       const len = seg.length()
       if (len > (o.kind === 'classeur' ? 0.02 : 1e-4)) {
         this.raycaster.set(o.prev, seg.clone().normalize())
-        this.raycaster.far = len + 0.12
+        this.raycaster.far = len + (o.kind === 'melon' ? 0.26 : 0.12)  // gros projectile : l'impact compte dès le contact
         const hit = this.raycaster.intersectObjects(this.targets, false)[0]
         if (hit && this.impact(o, hit, v3(o.body.velocity))) { this.removeLive(o); continue }
       }
@@ -733,6 +927,54 @@ function binderLabel() {
   g.font = 'bold 26px sans-serif'
   g.fillText('v47 FINAL', 128, 240)
   g.fillText('(vraiment)', 128, 275)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
+/** Écorce de melon : bandes vertes, dessinées à la volée. */
+function melonStripes() {
+  const c = document.createElement('canvas')
+  c.width = 256
+  c.height = 128
+  const g = c.getContext('2d')!
+  g.fillStyle = '#5a9e3a'
+  g.fillRect(0, 0, 256, 128)
+  g.fillStyle = '#2d6a4f'
+  for (let x = 0; x < 256; x += 32) g.fillRect(x, 0, 14, 128)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
+/** Post-it : carré de couleur, texte manuscrit retourné à la ligne. */
+function noteTexture(text: string, color: string) {
+  const c = document.createElement('canvas')
+  c.width = 256
+  c.height = 256
+  const g = c.getContext('2d')!
+  g.fillStyle = color
+  g.fillRect(0, 0, 256, 256)
+  g.fillStyle = 'rgba(0,0,0,0.08)'
+  g.fillRect(0, 0, 256, 34)
+  g.fillStyle = '#1b1530'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  const words = (text || ' ').split(/\s+/)
+  let size = 44
+  let lines: string[] = []
+  for (; size >= 18; size -= 2) {
+    g.font = `bold ${size}px "Comic Sans MS", "Segoe Print", cursive`
+    lines = []
+    let line = ''
+    for (const w of words) {
+      const next = line ? `${line} ${w}` : w
+      if (g.measureText(next).width > 220 && line) { lines.push(line); line = w } else line = next
+    }
+    lines.push(line)
+    if (lines.length * size * 1.15 <= 200) break
+  }
+  lines.forEach((l, i) => g.fillText(l, 128, 140 + (i - (lines.length - 1) / 2) * size * 1.15))
   const t = new THREE.CanvasTexture(c)
   t.colorSpace = THREE.SRGBColorSpace
   return t

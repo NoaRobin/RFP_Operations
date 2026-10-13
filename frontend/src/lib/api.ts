@@ -102,6 +102,7 @@ export const api = {
     available: (isin: string, fund: string, part: string) =>
       request<FundShopAvailable>(`/fundshop/available/${isin}?fund=${encodeURIComponent(fund)}&part=${encodeURIComponent(part)}`),
     fileUrl: (name: string) => `/api/fundshop/file/${encodeURIComponent(name)}`,
+    bundleUrl: () => '/api/fundshop/bundle.zip',
   },
 
   fabric: {

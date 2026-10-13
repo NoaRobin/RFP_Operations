@@ -227,6 +227,28 @@ def diagnostic(s: AppState = Depends(state)) -> dict[str, Any]:
     return {"checks": checks, "ok": all(c["ok"] for c in checks), "network": res.net.active}
 
 
+@router.get("/bundle.zip")
+def bundle(s: AppState = Depends(state)) -> Response:
+    """Les documents du dernier lancement, en un zip, téléchargé par le navigateur (dossier Téléchargements du poste)."""
+    import io
+    import zipfile
+    from datetime import date
+
+    last = load_last_run(root(s.settings)) or {}
+    dest = destination(s.settings)
+    files = [dest / Path(r["file"]).name for r in last.get("results", []) if r.get("status") in ("OK", "DÉJÀ PRÉSENT") and r.get("file")]
+    files = [f for f in dict.fromkeys(files) if f.exists()]
+    if not files:
+        raise not_found("Aucun document prêt : lancez d'abord « Télécharger ».")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for f in files:
+            zf.write(f, f.name)
+    name = f"Documents des fonds {date.today().isoformat()}.zip"
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f"attachment; filename*=UTF-8''{name.replace(' ', '%20')}"})
+
+
 @router.get("/file/{name}")
 def download(name: str, s: AppState = Depends(state)):
     path = destination(s.settings) / Path(name).name

@@ -200,6 +200,7 @@ export default function FundShop() {
       const o = await api.fundshop.overview()
       load(o)
       const rs = o.items.map((i) => i.result).filter(Boolean)
+      if (!o.last_run?.blocked) saveToComputer(rs.filter((r) => r?.status === 'OK' || r?.status === 'DÉJÀ PRÉSENT').map((r) => r!.file))
       if (o.last_run?.blocked) toast('error', T.blocked, o.last_run.blocked.title)
       else toast('success', T.summary(rs.filter((r) => r?.status === 'OK').length, rs.filter((r) => r?.status === 'DÉJÀ PRÉSENT').length,
         rs.filter((r) => r?.status === 'ÉCHEC').length))
@@ -207,11 +208,23 @@ export default function FundShop() {
     return () => window.clearInterval(id)
   }, [runId])
 
+  /** Comme sur n'importe quel site : le navigateur enregistre dans « Téléchargements » (1 document en PDF, sinon un zip). */
+  const saveToComputer = (files: string[]) => {
+    const unique = [...new Set(files.filter(Boolean))]
+    if (unique.length === 0) return
+    const a = document.createElement('a')
+    a.href = unique.length === 1 ? api.fundshop.fileUrl(unique[0]) : api.fundshop.bundleUrl()
+    a.download = ''
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+
   const runNow = async () => {
     await flush()
     setPreviews({})
     try {
-      const run = await api.run(AUTOMATION, { mode: 'missing' })
+      const run = await api.run(AUTOMATION, { mode: 'all' })  // toujours la dernière version publiée
       setRunId(run.id)
     } catch (e) {
       toast('error', e instanceof ApiError ? e.message : texts.errors.generic, e instanceof ApiError ? e.hint : undefined)
@@ -303,7 +316,7 @@ export default function FundShop() {
             <table className="w-full min-w-[60rem] text-left text-sm">
               <thead><tr className="text-xs font-bold uppercase tracking-wider text-fg-3">
                 <th className="pb-2 pr-3">{T.part}</th><th className="pb-2 pr-3">{T.kind}</th><th className="pb-2 pr-3">{T.month}</th>
-                <th className="pb-2 pr-3">{T.replace}</th><th className="w-[34%] pb-2 pr-3">{T.state}</th><th className="pb-2" />
+<th className="w-[34%] pb-2 pr-3">{T.state}</th><th className="pb-2" />
               </tr></thead>
               <tbody>
                 {items.map((it) => {
@@ -333,10 +346,6 @@ export default function FundShop() {
                             {it.period_label && <span className="text-xs font-semibold text-fg-3">→ {it.period_label}</span>}
                           </div>
                         ) : <span className="text-fg-3">{T.noMonth}</span>}
-                      </td>
-                      <td className="py-2.5 pr-3">
-                        <input type="checkbox" checked={it.overwrite} title={T.replaceHint} aria-label={T.replaceHint}
-                          onChange={(e) => update(it.id, { overwrite: e.target.checked })} className="size-4 accent-[var(--color-magic-500)]" />
                       </td>
                       <td className="py-2.5 pr-3">
                         <Status it={it} preview={previews[it.id]} blocked={!!data.last_run?.blocked} onLink={() => setLinkFor(linkFor === it.id ? null : it.id)} />
@@ -378,7 +387,15 @@ export default function FundShop() {
             {data.last_run.blocked ? (
               <><p className="mb-1 font-bold">{T.blocked}</p><ProblemBox p={data.last_run.blocked} /></>
             ) : (
-              <p><span className="text-fg-3">{T.lastRun} ({new Date(data.last_run.at).toLocaleString('fr-FR')}) : </span>{T.summary(counts.ok, counts.present, counts.failed)}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <p><span className="text-fg-3">{T.lastRun} ({new Date(data.last_run.at).toLocaleString('fr-FR')}) : </span>{T.summary(counts.ok, counts.present, counts.failed)}</p>
+                {counts.ok + counts.present > 0 && (
+                  <Button size="sm" variant="primary" icon={<Download size={14} />}
+                    onClick={() => saveToComputer(items.map((i) => i.result).filter((r) => r && r.status !== 'ÉCHEC').map((r) => r!.file))}>
+                    {T.saveAgain(counts.ok + counts.present)}
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -395,7 +412,7 @@ export default function FundShop() {
             </ul>
           </div>
         )}
-        <p className="mt-3 text-xs font-semibold">{T.destination} : {data.destination} · {T.memory(data.memory.shares, data.memory.funds)}</p>
+        <p className="mt-3 text-xs font-semibold">{T.whereFiles} · {T.memory(data.memory.shares, data.memory.funds)}</p>
       </section>
 
       <details className="mt-6 rounded-[var(--radius-card)] border-2 border-fg/30 p-4">
@@ -432,7 +449,7 @@ export default function FundShop() {
       </details>
 
       <ScheduleDialog open={scheduling} onClose={() => setScheduling(false)} targetType="automation" targetId={AUTOMATION} label={T.scheduleLabel}
-        params={{ mode: 'missing' }} />
+        params={{ mode: 'all' }} />
     </div>
   )
 }

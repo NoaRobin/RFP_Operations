@@ -14,12 +14,12 @@ export type Costume = Record<Slot, SlotStyle>
 /** Objets par emplacement, avec leur couleur par défaut. */
 export const ITEMS: Record<Slot, { id: string; color: string }[]> = {
   cheveux: [{ id: 'afro', color: '#2b1a10' }, { id: 'crete', color: '#ff3d7f' }, { id: 'carre', color: '#1b1530' }, { id: 'longs', color: '#f2c14e' }, { id: 'clown', color: '#ff7b00' }],
-  chapeau: [{ id: 'haut', color: '#1b1530' }, { id: 'fete', color: '#9b5de5' }, { id: 'couronne', color: '#ffd23f' }, { id: 'casquette', color: '#4cc9f0' }, { id: 'viking', color: '#9aa1ad' }],
+  chapeau: [{ id: 'haut', color: '#1b1530' }, { id: 'fete', color: '#9b5de5' }, { id: 'couronne', color: '#ffd23f' }, { id: 'casquette', color: '#4cc9f0' }, { id: 'viking', color: '#9aa1ad' }, { id: 'paille', color: '#e9c46a' }],
   lunettes: [{ id: 'rondes', color: '#1b1530' }, { id: 'soleil', color: '#1b1530' }, { id: 'etoiles', color: '#ff3d7f' }, { id: 'monocle', color: '#d4af37' }],
   moustache: [{ id: 'guidon', color: '#2b1a10' }, { id: 'morse', color: '#5a3a22' }, { id: 'dali', color: '#1b1530' }, { id: 'chevron', color: '#6b4226' }],
   barbe: [{ id: 'bouc', color: '#2b1a10' }, { id: 'pleine', color: '#5a3a22' }, { id: 'noel', color: '#ffffff' }],
   nez: [{ id: 'clown', color: '#e63946' }, { id: 'pinocchio', color: '#c68b59' }],
-  cou: [{ id: 'noeud', color: '#e63946' }, { id: 'cravate', color: '#4cc9f0' }, { id: 'perles', color: '#fff8ee' }],
+  cou: [{ id: 'noeud', color: '#e63946' }, { id: 'cravate', color: '#4cc9f0' }, { id: 'perles', color: '#fff8ee' }, { id: 'fleurs', color: '#ff6b9a' }],
 }
 
 export const EMPTY: Costume = Object.fromEntries(SLOTS.map((s) => [s, { item: null, color: ITEMS[s][0].color, size: 1 }])) as Costume
@@ -270,6 +270,24 @@ function build(slot: Slot, item: string, color: string): THREE.Object3D {
       m.castShadow = true
       return add(m)
     }
+    case 'chapeau:paille': {
+      const straw = mat(color, { roughness: 0.95, side: THREE.DoubleSide })
+      const base = L(0, 2.6, 0)
+      add(mesh([at(new THREE.CylinderGeometry(0.62, 0.66, 0.02, 48), base), at(new THREE.CylinderGeometry(0.26, 0.31, 0.2, 40), base.clone().add(new THREE.Vector3(0, 0.1, 0)))], straw))
+      add(mesh([at(new THREE.CylinderGeometry(0.315, 0.315, 0.05, 40, 1, true), base.clone().add(new THREE.Vector3(0, 0.035, 0)))], mat('#e63946', { side: THREE.DoubleSide })))
+      g.userData.tilt = [0.08, 0, -0.06]
+      return g
+    }
+    case 'cou:fleurs': {
+      const palette = [color, '#ffd23f', '#ffffff', '#ff7b00', '#9b5de5']
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * Math.PI * 2
+        const front = Math.cos(a)
+        add(mesh([at(new THREE.IcosahedronGeometry(0.045, 0), L(Math.sin(a) * 0.29, 1.42 - 0.06 * Math.max(front, 0), -0.13 + front * 0.31))],
+          mat(palette[i % palette.length], { roughness: 0.7 })))
+      }
+      return g
+    }
     case 'cou:perles': {
       const geos = []
       for (let i = 0; i < 30; i++) {
@@ -307,4 +325,7 @@ const dress = (parts: Partial<Record<Slot, string>>): Costume =>
   })) as Costume
 
 /** Tenue de départ (modifiable, mémorisée dans le navigateur). */
+/** Tenue de plage (pour les deux personnages). */
+export const BEACH_COSTUME: Costume = dress({ chapeau: 'paille', lunettes: 'soleil', cou: 'fleurs' })
+
 export const DEFAULT_COSTUME: Costume = dress({ chapeau: 'fete', lunettes: 'etoiles', nez: 'clown', cou: 'perles' })
