@@ -13,7 +13,7 @@ import { ErrorState, Loading } from '../components/ui/States'
 import { useToast } from '../components/ui/Toast'
 import { texts } from '../content/texts'
 import { api, ApiError } from '../lib/api'
-import type { FundEntry, FundShopDiagnostic, FundShopItem, FundShopOverview, FundShopProblem } from '../lib/types'
+import type { FundEntry, FundShopCheck, FundShopDiagnostic, FundShopItem, FundShopOverview, FundShopProblem } from '../lib/types'
 
 const T = texts.fundshop
 const AUTOMATION = 'telechargement_documents'
@@ -140,6 +140,9 @@ export default function FundShop() {
   const [linkFor, setLinkFor] = useState<string | null>(null)
   const [previews, setPreviews] = useState<Record<string, FundShopProblem | 'ok' | 'testing'>>({})
   const [diag, setDiag] = useState<FundShopDiagnostic | 'loading' | null>(null)
+  const [checkText, setCheckText] = useState('')
+  const [checking, setChecking] = useState(false)
+  const [checkResult, setCheckResult] = useState<FundShopCheck | null>(null)
   const [browsing, setBrowsing] = useState<{ isin: string; fund: string; part: string } | null>(null)
   const saveTimer = useRef(0)
   const version = useRef(0)
@@ -397,7 +400,32 @@ export default function FundShop() {
 
       <details className="mt-6 rounded-[var(--radius-card)] border-2 border-fg/30 p-4">
         <summary className="cursor-pointer font-bold">{T.advanced}</summary>
-        <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-fg/40 px-4 py-2 text-sm font-bold hover:border-fg">
+        <div className="mt-3">
+          <p className="font-display text-lg font-semibold">{T.checkTitle}</p>
+          <p className="text-xs font-semibold text-fg-3">{T.checkHint}</p>
+          <textarea value={checkText} onChange={(e) => setCheckText(e.target.value)} rows={5} aria-label={T.checkTitle}
+            className="mt-2 w-full rounded-xl border-2 border-fg bg-card p-2 font-mono text-xs" />
+          <Button size="sm" variant="primary" loading={checking} disabled={!checkText.trim()} className="mt-2"
+            onClick={async () => { setChecking(true); try { setCheckResult(await api.fundshop.check(checkText.split('\n'))) } catch (e) { toast('error', e instanceof ApiError ? e.message : texts.errors.generic) } finally { setChecking(false) } }}>
+            {T.checkRun}
+          </Button>
+          {checkResult && (
+            <div className="mt-3">
+              <p className="font-bold">{T.checkSummary(checkResult.ok, checkResult.total)}</p>
+              <ul className="mt-2 space-y-2 text-xs font-semibold">
+                {checkResult.results.map((r) => (
+                  <li key={r.line} className={`rounded-xl border-2 p-2 ${r.ok ? 'border-mint-300' : 'border-danger'}`}>
+                    <p className="font-bold">{r.ok ? '✓' : '✗'} {r.line} {r.problem && <span className="text-danger">— {r.problem}</span>}</p>
+                    {r.page && <a href={r.page} target="_blank" rel="noreferrer" className="underline">{r.page}</a>}
+                    <ul className="mt-1 list-disc pl-4 text-fg-2">{r.steps.map((st) => <li key={st}>{st}</li>)}</ul>
+                    {Object.keys(r.documents).length > 0 && <p className="mt-1 text-fg-3">{Object.entries(r.documents).map(([k, n]) => `${k} ×${n}`).join(' · ')}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+        <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-fg/40 px-4 py-2 text-sm font-bold hover:border-fg">
           <Upload size={15} aria-hidden="true" />{T.learnCsv}
           <input type="file" accept=".csv" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) void learn(f); e.target.value = '' }} />
         </label>

@@ -45,8 +45,7 @@ def problem(code: str, *, host: str = "", doc: str = "", period: str = "", statu
         "reseau": ("Problème de réseau", f"La demande vers {host} a échoué ({detail[:120]}).", "Réessayez ; si ça persiste, ouvrez le lien dans Edge."),
         "refuse": ("Accès refusé par le site", f"Le site a répondu « erreur {status} ».", "Ouvrez le lien dans Edge pour voir le message affiché."),
         "adresse-inconnue": ("Adresse du document encore inconnue",
-                             "L'app n'a pas trouvé la page de la part sur le site (elle la déduit du nom du fonds et de la part, "
-                             "ex. …/nos-fonds/r-co-valor/c-eur/) ni d'adresse mémorisée.",
+                             "L'app n'a pas trouvé la part en la cherchant sur le site (recherche « Nos fonds », puis menu des parts).",
                              "Ouvrez la page (bouton ci-dessous), vérifiez le nom du fonds et de la part dans la liste, ou collez l'adresse de la page "
                              "de la part ou d'un de ses PDF avec « J'ai le lien ». "
                              "Une seule fois : ensuite l'app retrouve tous ses documents, chaque mois."),

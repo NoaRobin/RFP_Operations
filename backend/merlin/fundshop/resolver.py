@@ -8,7 +8,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from datetime import timedelta
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 from ..data.access import DataAccess, DataError
 from ..rfi.ontology import norm
@@ -133,6 +133,7 @@ class Resolver:
         self._ids: dict[str, Identity] = {}
         self._pages: dict[str, str | None] = {}
         self._found: dict[str, list[str]] = {}
+        self.trace: dict[str, list[str]] = {}
 
     @property
     def net(self) -> Network:
@@ -179,39 +180,93 @@ class Resolver:
             share = share[len(ident.fund):]
         return slug(share)
 
-    def discover(self, ident: Identity, seen: "Attempts") -> list[str]:
-        """Comme la recherche du site : l'API « data-fund » donne, pour un ISIN, le fonds (fund_rewrite) et le DIC de la part ;
-        la page du fonds liste ses parts (menu « Part … ») : on en déduit la page exacte de la part."""
-        if ident.isin in self._found:
-            return self._found[ident.isin]
-        out: list[str] = []
+    def _search(self, query: str, seen: "Attempts") -> list[dict]:
+        """La recherche de la page « Nos fonds » (API data-fund) : une ligne par part trouvée."""
         lang = "fr"
-        api = (f"{self._root()}/api/data-fund/?query={ident.isin}&type=&region=&range=&expertise=&period=&esg="
+        api = (f"{self._root()}/api/data-fund/?query={quote(query)}&type=&region=&range=&expertise=&period=&esg="
                f"&country={lang}&language={lang}&user_type=individual")
         try:
             r = self.net.get(api)
             data = json.loads(r.content.decode("utf-8", "replace")) if r.status == 200 else {}
         except NetError as error:
             seen.add(error.code, host=error.host, detail=error.detail, link=api)
-            data = {}
+            return []
         except ValueError:
-            data = {}
-        record = None
-        for funds in (data.get("tree") or {}).values() if isinstance(data, dict) else []:
-            for experts in (funds or {}).values():
-                for shares in (experts or {}).values():
-                    for rec in shares or []:
-                        if isinstance(rec, dict) and ident.isin in {str(v).upper() for v in rec.values() if isinstance(v, str)}:
-                            record = rec
+            return []
+        out: list[dict] = []
+
+        def walk(node):
+            if isinstance(node, dict):
+                if node.get("fund_rewrite"):
+                    out.append(node)
+                else:
+                    for v in node.values():
+                        walk(v)
+            elif isinstance(node, list):
+                for v in node:
+                    walk(v)
+        walk(data.get("tree", data) if isinstance(data, dict) else data)
+        return out
+
+    def _pick(self, records: list[dict], ident: Identity, by_isin: bool) -> dict | None:
+        """La bonne ligne : ISIN si le site le donne, sinon le nom de la part (« C EUR »), sinon la seule part du seul fonds."""
+        for rec in records:
+            if ident.isin in {str(v).upper() for v in rec.values() if isinstance(v, str)}:
+                return rec
+        wanted = norm(self.share_label(ident))
+        fund = norm(ident.fund)
+        same_fund = [r for r in records if not fund or norm(r.get("fund_title", "")) == fund] or records
+        for rec in same_fund:
+            title = norm(re.sub(r"^part\s+", "", str(rec.get("share_title") or ""), flags=re.I))
+            if title and wanted and (title == wanted or wanted.endswith(" " + title)):
+                return rec
+        if by_isin and len({r.get("fund_rewrite") for r in records}) == 1:
+            return records[0] if len(records) == 1 else None
+        return None
+
+    def share_label(self, ident: Identity) -> str:
+        share = ident.share or ""
+        if ident.fund and norm(share).startswith(norm(ident.fund)):
+            share = share[len(ident.fund):]
+        return share.strip()
+
+    def discover(self, ident: Identity, seen: "Attempts") -> list[str]:
+        """Comme à la main sur « Nos fonds » : taper l'ISIN (sinon le nom du fonds), cliquer sur le fonds, choisir la part dans
+        le menu « Part … ». Chaque étape est notée dans self.trace[isin] pour expliquer un échec."""
+        if ident.isin in self._found:
+            return self._found[ident.isin]
+        trace = self.trace.setdefault(ident.isin, [])
+        out: list[str] = []
+        record, fund_rewrite = None, ""
+        for query, by_isin in ((ident.isin, True), (ident.fund, False)):
+            if not query:
+                continue
+            records = self._search(query, seen)
+            trace.append(f"recherche « {query} » sur le site : {len(records)} part(s) trouvée(s)")
+            if not records:
+                continue
+            record = self._pick(records, ident, by_isin)
+            funds = {r.get("fund_rewrite") for r in records}
+            if record:
+                fund_rewrite = str(record["fund_rewrite"])
+                break
+            if len(funds) == 1:
+                fund_rewrite = str(records[0]["fund_rewrite"])  # un seul fonds : on l'ouvre, la part sera prise dans le menu
+                break
         if record:
-            if record.get("DIPR"):
+            trace.append(f"part trouvée : {record.get('fund_title', '')} {record.get('share_title', '')}")
+            if record.get("DIPR") and ident.isin:
                 self.memory.learn(ident.isin, urljoin(self.docs_base + "/", str(record["DIPR"])), kind="dic")
             ident.fund = ident.fund or str(record.get("fund_title") or "")
             ident.share = ident.share or str(record.get("share_title") or "")
-            if record.get("fund_rewrite"):
-                fund_page = f"{self._root()}/{lang}/nos-fonds/{record['fund_rewrite']}/"
-                share_page = self._share_from_menu(fund_page, str(record.get("share_title") or ident.share), seen)
-                out = [share_page or fund_page] + ([fund_page] if share_page and share_page != fund_page else [])
+        if fund_rewrite:
+            fund_page = f"{self._root()}/fr/nos-fonds/{fund_rewrite}/"
+            label = str(record.get("share_title")) if record and record.get("share_title") else self.share_label(ident)
+            share_page = self._share_from_menu(fund_page, label, seen)
+            trace.append(f"page du fonds {fund_page} : " + (f"part « {label} » → {share_page}" if share_page else f"part « {label} » absente du menu"))
+            if share_page and ident.isin:
+                self.memory.remember_page(ident.isin, share_page)
+            out = [share_page or fund_page] + ([fund_page] if share_page and share_page != fund_page else [])
         self._found[ident.isin] = out
         return out
 
@@ -395,6 +450,12 @@ class Resolver:
         raise DocumentProblem(self._explain(seen, ident, doc, label, trusted_404))
 
     def _explain(self, seen: Attempts, ident: Identity, doc: DocType, label: str, trusted_404: bool) -> Problem:
+        p = self._explain_base(seen, ident, doc, label, trusted_404)
+        if p.code == "adresse-inconnue" and self.trace.get(ident.isin):
+            p.why += " Étapes : " + " ; ".join(self.trace[ident.isin]) + "."
+        return p
+
+    def _explain_base(self, seen: Attempts, ident: Identity, doc: DocType, label: str, trusted_404: bool) -> Problem:
         worst = seen.worst()
         page = self.fund_page(ident)
         if worst is None:
@@ -494,3 +555,46 @@ def available(resolver: "Resolver", isin: str, fund: str = "", part: str = "") -
     order = list(DOC_TYPES)
     return {"isin": ident.isin, "fund": ident.fund, "part": ident.share, "page": page_used,
             "documents": sorted(found.values(), key=lambda e: order.index(e["kind"])), "problem": problem_out}
+
+
+def check_line(resolver: "Resolver", text: str) -> dict:
+    """Test d'une ligne (« R-co Valor C EUR », « R-co Valor | C EUR » ou un ISIN) : refait le parcours humain sur le site
+    et dit ce qui a été trouvé à chaque étape, sans rien télécharger ni mémoriser."""
+    from collections import Counter
+
+    text = text.strip()
+    seen = Attempts()
+    isin = text.upper() if re.fullmatch(r"[A-Z]{2}[A-Z0-9]{9}\d", text.upper()) else ""
+    fund, part = "", ""
+    if not isin:
+        if "|" in text or ";" in text:
+            fund, part = [x.strip() for x in re.split(r"[|;]", text, maxsplit=1)]
+        else:  # « R-co Valor C EUR » : le plus long début de phrase que le site reconnaît comme fonds
+            words = text.split()
+            for n in range(len(words), 0, -1):
+                records = resolver._search(" ".join(words[:n]), seen)
+                if records:
+                    titles = {str(r.get("fund_title") or "") for r in records}
+                    # le fonds tel que le site l'écrit, s'il commence la ligne ; la suite de la ligne est la part
+                    match = next((t for t in sorted(titles, key=len, reverse=True) if t and norm(text).startswith(norm(t))), "")
+                    if match:
+                        fund, part = match, text[len(match):].strip(" -·")
+                    else:
+                        fund, part = " ".join(words[:n]), " ".join(words[n:])
+                    break
+            fund = fund or text
+    ident = Identity(isin, fund, part)
+    pages = resolver.discover(ident, seen)
+    steps = list(resolver.trace.get(isin, []))
+    resolver.trace.pop(isin, None)
+    resolver._found.pop(isin, None)
+    docs: Counter = Counter()
+    if pages:
+        for ln in resolver.links(pages[0], seen):
+            if ln.prefix:
+                docs[ln.prefix] += 1
+    worst = seen.worst()
+    network = worst and worst[0] in {"proxy", "certificat", "hors-ligne", "delai", "reseau", "refuse"}
+    return {"line": text, "fund": ident.fund, "part": ident.share or part, "page": pages[0] if pages else "", "steps": steps,
+            "documents": dict(docs), "ok": bool(docs.get("DIPR") or docs.get("REPM")),
+            "problem": problem(worst[0], host=worst[1].get("host", ""), detail=worst[1].get("detail", "")).title if network else ""}

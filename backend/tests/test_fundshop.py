@@ -307,3 +307,32 @@ def test_available_lists_what_the_site_really_publishes(tmp_path):
     assert res.memory.guid(ISIN, "share") == SHARE_GUID  # lu une fois, mémorisé
     blocked = available(resolver(tmp_path, {}, data=None, down="proxy"), ISIN, "Fonds Fictif", "C EUR")
     assert blocked["documents"] == [] and blocked["problem"]["code"] == "proxy"
+
+
+def test_site_search_by_fund_name_when_results_carry_no_isin(tmp_path):
+    """Les lignes de la recherche du site n'ont pas forcément l'ISIN : on tape le nom du fonds, on prend la part par son nom."""
+    import json
+
+    from merlin.fundshop.net import Reply
+    from merlin.fundshop.resolver import check_line
+
+    records = [{"fund_title": "Fonds Fictif", "share_title": "C EUR", "fund_rewrite": "fonds-fictif", "DIPR": f"DIPR_{SHARE_GUID}_FR_FR.pdf"},
+               {"fund_title": "Fonds Fictif", "share_title": "I EUR", "fund_rewrite": "fonds-fictif", "DIPR": "DIPR_x.pdf"}]
+    fund_page = f"""<select><option selected value="/fr/nos-fonds/fonds-fictif/">Part C EUR</option>
+      <option value="/fr/nos-fonds/fonds-fictif/i-eur/">Part I EUR</option></select>
+      <a href="https://docs.test/DIPR_{SHARE_GUID}_FR_FR.pdf">DIC</a><a href="https://docs.test/REPM_{SHARE_GUID}_FR_FR_20260831.pdf">r</a>"""
+    res = resolver(tmp_path, {"https://site.test/fr/nos-fonds/fonds-fictif/": fund_page.encode()}, data=None)
+    original = res.net.get
+
+    def get(url):
+        if "/api/data-fund/" in url:
+            hit = "fonds%20fictif" in url.lower()
+            return Reply(200, json.dumps({"status": "ok", "tree": {"t": {"e": {"1": records}}} if hit else {}}).encode(), "application/json", url)
+        return original(url)
+    res.net.get = get
+    out = check_line(res, "Fonds Fictif C EUR")
+    assert out["ok"] and out["page"].endswith("/fonds-fictif/") and out["documents"]["REPM"] == 1
+    assert any("recherche « Fonds Fictif »" in s for s in out["steps"])
+    ident = res.identity(ISIN, "Fonds Fictif", "C EUR")
+    assert res.discover(ident, __import__("merlin.fundshop.resolver", fromlist=["Attempts"]).Attempts())[0].endswith("/fonds-fictif/")
+    assert res.memory.guid(ISIN, "share") == SHARE_GUID

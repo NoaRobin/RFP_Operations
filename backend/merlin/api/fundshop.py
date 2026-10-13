@@ -174,6 +174,21 @@ def available_documents(isin: str, fund: str = "", part: str = "", s: AppState =
     return available(resolver(s.settings, s.data), isin, fund, part)
 
 
+class CheckIn(BaseModel):
+    lines: list[str]
+
+
+@router.post("/check")
+def check(body: CheckIn, s: AppState = Depends(state)) -> dict[str, Any]:
+    """« Tester sur le site » : pour chaque fonds / part, le parcours de la page « Nos fonds » étape par étape (sans téléchargement)."""
+    from ..fundshop.resolver import check_line
+
+    res = resolver(s.settings, s.data)
+    lines = [x for x in (l.strip() for l in body.lines) if x][:40]
+    results = [check_line(res, line) for line in lines]
+    return {"results": results, "ok": sum(r["ok"] for r in results), "total": len(results)}
+
+
 @router.get("/diagnostic")
 def diagnostic(s: AppState = Depends(state)) -> dict[str, Any]:
     """Test de connexion en clair : dossier, site des documents, site des fonds, Product Info."""

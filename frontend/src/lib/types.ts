@@ -489,6 +489,10 @@ export interface FundShopAvailable {
   isin: string; fund: string; part: string; page: string; problem: FundShopProblem | null
   documents: { kind: string; label: string; needs_month: boolean; url: string; months: { value: string; label: string; url: string }[] }[]
 }
+export interface FundShopCheck {
+  ok: number; total: number
+  results: { line: string; fund: string; part: string; page: string; steps: string[]; documents: Record<string, number>; ok: boolean; problem: string }[]
+}
 export interface FundShopDiagnostic { ok: boolean; network: string; checks: { label: string; ok: boolean; message: string; fix?: string }[] }
 
 export interface OmniOverview {

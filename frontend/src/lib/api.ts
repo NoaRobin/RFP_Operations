@@ -4,6 +4,7 @@ import type {
   CopilotAnswers,
   CopilotPrompt,
   FundShopAvailable,
+  FundShopCheck,
   FundShopDiagnostic,
   FundShopProblem,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
@@ -97,6 +98,7 @@ export const api = {
     tryOne: (isin: string, kind: string, month: string, fund: string) =>
       request<{ found: boolean; url?: string; note?: string; problem?: FundShopProblem }>('/fundshop/try', json({ isin, kind, month, fund })),
     diagnostic: () => request<FundShopDiagnostic>('/fundshop/diagnostic'),
+    check: (lines: string[]) => request<FundShopCheck>('/fundshop/check', json({ lines })),
     available: (isin: string, fund: string, part: string) =>
       request<FundShopAvailable>(`/fundshop/available/${isin}?fund=${encodeURIComponent(fund)}&part=${encodeURIComponent(part)}`),
     fileUrl: (name: string) => `/api/fundshop/file/${encodeURIComponent(name)}`,
