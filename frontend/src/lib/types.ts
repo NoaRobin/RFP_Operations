@@ -485,3 +485,8 @@ export interface OmniOverview {
   next: { periode: string; mois: number; annee: number; date_arrete: string; source: string }
   reports: { file: string; periode: string; statut: string; date_arrete: string; alertes: string[]; holdings: number | null; controle_net: string | null }[]
 }
+
+export interface CopilotAnswers {
+  overrides: Record<string, { text: string; source: 'copilot'; citation: string; confidence: string; previous: string | null }>
+  rejected: { id: string; question: string; reason: string }[]
+}

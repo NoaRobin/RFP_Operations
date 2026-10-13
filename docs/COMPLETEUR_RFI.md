@@ -148,6 +148,11 @@ avec lien, anciens RFI, liaison apprise, raisonnement) et « Utiliser cette vale
 (automatique / validée / à vérifier / à compléter), validations groupées (confirmées par un document, réponses société,
 visibles), clavier : J / K, A, E, S, X. `prefers-reduced-motion` respecté.
 
+## 7 bis. Deuxième avis Copilot
+Pack Excel + DIC + prospectus à ouvrir avec Copilot sur le poste, puis réimport des réponses : toujours « à vérifier »,
+source citée obligatoire, option de liste contrôlée, contradiction avec l'app signalée (`merlin/rfi/copilot.py`).
+Détail : `docs/OMNI_ET_DOCUMENTS.md` § 3.
+
 ## 8. Mesurer et faire progresser
 
 - `python -m merlin.rfi.replay <bibliothèque>` : couverture et concordance sur de vrais questionnaires (voir plus haut).

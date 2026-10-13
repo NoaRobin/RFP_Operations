@@ -1,6 +1,7 @@
 import { getUserName } from './storage'
 import { texts } from '../content/texts'
 import type {
+  CopilotAnswers,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
   DueDiligenceList, FinalListing, SharePointImport, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
@@ -108,6 +109,25 @@ export const api = {
       return request<RfiDocument>('/rfi/documents', { method: 'POST', body: form })
     },
     demo: (kind: 'xlsx' | 'docx') => request<RfiDocument>(`/rfi/demo/${kind}`, { method: 'POST' }),
+    copilotPack: async (id: string, body: RfiRequest, includeAuto = false): Promise<Blob> => {
+      let response: Response
+      try {
+        response = await fetch(`/api/rfi/documents/${id}/copilot-pack${includeAuto ? '?include_auto=true' : ''}`, { ...json(body), headers: headers({ 'Content-Type': 'application/json' }) })
+      } catch {
+        throw new ApiError(texts.errors.network, texts.errors.networkHint)
+      }
+      if (!response.ok) throw new ApiError(texts.errors.generic, '', response.status)
+      return response.blob()
+    },
+    copilotAnswers: (id: string, file: File, body: RfiRequest) => {
+      const form = new FormData()
+      form.append('file', file)
+      const q = new URLSearchParams()
+      if (body.pid) q.set('pid', body.pid)
+      if (body.isin) q.set('isin', body.isin)
+      if (body.as_of) q.set('as_of', body.as_of)
+      return request<CopilotAnswers>(`/rfi/documents/${id}/copilot-answers?${q}`, { method: 'POST', body: form })
+    },
     answers: (id: string, body: RfiRequest) => request<RfiAnalysis>(`/rfi/documents/${id}/answers`, json(body)),
     generate: (id: string, body: RfiRequest) => request<RfiGenerated>(`/rfi/documents/${id}/generate`, json(body)),
     originalUrl: (id: string) => `/api/rfi/documents/${id}/original`,

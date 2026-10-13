@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Check, Download, FileQuestion, FileSpreadsheet, FileText, RotateCcw, Search, Sparkles, Wand2 } from 'lucide-react'
 import { Dropzone } from '../components/atelier/Dropzone'
+import { CopilotPanel } from '../components/rfi/CopilotPanel'
 import { FundDocuments } from '../components/rfi/FundDocuments'
 import { Workbench } from '../components/rfi/review/Workbench'
 import { PrecedentsPanel } from '../components/rfi/PrecedentsPanel'
@@ -317,6 +318,16 @@ export default function Rfi() {
                 <ul className="mt-4 rounded-xl border-2 border-warning bg-sun-400/20 p-3 text-sm font-semibold text-warning">
                   {analysis.errors.map((e) => <li key={e}>{e}</li>)}
                 </ul>
+              )}
+              {doc && (
+                <div className="mt-5">
+                  <CopilotPanel docId={doc.id} filename={doc.filename} request={() => request()}
+                    onAnswers={(r) => {
+                      const next = { ...overrides, ...r.overrides }
+                      setOverrides(next)
+                      void analyze(doc, { overrides: next })
+                    }} />
+                </div>
               )}
               <div className={`mt-5 transition-opacity ${analyzing ? 'opacity-60' : ''}`}>
                 <Workbench analysis={analysis} preview={preview} facts={facts} overrides={overrides} accepted={accepted}

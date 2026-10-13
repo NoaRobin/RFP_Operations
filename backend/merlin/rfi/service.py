@@ -283,6 +283,17 @@ def _analyze_slot(ontology, library: Library, slot: Slot, u: Understanding, vals
     if override != "__none__":
         if override is None:
             return {**base, "status": "skipped", "source": "utilisateur"}
+        if isinstance(override, dict) and override.get("source") == "copilot" and override.get("text"):
+            # Copilot : jamais automatique ; la citation et l'écart éventuel avec l'app sont affichés
+            text = str(override["text"]).strip()
+            previous = override.get("previous")
+            issues = list(base["issues"])
+            if previous and norm(previous) != norm(text):
+                issues.append(f"incohérence : l'app proposait « {previous} », Copilot répond « {text} » ({override.get('citation')})")
+            return {**base, "status": "review", "answer": text, "value": text, "_value": text, "confidence": 0.6, "source": "Copilot",
+                    "evidence": f"Copilot · {override.get('citation')}", "issues": issues,
+                    "reasons": [f"réponse Copilot (confiance {override.get('confidence') or '—'}), source citée : {override.get('citation')}"],
+                    "sources": [{"kind": "copilot", "label": str(override.get("citation") or ""), "value": text}]}
         if isinstance(override, dict) and override.get("text") is not None:
             text = str(override["text"]).strip()
             return {**base, "status": "review" if not text else "auto", "answer": text, "value": text, "confidence": 1.0,
@@ -492,6 +503,8 @@ def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, is
         reusable_ids = set(reusable or [])
         by_id = {r["id"]: r for r in result["questions"]}
         for row in written_rows:
+            if row["source"] == "Copilot":
+                continue  # une réponse Copilot validée n'entre pas dans la bibliothèque sans relecture humaine dédiée
             if row["source"] == "réponse saisie":
                 library.remember(row["question"], "text", text=row["answer"], scope="all" if row["id"] in reusable_ids else scope_default, by=user)
             elif row["source"] == "précédent" and not row["concept"]:

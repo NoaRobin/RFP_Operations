@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import date
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
@@ -183,3 +184,55 @@ def original(doc_id: str, s: AppState = Depends(state)):
 
 
 __all__ = ["router", "date"]
+
+
+# ------------------------------------------------------------------ aller-retour Copilot
+@router.post("/documents/{doc_id}/copilot-pack")
+def copilot_pack(doc_id: str, body: AnswerRequest, include_auto: bool = False, s: AppState = Depends(state)):
+    from fastapi.responses import Response
+
+    from ..rfi.copilot import build_pack
+    from .documents import service_for
+
+    store = _store(s)
+    try:
+        path, layout = load_layout(store, doc_id)
+    except FileNotFoundError as error:
+        raise not_found("Ce RFI n'est plus là.") from error
+    docs_service = service_for(s)
+    result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides,
+                     get_index(store.root), documents=docs_service, bindings=get_bindings(store.root))
+    documents = []
+    if docs_service is not None and body.isin:
+        try:
+            documents = docs_service.describe(body.isin)["documents"]
+        except Exception:  # noqa: BLE001 - le pack reste utile sans PDF (Copilot est invité à les joindre)
+            documents = []
+    fund = ""
+    if body.pid:
+        try:
+            fund = next((x["name"] for x in search_funds(s.data, "", limit=100000) if x["pid"] == body.pid), "")
+        except DataError:
+            fund = ""
+    content = build_pack(result, fund, body.isin or "", documents, include_auto)
+    name = f"Pack_Copilot_{Path(store.meta(doc_id)['filename']).stem[:40]}.zip"
+    return Response(content, media_type="application/zip", headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+@router.post("/documents/{doc_id}/copilot-answers")
+async def copilot_answers(doc_id: str, file: UploadFile = File(...), pid: str | None = None, isin: str | None = None,
+                          as_of: str | None = None, s: AppState = Depends(state)):
+    from ..rfi.copilot import read_answers
+
+    store = _store(s)
+    try:
+        path, layout = load_layout(store, doc_id)
+    except FileNotFoundError as error:
+        raise not_found("Ce RFI n'est plus là.") from error
+    raw = await file.read()
+    result = analyze(s.data, store, path, layout, pid, isin, as_of, None, None, get_index(store.root),
+                     documents=service_for(s), bindings=get_bindings(store.root))
+    try:
+        return read_answers(raw, result, load_ontology(s.data.catalog))
+    except Exception as error:  # noqa: BLE001
+        raise bad_request("Classeur Copilot illisible.", type(error).__name__) from error

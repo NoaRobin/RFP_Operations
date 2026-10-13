@@ -191,6 +191,16 @@ export const texts = {
     noPrecedent: 'Aucun ancien RFI chargé : seule l\'ontologie répond. Ouvrez « Anciens RFI » pour brancher SharePoint.',
   },
 
+  copilot: {
+    title: 'Deuxième avis Copilot',
+    lead: 'Préparez un pack (questions + DIC + prospectus), ouvrez-le avec Copilot sur votre poste, puis réimportez ses réponses : elles arrivent « à vérifier », avec la page citée.',
+    pack: 'Préparer le pack Copilot',
+    packAll: 'inclure aussi les réponses automatiques',
+    import: 'Importer les réponses Copilot',
+    imported: (n: number, r: number) => `${n} réponse(s) Copilot à vérifier${r ? ` · ${r} écartée(s)` : ''}`,
+    rejected: 'Écartées',
+    none: 'Aucune réponse exploitable (citez toujours la source).',
+  },
   review: {
     title: '2 · L\'atelier de revue',
     lead: 'Cliquez une case du document ou parcourez les questions : chaque réponse montre d\'où elle vient.',
