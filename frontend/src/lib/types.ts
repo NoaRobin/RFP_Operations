@@ -551,6 +551,7 @@ export interface QvidianStatus {
   user: string
   auth_url: string
   sso: boolean
+  sso_suffix: boolean
   credentials: boolean
   write_enabled: boolean
   locked: number

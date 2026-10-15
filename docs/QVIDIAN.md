@@ -36,7 +36,7 @@ Légende :
 | Limite du SSO | ✅ | En cas d'échec chez le fournisseur d'identité, QPA affiche une page d'erreur et ne rappelle jamais l'app (guide SSO, § *Limitations*). |
 | Durée de vie du jeton | ✅ guide | « Authentication Tokens » : le jeton vaut le temps de la connexion, jusqu'à `ConnectionTerminate` ou l'expiration de la session — réglage serveur `ConnectionTimeout`, **1200 s (20 min) par défaut**. L'app garde la session ouverte par un petit appel de lecture toutes les 10 min (`QVIDIAN_KEEPALIVE_MINUTES`) ; si la session a quand même expiré, elle tente une reconnexion avec le jeton, sinon demande de refaire le SSO. |
 | Mode de connexion de l'abonnement | ❌ | Explicite, SSO seul ou mixte (guide SSO) : à demander à l'administrateur Qvidian. |
-| Valeur de `SubscriberSuffix` | ❌ | Identifiant de l'abonnement dans la base du portail QPA : à demander à l'administrateur Qvidian. |
+| Valeur de `SubscriberSuffix` | ✅ facultatif | L'exemple `SSOQvidianWebServices/Default.aspx.cs` redirige sans lui quand il est vide (`?SSOWebService=…` seul) : l'app fait de même. S'il est connu, il évite la page de choix. Ancienne note : | Identifiant de l'abonnement dans la base du portail QPA : à demander à l'administrateur Qvidian. |
 
 ### Précisions du guide en ligne (pages des méthodes de connexion) ✅
 - `Connect` : le mot de passe ne peut pas être vide. **Un compte qui se connecte uniquement par SSO n'a pas de mot de passe Qvidian** : il passe par le bouton SSO (ou une clé d'API).

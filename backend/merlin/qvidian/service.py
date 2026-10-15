@@ -97,11 +97,13 @@ class QvidianService:
         return {"user": binding.user}
 
     def sso_url(self, callback: str) -> str:
-        if not self.settings.subscriber_suffix:
-            raise QvidianError("config", "SSO non configuré", "Renseignez QVIDIAN_SUBSCRIBER_SUFFIX (identifiant de l'abonnement QPA) dans .env.")
+        """Le SubscriberSuffix est facultatif : l'exemple SSOQvidianWebServices (Default.aspx.cs) redirige avec le seul
+        SSOWebService quand il est vide ; le portail QPA demande alors l'adresse e-mail et oriente vers le SSO de l'entreprise."""
         portal = self.settings.auth_url.rsplit("/", 1)[0]
         target = base64.b64encode(callback.encode("utf-8")).decode("ascii")
-        return f"{portal}?SubscriberSuffix={self.settings.subscriber_suffix}&SSOWebService={target}"
+        if self.settings.subscriber_suffix:
+            return f"{portal}?SubscriberSuffix={self.settings.subscriber_suffix}&SSOWebService={target}"
+        return f"{portal}?SSOWebService={target}"
 
     def sso_callback(self, token_b64: str, login_b64: str) -> dict[str, Any]:
         token = base64.b64decode(token_b64).decode("utf-8")
@@ -174,7 +176,7 @@ class QvidianService:
         meta = self.snapshot(mode).meta() if mode != "off" else {}
         return {"mode": mode, "connected": mode == "demo" or (self.real is not None and self.real.connected),
                 "user": (self.real.binding.user if self.real and self.real.binding else ("démo" if mode == "demo" else "")),
-                "auth_url": self.settings.auth_url, "sso": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
+                "auth_url": self.settings.auth_url, "sso": True, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
                 "write_enabled": self.guard.configured, "locked": self.guard.locked, "snapshot": meta, "sync": self.sync_state,
                 "half_life_days": self.settings.half_life_days, "extended_fields": getattr(self.real, "extended_fields", True)}
 

@@ -70,7 +70,7 @@ function StatusBar({ status, onChange }: { status: QvidianStatus; onChange: (s: 
       {status.mode !== 'off' && !(status.mode === 'qvidian' && status.connected) && (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border-[2.5px] border-fg bg-sun-400/30 p-3">
           <Button variant="primary" onClick={sso} disabled={!status.sso} icon={<LogIn size={17} />}>{Q.sso}</Button>
-          <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso ? Q.ssoHint : Q.ssoMissing}</p>
+          <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso_suffix ? Q.ssoHint : Q.ssoNoSuffix}</p>
         </div>
       )}
       {status.mode !== 'off' && !(status.mode === 'qvidian' && status.connected) && (

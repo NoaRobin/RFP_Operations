@@ -315,6 +315,7 @@ export const texts = {
     sso: 'Se connecter avec le SSO',
     ssoHint: 'Vous passez par la page de connexion habituelle de l\'entreprise (compte Microsoft), puis vous revenez ici, connecté. Rien n\'est enregistré.',
     ssoMissing: 'SSO pas encore configuré : ajoutez QVIDIAN_SUBSCRIBER_SUFFIX=… (valeur donnée par l\'administrateur Qvidian) dans le fichier .env, puis relancez run.bat.',
+    ssoNoSuffix: 'Sans réglage : la page Qvidian vous demandera votre adresse e-mail professionnelle, puis vous enverra vers la connexion Microsoft de l\'entreprise. Revenez ensuite ici automatiquement.',
     connectOther: 'Autre connexion (identifiant + mot de passe ou clé d\'API)',
     disconnect: 'Se déconnecter',
     ssoOk: 'Connexion SSO réussie.',
