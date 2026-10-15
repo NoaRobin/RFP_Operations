@@ -1,5 +1,8 @@
 # ✦ RFP pas envie de travailler — #RFPasenviedetravailler
 
+
+Lien HTML : https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/index.html
+
 > *My RFP will go on… mais sans nous.*
 
 **RFP pas envie de travailler** est l'application de l'équipe RFP. Elle fait quatre choses :
