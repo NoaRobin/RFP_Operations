@@ -279,3 +279,25 @@ def test_choose_recomputes_only_the_chosen_cell(client, monkeypatch):
     calls.clear()
     client.post(f"/api/rfi/documents/{doc['id']}/answers", json={**body, "fresh": True})
     assert len(calls) == len(first["questions"])  # « Analyser » : tout est relu
+
+
+def test_expired_session_asks_to_reconnect_and_object_errors_are_raised():
+    class Expired(FakeTransport):
+        def post(self, url, body, action):
+            op = action.rsplit("/", 1)[-1]
+            if op == "ConnectByAuthToken":
+                return SoapReply(500, envelope('<soap:Fault><faultcode>soap:Server</faultcode><faultstring>Invalid authentication token</faultstring></soap:Fault>'))
+            if op == "libraryContentDetailsGet":
+                return SoapReply(200, envelope(f'<{op}Response xmlns="{NS}"><{op}Result><ContentID>0</ContentID><HasErrors>true</HasErrors>'
+                                               f'<errors><int>1007</int></errors></{op}Result></{op}Response>'))
+            return super().post(url, body, action)
+
+    c = QvidianClient("https://login.example.invalid/QvidianAuthentication.asmx", transport=Expired())
+    c.connect("demo.user", "secret")
+    with pytest.raises(QvidianError) as err:
+        c.content(5)
+    assert "1007" in err.value.message  # HasErrors : erreur signalée dans l'objet (guide « Error Handling »)
+    c.transport.expire_once = True
+    with pytest.raises(QvidianError) as err:
+        c.top_folder()
+    assert err.value.code == "session" and c.binding is None and not c.connected

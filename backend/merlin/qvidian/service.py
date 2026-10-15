@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import threading
+import time
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,26 @@ class QvidianService:
         self.sync_state: dict[str, Any] = {"running": False, "message": "", "done": 0, "error": None, "result": None}
         self._lock = threading.Lock()
         self._snapshots: dict[str, Snapshot] = {}
+        self._keepalive: threading.Thread | None = None
+
+    def _start_keepalive(self) -> None:
+        """La session Qvidian expire après 20 minutes sans appel (réglage par défaut du serveur) : tant que l'app tourne,
+        un petit appel de lecture toutes les N minutes évite de refaire le SSO. QVIDIAN_KEEPALIVE_MINUTES=0 le coupe."""
+        minutes = self.settings.keepalive_minutes
+        if minutes <= 0 or (self._keepalive is not None and self._keepalive.is_alive()):
+            return
+
+        def loop() -> None:
+            while True:
+                time.sleep(60)
+                client = self.real
+                if client is None or not client.connected:
+                    continue
+                if time.time() - client.last_call >= minutes * 60:
+                    client.keepalive()
+
+        self._keepalive = threading.Thread(target=loop, name="qvidian-keepalive", daemon=True)
+        self._keepalive.start()
 
     # ------------------------------------------------------------------ mode et connexion
     @property
@@ -62,13 +83,16 @@ class QvidianService:
         elif s.password:
             client.connect(s.user, s.password)
         else:
-            raise QvidianError("config", "Pas de connexion Qvidian", "Connectez-vous depuis la fenêtre Qvidian (identifiant ou SSO).")
+            raise QvidianError("config", "Pas de connexion Qvidian (ou session expirée)",
+                               "Connectez-vous depuis la fenêtre Qvidian (bouton SSO).")
         self.real = client
+        self._start_keepalive()
 
     def connect(self, user: str, password: str = "", api_key: str = "") -> dict[str, Any]:
         client = QvidianClient(self.settings.auth_url)
         binding = client.connect_api_key(user, api_key) if api_key else client.connect(user, password)
         self.real = client
+        self._start_keepalive()
         return {"user": binding.user}
 
     def sso_url(self, callback: str) -> str:
@@ -84,6 +108,7 @@ class QvidianService:
         client = QvidianClient(self.settings.auth_url)
         binding = client.connect_token(login, token)
         self.real = client
+        self._start_keepalive()
         return {"user": binding.user}
 
     def disconnect(self) -> None:

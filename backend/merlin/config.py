@@ -104,6 +104,7 @@ class QvidianSettings:
     api_key: str = ""
     subscriber_suffix: str = ""  # SSO : identifiant de l'abonnement sur le portail QPA
     write_password: str = ""  # mot de passe des modifications en masse (QVIDIAN_WRITE_PASSWORD)
+    keepalive_minutes: int = 10  # la session Qvidian expire après 20 min sans appel : petit appel de maintien (0 = jamais)
     half_life_days: int = 365  # agrégation : une réponse choisie il y a un an pèse moitié moins qu'aujourd'hui
 
     @property
@@ -190,6 +191,7 @@ def get_settings() -> Settings:
             subscriber_suffix=_env("QVIDIAN_SUBSCRIBER_SUFFIX"),
             write_password=os.environ.get("QVIDIAN_WRITE_PASSWORD", ""),
             half_life_days=int(_env("QVIDIAN_HALF_LIFE_DAYS", "365") or 365),
+            keepalive_minutes=int(_env("QVIDIAN_KEEPALIVE_MINUTES", "10") or "10"),
         ),
         omni=OmniSettings(
             root=_env("OMNI_ROOT"),

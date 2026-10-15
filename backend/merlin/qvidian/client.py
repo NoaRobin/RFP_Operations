@@ -14,6 +14,7 @@ import base64
 import html
 import re
 import threading
+import time
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from typing import Any
@@ -142,6 +143,15 @@ def normalize_folder(f: dict[str, Any]) -> dict[str, Any]:
             "children": _int(f.get("ChildFolderCount")), "contents": _int(f.get("ContentCount")), "enabled": _bool(f.get("Enabled", "true"))}
 
 
+def _checked(obj: Any, what: str) -> Any:
+    """Guide « Error Handling » : une méthode qui renvoie un objet signale ses erreurs par HasErrors / errors (codes
+    ErrorCodes) plutôt que par une exception ; les autres champs ne sont alors pas remplis."""
+    if isinstance(obj, dict) and (_bool(obj.get("HasErrors")) or _bool(obj.get("hasErrors"))):
+        codes = [str(c) for c in as_list(obj.get("errors") or obj.get("errorCodes"), "int")]
+        raise QvidianError("qvidian", f"Qvidian a refusé « {what} » (code{'s' if len(codes) > 1 else ''} {', '.join(codes) or '?'})", HINTS["qvidian"])
+    return obj
+
+
 class QvidianClient:
     mode = "qvidian"
 
@@ -150,6 +160,7 @@ class QvidianClient:
         self.transport = transport or SoapTransport()
         self.binding: Binding | None = None
         self.extended_fields = True
+        self.last_call = 0.0
         self._lock = threading.Lock()
 
     # ------------------------------------------------------------------ appels
@@ -208,39 +219,57 @@ class QvidianClient:
         return self.binding is not None
 
     def call(self, operation: str, **params: Any) -> Any:
+        """Appel authentifié. Le jeton vit tant que la session est active : 1200 s sans appel par défaut
+        (guide « Authentication Tokens », réglage ConnectionTimeout du serveur)."""
         if self.binding is None:
             raise QvidianError("config", "Pas de connexion Qvidian", HINTS["config"])
         try:
-            return self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
+            res = self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
         except QvidianError as error:
             if error.code != "auth":
                 raise
-            # Jeton expiré : une reconnexion avec le jeton courant (exemple « Reconnect » du test UI), puis on réessaie une fois
-            self.connect_token(self.binding.user, self.binding.token)
-            return self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
+            # Jeton refusé : une reconnexion avec le jeton courant (« Reconnect » du test UI), puis un seul nouvel essai
+            try:
+                self.connect_token(self.binding.user, self.binding.token)
+            except QvidianError as again:
+                self.binding = None  # session expirée côté Qvidian : il faut se reconnecter (SSO ou identifiant)
+                raise QvidianError("session", "Session Qvidian expirée (20 minutes sans activité par défaut).",
+                                   "Reconnectez-vous depuis la fenêtre Qvidian (bouton SSO).") from again
+            res = self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
+        self.last_call = time.time()
+        return res
+
+    def keepalive(self) -> bool:
+        """Petit appel de lecture pour garder la session ouverte pendant que l'app tourne."""
+        try:
+            self.has_permission("ViewSearchEnabledContent")
+            return True
+        except QvidianError:
+            return False
 
     # ------------------------------------------------------------------ lecture
     def has_permission(self, permission: str) -> bool:
         return _bool(self.call("HasPermissions", Permission=permission))
 
     def top_folder(self) -> dict[str, Any]:
-        return normalize_folder(self.call("libraryFolderGetTop") or {})
+        return normalize_folder(_checked(self.call("libraryFolderGetTop") or {}, "libraryFolderGetTop"))
 
     def folders(self, parent_id: int) -> list[dict[str, Any]]:
         return [normalize_folder(f) for f in as_list(self.call("libraryFoldersGetList", parentFolderID=parent_id), "LibraryFolder")]
 
     def folder_contents(self, folder_id: int) -> list[dict[str, Any]]:
-        return [normalize_content(c) for c in as_list(self.call("libraryFolderContentGetList", folderID=folder_id), "Content")]
+        items = as_list(self.call("libraryFolderContentGetList", folderID=folder_id), "Content")
+        return [normalize_content(c) for c in items if not _bool(c.get("HasErrors"))]  # objet en erreur : ses champs ne sont pas remplis
 
     def content(self, content_id: int) -> dict[str, Any]:
-        return normalize_content(self.call("libraryContentDetailsGet", contentID=content_id) or {})
+        return normalize_content(_checked(self.call("libraryContentDetailsGet", contentID=content_id) or {}, f"contenu {content_id}"))
 
     def content_file(self, content_id: int) -> tuple[str, bytes]:
         res = self.call("libraryContentGet", contentID=content_id) or {}
         return res.get("fileName") or f"contenu_{content_id}", base64.b64decode(res.get("fileContent") or "")
 
     def preview_html(self, content_id: int, revision: int) -> str:
-        res = self.call("libraryContentPreviewHTMLGet", contentID=content_id, revision=revision) or {}
+        res = _checked(self.call("libraryContentPreviewHTMLGet", contentID=content_id, revision=revision) or {}, "aperçu HTML")
         return res.get("htmlContent") or ""
 
     def search(self, terms: str = "", page: int = 0, size: int = 50, behavior: str = "AnyOfTheseWords",

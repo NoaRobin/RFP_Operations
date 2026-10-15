@@ -34,7 +34,7 @@ Légende :
 | En-tête SOAP | ✅ | `QvidianCredentialHeader/AuthenticationToken` sur chaque appel à `Qvidian.asmx`. Le service d'authentification accepte aussi `IgnoreLockedOut`. |
 | SSO | ✅ | 1. Redirection vers le portail QPA avec `?SubscriberSuffix=<abonnement>&SSOWebService=<adresse de retour en Base64>`. 2. QPA authentifie l'utilisateur (Ping Federate / fournisseur d'identité). 3. Retour sur l'adresse de l'app avec `SSOToken`, `SSOLogin`, `SSOUserID` en Base64. 4. Appel de `ConnectByAuthToken`. |
 | Limite du SSO | ✅ | En cas d'échec chez le fournisseur d'identité, QPA affiche une page d'erreur et ne rappelle jamais l'app (guide SSO, § *Limitations*). |
-| Durée de vie du jeton | ❌ | Non documentée. L'app se reconnecte une fois avec `ConnectByAuthToken` quand Qvidian refuse le jeton. |
+| Durée de vie du jeton | ✅ guide | « Authentication Tokens » : le jeton vaut le temps de la connexion, jusqu'à `ConnectionTerminate` ou l'expiration de la session — réglage serveur `ConnectionTimeout`, **1200 s (20 min) par défaut**. L'app garde la session ouverte par un petit appel de lecture toutes les 10 min (`QVIDIAN_KEEPALIVE_MINUTES`) ; si la session a quand même expiré, elle tente une reconnexion avec le jeton, sinon demande de refaire le SSO. |
 | Mode de connexion de l'abonnement | ❌ | Explicite, SSO seul ou mixte (guide SSO) : à demander à l'administrateur Qvidian. |
 | Valeur de `SubscriberSuffix` | ❌ | Identifiant de l'abonnement dans la base du portail QPA : à demander à l'administrateur Qvidian. |
 
@@ -88,6 +88,17 @@ Le résultat (`contentDataList`) est un tableau de `Content`, avec `totalCount`.
 - `SubmittedContentMetadata.QuestionText` (la question d'origine d'un contenu soumis depuis un projet) ;
 - `AIAssistExcluded`, `AIEngineGenerated`.
 
+### Erreurs (guide « Error Handling ») ✅
+Deux voies complémentaires :
+- un objet renvoyé porte `HasErrors = true` et des codes (`errors`, énumération `ErrorCodes`) ; ses autres champs ne sont alors pas remplis ;
+- sinon, une `SoapException` dont le détail contient `<Error>` avec `Number`, `Message`, `Source`.
+
+L'app gère les deux :
+- un contenu en erreur est écarté d'une liste, ou signalé avec son code ;
+- une exception est traduite en phrase claire.
+
+Ce qui manque : la page `ErrorCodes` (le sens de chaque code) n'est pas dans la table des matières du guide. L'app affiche donc le numéro brut.
+
 ## 3. Écrire dans Qvidian
 
 | Opération | Statut | Usage dans l'app |
@@ -114,7 +125,7 @@ Champs modifiables par `ContentUpdates` :
 
 1. L'adresse réelle du service d'authentification de l'abonnement, et le `SubscriberSuffix` pour le SSO.
 2. Le droit d'utiliser l'API pour le compte, ou une clé d'API (`ConnectByAPIKey`).
-3. Le lien entre une question d'un projet RFP et le contenu retenu pour y répondre. **Aucune opération ne le renvoie directement.**
+3. Le lien entre une question d'un projet RFP et le contenu retenu pour y répondre (le guide confirme seulement que `TimesUsedCount` est « le nombre de fois où ce contenu a été utilisé », calculé par le serveur ; il ne dit pas dans quel contexte). **Aucune opération ne le renvoie directement.**
    - Il existe :
      - les compteurs `TimesUsedCount` et `DateLastUsed` de chaque contenu ;
      - la question d'origine des contenus soumis (`SubmittedContentMetadata.QuestionText`) ;
