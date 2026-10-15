@@ -182,7 +182,9 @@ class QvidianClient:
         text = fault.message.lower()
         if any(w in text for w in ("permission", "not authorized", "access denied", "unauthorized")):
             return QvidianError("permission", fault.message, HINTS["permission"])
-        if any(w in text for w in ("password", "invalid user", "login", "token", "authentic", "locked")):
+        # Codes du guide : AuthenticationCredentialsMismatch, AuthenticationValueMismatch, AuthenticationTokenMismatch,
+        # AuthenticationTokensEmpty, AuthenticationPasswordEmpty, AuthenticationFailure…
+        if any(w in text for w in ("password", "invalid user", "login", "token", "authentic", "locked", "credential", "mismatch")):
             return QvidianError("auth", fault.message, HINTS["auth"])
         return QvidianError("qvidian", fault.message + (f" (n° {fault.number})" if fault.number else ""), HINTS["qvidian"])
 

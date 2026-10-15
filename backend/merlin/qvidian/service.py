@@ -7,6 +7,7 @@ Le jeton Qvidian reste en mémoire (jamais écrit sur disque).
 from __future__ import annotations
 
 import base64
+import re
 import threading
 import time
 from datetime import date
@@ -105,6 +106,9 @@ class QvidianService:
     def sso_callback(self, token_b64: str, login_b64: str) -> dict[str, Any]:
         token = base64.b64decode(token_b64).decode("utf-8")
         login = base64.b64decode(login_b64).decode("utf-8")
+        if not re.fullmatch(r"[0-9a-fA-F]{8}-?([0-9a-fA-F]{4}-?){3}[0-9a-fA-F]{12}", token.strip("{} ")):
+            # Guide : ConnectByAuthToken refuse un jeton qui n'est pas un GUID (AuthenticationTokenMismatch)
+            raise QvidianError("auth", "Jeton SSO reçu dans un format inattendu.", "Refaites la connexion SSO depuis la fenêtre Qvidian.")
         client = QvidianClient(self.settings.auth_url)
         binding = client.connect_token(login, token)
         self.real = client

@@ -38,6 +38,13 @@ Légende :
 | Mode de connexion de l'abonnement | ❌ | Explicite, SSO seul ou mixte (guide SSO) : à demander à l'administrateur Qvidian. |
 | Valeur de `SubscriberSuffix` | ❌ | Identifiant de l'abonnement dans la base du portail QPA : à demander à l'administrateur Qvidian. |
 
+### Précisions du guide en ligne (pages des méthodes de connexion) ✅
+- `Connect` : le mot de passe ne peut pas être vide. **Un compte qui se connecte uniquement par SSO n'a pas de mot de passe Qvidian** : il passe par le bouton SSO (ou une clé d'API).
+- `ConnectByAPIKey` : la clé est un GUID (exemple du guide : `88B62808-1F6D-4FDA-8441-6250618B4FE8`), propre à l'utilisateur.
+- `ConnectByAuthToken` : le jeton doit être un GUID. Sinon Qvidian renvoie `AuthenticationTokenMismatch`, et l'app le vérifie avant l'appel.
+- Codes d'erreur de connexion : `AuthenticationUserEmpty`, `AuthenticationPasswordEmpty`, `AuthenticationCredentialsMismatch` (identifiants faux ou compte verrouillé), `AuthenticationTokensEmpty`, `AuthenticationTokenMismatch`, `AuthenticationValueMismatch`, `AuthenticationFailure`. Tous sont traduits par l'app en « connexion refusée ».
+- `ConnectionBinding` renvoie aussi les adresses des anciens services (Administration, Common, Projects, Library, ContentLibrary). Le guide confirme qu'on peut tout faire avec le seul `Qvidian.asmx` (`QvidianURL`) : c'est ce que fait l'app.
+
 ## 2. Rechercher et récupérer les contenus
 
 | Opération | Statut | Paramètres → retour |
