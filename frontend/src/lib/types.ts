@@ -281,6 +281,30 @@ export interface RfiQuestion {
   precedent?: RfiDecision
   sources?: RfiSource[]
   option?: string | null
+  /** Toutes les réponses possibles, toutes sources confondues, regroupées et classées (fréquence × récence × fiabilité). */
+  choices?: RfiChoice[]
+}
+
+export interface RfiChoiceSource {
+  kind: string
+  label: string
+  url: string
+  check: string | null
+  blocked: boolean
+  date: string | null
+  uses: number
+  ref: string
+}
+
+export interface RfiChoice {
+  value: string
+  score: number
+  share: number
+  versions: number
+  latest: string | null
+  uses: number
+  why: string
+  sources: RfiChoiceSource[]
 }
 
 export interface RfiSource {
@@ -293,6 +317,9 @@ export interface RfiSource {
   check?: 'match' | 'mismatch' | 'unknown' | 'fill' | null
   blocked?: boolean
   detail?: string | null
+  uses?: number
+  weight?: number
+  ref?: string
 }
 
 export interface PreviewCell { ref: string; v: string; q: string | null }
@@ -404,6 +431,8 @@ export interface RfiRequest {
   accept?: string[]
   reusable?: string[]
   remember?: boolean
+  /** true : recalcul complet (bouton « Analyser ») ; sinon seules les cases modifiées sont recalculées */
+  fresh?: boolean
 }
 
 /* ---------------------------------------------------------------- Merge codes */
@@ -514,3 +543,50 @@ export interface CopilotPrompt {
   batches: { prompt: string; labels: string[]; chars: number }[]; labels: Record<string, string>; count: number; fund: string; share: string
   documents: { kind: string; title: string; name: string; download: string; url: string }[]
 }
+
+/* ---------------------------------------------------------------- Qvidian */
+export interface QvidianStatus {
+  mode: 'demo' | 'qvidian' | 'off'
+  connected: boolean
+  user: string
+  auth_url: string
+  sso: boolean
+  credentials: boolean
+  write_enabled: boolean
+  locked: number
+  snapshot: { source?: string; synced_at?: string; count?: string }
+  sync: { running: boolean; message: string; done: number; error: { code: string; message: string; hint: string } | null; result: { contents: number; folders: number; previews: number; problems: string[] } | null }
+  half_life_days: number
+  extended_fields: boolean
+}
+
+export interface QvidianIssue { category: string; label: string; severity: 'haute' | 'moyenne' | 'basse'; message: string; excerpt: string; fix?: string; others?: number[] }
+export interface QvidianItem {
+  id: number; title: string; folder_path: string; group: string; enabled: boolean; times_used: number; last_used: string | null
+  modified: string | null; revision: number; issues: QvidianIssue[]; text: string
+}
+export interface QvidianAudit {
+  today: string
+  contents: number
+  with_issues: number
+  categories: { key: string; label: string; severity: string; count: number }[]
+  groups: { group: string; total: number; with_issues: number; counts: Record<string, number> }[]
+  items: QvidianItem[]
+}
+export interface QvidianContent {
+  id: number; revision: number; title: string; text: string; folder_path: string; language: string; enabled: boolean; expired: boolean
+  created: string | null; modified: string | null; last_used: string | null; expires: string | null; times_used: number; owners: string
+  inline_edit: boolean; checked_out: boolean; checked_out_by: string; alert_text: string; comments: string
+  versions: { revision: number; title: string; text: string; modified: string | null; seen_at: string }[]
+}
+export interface QvidianSuggest { question: string; half_life_days: number; choices: (RfiChoice & { contents: string[] })[] }
+export interface QvidianAiPrompt { batches: { prompt: string; ids: number[]; chars: number }[]; count: number }
+export interface QvidianAiReply { read: number; unknown: string[]; saved: number; findings: Record<string, { kind: string; severity: string; problem: string; fix: string }[]> }
+export interface QvidianPlanItem { id: number; title: string; field: string; before: string; after: string; warnings: string[] }
+export interface QvidianPlan { id: string; action: string; label: string; params: Record<string, unknown>; items: QvidianPlanItem[]; unchanged: number[]; warnings: number }
+export interface QvidianApplyResult { batch: string; written: number; skipped: number; failed: number; results: { id: number; ok: boolean; skipped: boolean; error: string }[] }
+export interface QvidianJournalEntry {
+  batch: string; at: string; user: string; source: string; action: string; label: string; force: boolean; undo_of: string | null
+  items: { id: number; title: string; field: string; before: unknown; after: unknown; ok: boolean }[]
+}
+export interface QvidianImport { projects: number; total: number; imported: number; documents: { project: string; file?: string; imported?: number; error?: string }[] }

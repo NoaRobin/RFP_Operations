@@ -1,6 +1,7 @@
 """Service « Remplir un RFI » : dépôt, repérage du fonds, propositions de réponses, génération de la copie remplie."""
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import re
@@ -24,6 +25,7 @@ from .precedents.compare import same
 from .precedents.bindings import BindingIndex, pseudo_concept
 from .values import EXTRA_COLUMNS, PRODUCT, SHARE, Raw, Values, to_date
 from .writer import write
+from .aggregate import HALF_LIFE_DAYS, Vote, aggregate, to_date as vote_date
 
 ALLOWED = {".xlsx", ".xlsm", ".docx"}
 ISIN = re.compile(r"\b[A-Z]{2}[A-Z0-9]{9}\d\b")
@@ -151,11 +153,16 @@ def _share_fund(data: DataAccess, isin: str) -> str | None:
 def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: str | None, isin: str | None,
             as_of: str | None, lang: str | None = None, overrides: dict[str, Any] | None = None,
             precedents: PrecedentIndex | None = None, precedent_isin: str | None = None,
-            documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None) -> dict[str, Any]:
+            documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None,
+            qvidian=None, cache: dict[str, dict[str, Any]] | None = None, half_life: int = HALF_LIFE_DAYS) -> dict[str, Any]:
     """Propose une réponse par case. overrides[id] = id de concept | None (ne pas remplir) | {"text": …}.
 
     Avec des précédents, chaque case reçoit aussi une décision justifiée (repris de l'ancien, modèle d'ontologie,
-    incohérence…), après contrôle des réponses historiques dans Fabric."""
+    incohérence…), après contrôle des réponses historiques dans Fabric. Avec Qvidian (instantané local), les réponses
+    types déjà choisies par l'équipe sont proposées pour les questions qualitatives.
+    Chaque case reçoit `choices` : toutes les réponses possibles, toutes sources confondues, classées par
+    `merlin.rfi.aggregate` (fréquence × récence × fiabilité de la source).
+    `cache` (facultatif) garde le calcul de chaque case : quand on choisit une réponse, seule cette case est recalculée."""
     ontology = load_ontology(data.catalog)
     lang = lang or layout.language
     as_of_d = date.fromisoformat(as_of) if as_of else date.today()
@@ -174,7 +181,12 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
             values_by_entity[key] = vals
         return values_by_entity[key]
 
-    advisor = _advisor(data, ontology, precedents, pid, precedent_isin or isin, as_of_d, lang)
+    lazy: dict[str, Any] = {}
+
+    def advisor() -> PrecedentAdvisor | None:  # créé à la première case qui en a besoin (rien à créer si tout vient du cache)
+        if "advisor" not in lazy:
+            lazy["advisor"] = _advisor(data, ontology, precedents, pid, precedent_isin or isin, as_of_d, lang)
+        return lazy["advisor"]
     if bindings is not None:
         for table, columns in bindings.columns().items():  # colonnes apprises : lues avec le reste de la fiche
             EXTRA_COLUMNS.setdefault(table, set()).update(c for c in columns if (t := data.catalog.table(table)) and t.column(c))
@@ -182,20 +194,48 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
     decisions: dict[str, int] = {}
     rows: list[dict[str, Any]] = []
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}
-    for slot in layout.slots:
+    def compute(slot: Slot, override: Any) -> dict[str, Any]:
         u = understand(ontology, slot.question, hint=slot.hint, context=slot.context, options=slot.options,
                        number_format=slot.number_format, as_of=as_of_d, entity_scope="share" if slot.entity.get("isin") else None,
                        parent=slot.parent)
-        vals = values_for(slot)
-        binding = bindings.lookup(f"{slot.parent} {slot.question}" if slot.parent else slot.question, similar) if bindings else None
-        row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, overrides.get(slot.id, "__none__"), binding)
-        if advisor is not None and row["status"] not in {"skipped", "existing"} and row["source"] in {"ontologie", "bibliothèque"}:
-            row = _apply_decision(row, advisor.advise(slot, u, row))
+        typed = override is None or (isinstance(override, dict) and override.get("text") is not None)
+        vals = None if typed else values_for(slot)  # réponse saisie ou choisie : ni Fabric ni documents à relire
+        binding = None
+        if bindings and not typed:
+            binding = bindings.lookup(f"{slot.parent} {slot.question}" if slot.parent else slot.question, similar)
+        row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, override, binding)
+        if row["status"] not in {"skipped", "existing"} and row["source"] in {"ontologie", "bibliothèque"} and advisor() is not None:
+            row = _apply_decision(row, advisor().advise(slot, u, row))
+        if qvidian is not None and override == "__none__":
+            row = _apply_qvidian(row, slot, qvidian, as_of_d, half_life)
+        return row
+
+    for slot in layout.slots:
+        override = overrides.get(slot.id, "__none__")
+        key = json.dumps(override, sort_keys=True, ensure_ascii=False, default=str)
+        slot_cache = cache.setdefault(slot.id, {}) if cache is not None else {}
+        if key in slot_cache:
+            row = copy.deepcopy(slot_cache[key])
+        else:
+            row = compute(slot, override)
+            if isinstance(override, dict) and override.get("text") is not None:
+                # Réponse choisie ou saisie : on garde sous les yeux toutes les autres sources de la case (carrousel)
+                none_key = json.dumps("__none__")
+                if none_key not in slot_cache:
+                    slot_cache[none_key] = _with_choices(compute(slot, "__none__"), as_of_d, half_life)
+                row = _merge_sources(row, slot_cache[none_key])
+            row = _with_choices(row, as_of_d, half_life)
+            slot_cache[key] = copy.deepcopy(row)
+        if row.get("precedent") and row["source"] not in {"réponse saisie", "Copilot"} and row.get("status") not in {"skipped", "existing"}:
             decisions[row["precedent"]["kind"]] = decisions.get(row["precedent"]["kind"], 0) + 1
         stats[row["status"]] += 1
         rows.append(row)
     for v in values_by_entity.values():
         errors.extend(e for e in v.errors if e not in errors)
+    if cache is not None:  # les cases reprises du cache ne relisent pas Fabric : on garde les alertes du premier calcul
+        kept = cache.setdefault("__errors__", {"list": []})["list"]
+        kept.extend(e for e in errors if e not in kept)
+        errors = list(kept)
     total = len(rows)
     answerable = sum(1 for r in rows if r["status"] in {"auto", "review"})
     return {"questions": rows, "stats": stats, "language": lang, "as_of": as_of_d.isoformat(), "errors": errors,
@@ -203,6 +243,86 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
                          "rate": round(answerable / total, 3) if total else 0.0},
             "notes": layout.notes, "library": library.stats(), "decisions": decisions,
             "precedents": precedents.store.count() if precedents is not None else 0}
+
+
+QVIDIAN_SOURCES = 6  # contenus Qvidian montrés comme sources d'une case (les plus pertinents)
+
+
+def _apply_qvidian(row: dict[str, Any], slot: Slot, snapshot, as_of: date, half_life: int) -> dict[str, Any]:
+    """Réponses types Qvidian déjà choisies pour cette question : sources de la case, et proposition « à vérifier »
+    quand rien d'autre ne répond (question qualitative). Jamais automatique."""
+    from ..qvidian.suggest import votes as qvidian_votes
+
+    if row["status"] in {"skipped", "existing"} or slot.target.get("unresolved_list"):
+        return row
+    try:
+        found = qvidian_votes(snapshot, f"{slot.parent} {slot.question}" if slot.parent else slot.question)
+    except Exception:  # noqa: BLE001 - un instantané illisible n'arrête jamais l'analyse
+        return row
+    if not found:
+        return row
+    from .aggregate import vote_score
+
+    found.sort(key=lambda v: -vote_score(v, as_of, half_life))
+    row = {**row, "sources": list(row.get("sources") or []) + [
+        {"kind": "qvidian", "label": v.label, "value": v.text, "date": v.when.isoformat() if v.when else None, "uses": v.uses,
+         "weight": round(v.weight, 3), "check": v.check, "ref": v.ref} for v in found[:QVIDIAN_SOURCES]]}
+    if row.get("answer") is None and row["status"] in {"unmatched", "no_value"}:
+        best = aggregate(found, today=as_of, half_life=half_life)[0]
+        value = best.value
+        if slot.options:
+            value = next((o for o in slot.options if norm(o) == norm(best.value)), None)
+            if value is None:
+                return row  # liste déroulante du client : un texte libre Qvidian n'y entre pas
+        row.update({"answer": value, "value": value, "_value": value, "status": "review", "source": "Qvidian",
+                    "confidence": round(min(0.6, 0.3 + 0.3 * best.share), 2), "evidence": f"Qvidian · {best.why()}",
+                    "reasons": [f"réponse type Qvidian la plus choisie récemment ({best.why()})"],
+                    "issues": [i for i in row["issues"] if i != "question qualitative"] + ["réponse type Qvidian : à relire et adapter au fonds"]})
+        row.pop("suggestion", None)
+    return row
+
+
+def _merge_sources(row: dict[str, Any], base: dict[str, Any]) -> dict[str, Any]:
+    seen = {(x.get("kind"), x.get("label"), x.get("value")) for x in row.get("sources") or []}
+    extra = [x for x in base.get("sources") or [] if (x.get("kind"), x.get("label"), x.get("value")) not in seen]
+    row = {**row, "sources": list(row.get("sources") or []) + extra}
+    for k in ("precedent", "alternatives"):
+        if base.get(k) and not row.get(k):
+            row[k] = base[k]
+    if base.get("answer") and norm(base["answer"]) != norm(row.get("answer") or ""):
+        row["sources"].append({"kind": "app", "label": f"proposition de l'app ({base.get('source')})", "value": base["answer"]})
+    return row
+
+
+KIND_OF_SOURCE = {"bibliothèque": "library", "réponse saisie": "mine", "Copilot": "copilot", "Qvidian": "qvidian", "document": "document",
+                  "précédent": "precedent", "utilisateur": "app", "ontologie": "app", "liaison apprise": "app"}
+
+
+def _with_choices(row: dict[str, Any], as_of: date, half_life: int) -> dict[str, Any]:
+    """Toutes les réponses possibles de la case, regroupées par texte et classées (voir merlin.rfi.aggregate)."""
+    votes: list[Vote] = []
+    for x in row.get("sources") or []:
+        if x.get("kind") == "precedent" or not x.get("value"):
+            continue
+        votes.append(Vote(str(x["value"]), x.get("kind") or "document", x.get("label") or "", weight=float(x.get("weight") or 1.0),
+                          when=vote_date(x.get("date")), uses=int(x.get("uses") or 1), url=x.get("url") or "",
+                          check=x.get("check") if x.get("check") in {"match", "mismatch"} else None, ref=str(x.get("ref") or "")))
+    for p in (row.get("precedent") or {}).get("precedents") or []:
+        if p.get("answer"):
+            votes.append(Vote(str(p["answer"]), "precedent", p.get("provenance") or "", weight=float(p.get("similarity") or 1.0),
+                              when=vote_date(p.get("date")), url=p.get("url") or "", check=p.get("check"), blocked=bool(p.get("blocked"))))
+    for a in row.get("alternatives") or []:
+        if a.get("answer"):
+            votes.append(Vote(str(a["answer"]), "alternative", a.get("label") or ""))
+    answer = row.get("answer")
+    if answer and not any(norm(v.text) == norm(str(answer)) for v in votes):
+        votes.append(Vote(str(answer), KIND_OF_SOURCE.get(row.get("source") or "", "app"), row.get("evidence") or row.get("source") or ""))
+    elif answer and row.get("source") in {"réponse saisie", "Copilot"}:
+        kind = KIND_OF_SOURCE[row["source"]]
+        if not any(v.kind == kind and norm(v.text) == norm(str(answer)) for v in votes):
+            votes.append(Vote(str(answer), kind, row.get("evidence") or row["source"]))
+    row["choices"] = [c.public() for c in aggregate(votes, today=as_of, half_life=half_life)[:8]]
+    return row
 
 
 def _document_facts(data: DataAccess, documents, vals: Values, pid: str | None, isin: str | None, errors: list[str]) -> dict:
@@ -468,11 +588,13 @@ def _jsonable(value: Any) -> Any:
 def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, isin: str | None, as_of: str | None,
              lang: str | None, overrides: dict[str, Any], overwrite: bool, accept: list[str] | None, user: str,
              remember: bool = True, reusable: list[str] | None = None, precedents: PrecedentIndex | None = None,
-             documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None) -> dict[str, Any]:
+             documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None, qvidian=None,
+             half_life: int = HALF_LIFE_DAYS, cache: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     """Écrit les réponses « auto » + celles acceptées par l'utilisateur dans une nouvelle version du fichier."""
     path = store.original(doc_id)
     layout = detect(path)
-    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents, documents=documents, bindings=bindings)
+    result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents, documents=documents, bindings=bindings,
+                     qvidian=qvidian, half_life=half_life, cache=cache)
     accepted = set(accept or [])
     slots = {s.id: s for s in layout.slots}
     answers = []

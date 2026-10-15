@@ -95,6 +95,23 @@ class FundDocumentSettings:
 
 
 @dataclass(frozen=True)
+class QvidianSettings:
+    """Qvidian (QPA) : services web SOAP. Identifiants et mot de passe d'écriture : uniquement dans .env, jamais dans le code."""
+    mode: str = "auto"  # auto : Qvidian si connecté, sinon bibliothèque de démonstration | demo | off
+    auth_url: str = "https://qpalogin.qvidian.com/QvidianAuthentication.asmx"
+    user: str = ""
+    password: str = ""
+    api_key: str = ""
+    subscriber_suffix: str = ""  # SSO : identifiant de l'abonnement sur le portail QPA
+    write_password: str = ""  # mot de passe des modifications en masse (QVIDIAN_WRITE_PASSWORD)
+    half_life_days: int = 365  # agrégation : une réponse choisie il y a un an pèse moitié moins qu'aujourd'hui
+
+    @property
+    def credentials(self) -> bool:
+        return bool(self.user and (self.password or self.api_key))
+
+
+@dataclass(frozen=True)
 class Settings:
     data_mode: str  # auto | mock | fabric
     data_dir: Path
@@ -113,6 +130,7 @@ class Settings:
     fund_documents: FundDocumentSettings = field(default_factory=FundDocumentSettings)
     fundshop: FundShopSettings = field(default_factory=FundShopSettings)
     omni: OmniSettings = field(default_factory=OmniSettings)
+    qvidian: QvidianSettings = field(default_factory=QvidianSettings)
 
     @property
     def db_path(self) -> Path:
@@ -162,6 +180,16 @@ def get_settings() -> Settings:
             tenant_id=_env("FABRIC_TENANT_ID"),
             odbc_driver=_env("FABRIC_ODBC_DRIVER", "ODBC Driver 18 for SQL Server"),
             timeout=int(_env("FABRIC_TIMEOUT", "30")),
+        ),
+        qvidian=QvidianSettings(
+            mode=_env("QVIDIAN_MODE", "auto").lower(),
+            auth_url=_env("QVIDIAN_AUTH_URL", QvidianSettings.auth_url),
+            user=_env("QVIDIAN_USER"),
+            password=_env("QVIDIAN_PASSWORD"),
+            api_key=_env("QVIDIAN_API_KEY"),
+            subscriber_suffix=_env("QVIDIAN_SUBSCRIBER_SUFFIX"),
+            write_password=os.environ.get("QVIDIAN_WRITE_PASSWORD", ""),
+            half_life_days=int(_env("QVIDIAN_HALF_LIFE_DAYS", "365") or 365),
         ),
         omni=OmniSettings(
             root=_env("OMNI_ROOT"),

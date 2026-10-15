@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api import atelier, core, documents, fundshop, mergecodes, omni, precedents, rfi
+from .api import atelier, core, documents, fundshop, mergecodes, omni, precedents, qvidian, rfi
 from .atelier.store import AtelierStore
 from .config import get_settings
 from .data.access import DataError, build_data_access, resolve_mode, set_shared
@@ -68,6 +68,7 @@ app.include_router(documents.router)
 app.include_router(fundshop.router)
 app.include_router(omni.router)
 app.include_router(mergecodes.router)
+app.include_router(qvidian.router)
 
 _suivi = build_suivi_app(get_settings().data_dir)
 if _suivi is not None:

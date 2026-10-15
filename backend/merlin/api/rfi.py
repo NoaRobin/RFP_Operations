@@ -1,6 +1,8 @@
 """API « Remplir un RFI »."""
 from __future__ import annotations
 
+import threading
+from collections import OrderedDict
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -26,6 +28,48 @@ MINUTES_PER_ANSWER = 2
 
 def _store(s: AppState) -> RfiStore:
     return RfiStore(s.settings.data_dir / "rfi")
+
+
+def _qvidian(s: AppState):
+    """Bibliothèque Qvidian du compléteur : la vraie (synchronisée) ; la démo seulement avec des données fictives."""
+    from .qvidian import service as qvidian_service
+
+    try:
+        return qvidian_service(s).rfi_snapshot(s.data.mode)
+    except Exception:  # noqa: BLE001 - Qvidian absent ou illisible : le compléteur fonctionne sans
+        return None
+
+
+# Cache des cases déjà calculées, par document et contexte : choisir une réponse ne recalcule que cette case
+# (avant : toute l'analyse — Fabric, précédents SharePoint, documents — soit ~40 s à chaque « Choisir »).
+_CACHE: "OrderedDict[tuple, dict]" = OrderedDict()
+_CACHE_LOCK = threading.Lock()
+MAX_CACHED = 6
+
+
+def _mtime(path: Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+def _cache_for(s: AppState, store: RfiStore, doc_id: str, body: "AnswerRequest", qvidian) -> dict:
+    key = (doc_id, body.pid, body.isin, body.as_of or date.today().isoformat(), body.language, s.data.mode,
+           _mtime(store.root / "library.json"), _mtime(store.root / "bindings.json"), get_index(store.root).store.count(),
+           qvidian.meta().get("synced_at") if qvidian is not None else None, str(qvidian.path) if qvidian is not None else None)
+    with _CACHE_LOCK:
+        if body.fresh:  # « Analyser » : on repart de zéro (documents téléchargés entre-temps, Fabric mis à jour…)
+            for k in [k for k in _CACHE if k[0] == doc_id]:
+                del _CACHE[k]
+        cache = _CACHE.get(key)
+        if cache is None:
+            cache = _CACHE[key] = {}
+            while len(_CACHE) > MAX_CACHED:
+                _CACHE.popitem(last=False)
+        else:
+            _CACHE.move_to_end(key)
+    return cache
 
 
 def _describe(s: AppState, doc_id: str) -> dict[str, Any]:
@@ -107,6 +151,7 @@ class AnswerRequest(BaseModel):
     accept: list[str] = Field(default_factory=list)  # propositions « à vérifier » validées par l'utilisateur
     reusable: list[str] = Field(default_factory=list)  # réponses saisies réutilisables pour tous les fonds
     remember: bool = True
+    fresh: bool = False  # True : ignorer le cache des cases (bouton « Analyser »)
 
 
 @router.post("/documents/{doc_id}/answers")
@@ -116,10 +161,12 @@ def answers(doc_id: str, body: AnswerRequest, s: AppState = Depends(state)):
         path, layout = load_layout(store, doc_id)
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
+    qvidian = _qvidian(s)
     try:
         result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides,
                          get_index(store.root), documents=service_for(s),
-                         bindings=get_bindings(store.root))
+                         bindings=get_bindings(store.root), qvidian=qvidian, cache=_cache_for(s, store, doc_id, body, qvidian),
+                         half_life=s.settings.qvidian.half_life_days)
         for row in result["questions"]:
             row.pop("_value", None)
         return result
@@ -132,10 +179,12 @@ def generate_version(doc_id: str, body: AnswerRequest, s: AppState = Depends(sta
     store = _store(s)
     try:
         meta = store.meta(doc_id)
+        qvidian = _qvidian(s)
         result = generate(s.data, store, doc_id, body.pid, body.isin, body.as_of, body.language, body.overrides, body.overwrite,
                           body.accept, user, remember=body.remember, reusable=body.reusable,
                           precedents=get_index(store.root), documents=service_for(s),
-                         bindings=get_bindings(store.root))
+                          bindings=get_bindings(store.root), qvidian=qvidian, half_life=s.settings.qvidian.half_life_days,
+                          cache=_cache_for(s, store, doc_id, body, qvidian))
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     except DataError as error:
@@ -248,8 +297,10 @@ def _copilot_context(s: AppState, doc_id: str, body: "AnswerRequest"):
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     docs_service = service_for(s)
+    qvidian = _qvidian(s)
     result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides,
-                     get_index(store.root), documents=docs_service, bindings=get_bindings(store.root))
+                     get_index(store.root), documents=docs_service, bindings=get_bindings(store.root), qvidian=qvidian,
+                     cache=_cache_for(s, store, doc_id, body, qvidian), half_life=s.settings.qvidian.half_life_days)
     fund, share = _names(s, body.isin) if body.isin else ("", "")
     return result, fund, share, docs_service
 

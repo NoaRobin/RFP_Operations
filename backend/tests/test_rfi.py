@@ -128,7 +128,9 @@ def test_xlsx_demo_completes_with_dropdowns_formats_and_grid(client):
             assert x["answer"] in x["options"], x
     assert by_q["Durée de placement recommandée"]["answer"] == "3 à 5 ans"  # 5 ans ∈ [3 ; 5], jamais « > 5 ans »
     assert by_q["Le fonds est-il un OPCVM ?"]["answer"] == "Oui"
-    assert by_q["Décrivez la philosophie d'investissement et le processus de sélection des titres."]["status"] == "unmatched"
+    # question qualitative : rien dans Fabric ; la réponse type Qvidian (démo) est proposée, jamais écrite d'office
+    philo = by_q["Décrivez la philosophie d'investissement et le processus de sélection des titres."]
+    assert philo["status"] == "review" and philo["source"] == "Qvidian" and philo["choices"][0]["sources"][0]["kind"] == "qvidian"
     # grille par part : chaque ligne reçoit les données de SON ISIN
     grid = [x for x in analysis["questions"] if x["layout"] == "row-grid" and x["question"] == "Devise"]
     assert {x["entity"]["isin"] for x in grid} and len({x["answer"] for x in grid}) >= 1

@@ -1,6 +1,6 @@
 /**
  * Atelier de revue : le document en grand à gauche (zoom, plein écran), la question et toutes ses propositions à droite,
- * chacune avec « Choisir ». Une barre fixe en bas : où on en est, Copilot, et « Générer » toujours à portée de main.
+ * dans un carrousel qui compare les sources (Fabric, anciens RFI, Qvidian, Copilot…), chacune avec « Choisir ». Une barre fixe en bas : où on en est, Copilot, et « Générer » toujours à portée de main.
  * Clavier : J / K naviguer, A valider et suivant, E modifier, S autre donnée, X ne pas remplir (jamais pendant la saisie).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -9,7 +9,7 @@ import { texts } from '../../../content/texts'
 import type { RfiAnalysis, RfiFact, RfiPreview } from '../../../lib/types'
 import { EvidencePanel } from './EvidencePanel'
 import { ProgressRing } from './ProgressRing'
-import { Proposals } from './Proposals'
+import { SourceCarousel } from './SourceCarousel'
 import { QuestionCard, type QuestionCardHandle } from './QuestionCard'
 import { QuestionList } from './QuestionList'
 import { SheetPreview } from './SheetPreview'
@@ -187,7 +187,7 @@ export function Workbench({ analysis, preview, facts, overrides, accepted, onAcc
                 onAccept={acceptAndNext} onOverride={(v) => onOverride(q.id, v)} />
               <div className="rounded-[var(--radius-card)] border-2 border-fg/25 bg-card-2 p-3">
                 <h4 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-fg-3"><Sparkles size={13} aria-hidden="true" />{R.proposals}</h4>
-                <Proposals q={q} override={overrides[q.id]} onChoose={choose} />
+                <SourceCarousel q={q} override={overrides[q.id]} onChoose={choose} onEdit={(v) => card.current?.editWith(v)} />
               </div>
               <EvidencePanel q={q} />
             </>

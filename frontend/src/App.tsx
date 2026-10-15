@@ -18,6 +18,7 @@ const FundShop = lazy(() => import('./pages/FundShop'))
 const Omni = lazy(() => import('./pages/Omni'))
 const RFPascontente = lazy(() => import('./pages/RFPascontente'))
 const MergeCodes = lazy(() => import('./pages/MergeCodes'))
+const Qvidian = lazy(() => import('./pages/Qvidian'))
 const Suivi = lazy(() => import('./pages/Suivi'))
 const AutomationPage = lazy(() => import('./pages/AutomationPage'))
 const RunPage = lazy(() => import('./pages/Run'))
@@ -40,6 +41,7 @@ function Shell() {
               <Route path="/omni" element={<Omni />} />
               <Route path="/rfpascontente" element={<RFPascontente />} />
               <Route path="/merge-codes" element={<MergeCodes />} />
+              <Route path="/qvidian" element={<Qvidian />} />
               <Route path="/suivi-activite" element={<Suivi />} />
               <Route path="/sorts" element={<Navigate to="/" replace />} />
               <Route path="/bibliotheque" element={<Navigate to="/" replace />} />

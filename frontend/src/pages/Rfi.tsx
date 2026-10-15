@@ -119,6 +119,8 @@ export default function Rfi() {
   const [result, setResult] = useState<RfiGenerated | null>(null)
   const [preview, setPreview] = useState<RfiPreview | null>(null)
   const [copilot, setCopilot] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const analysisSeq = useRef(0)
 
   useGSAP(() => {
     if (prefersReducedMotion()) return
@@ -153,16 +155,36 @@ export default function Rfi() {
     }
   }
 
+  /** Analyse complète (dépôt, « Analyser ») : tout est relu (Fabric, précédents, documents, Qvidian). */
   const analyze = async (target: RfiDocument | null = doc, extra: Partial<RfiRequest> = {}) => {
     if (!target) return
+    const seq = ++analysisSeq.current
     setAnalyzing(true)
     setResult(null)
     try {
-      setAnalysis(await api.rfi.answers(target.id, request(extra)))
+      const a = await api.rfi.answers(target.id, request({ fresh: true, ...extra }))
+      if (seq === analysisSeq.current) setAnalysis(a)
     } catch (e) {
       toast('error', e instanceof ApiError ? e.message : texts.errors.generic, e instanceof ApiError ? e.hint : undefined)
     } finally {
-      setAnalyzing(false)
+      if (seq === analysisSeq.current) setAnalyzing(false)
+    }
+  }
+
+  /** Après un choix : seules les cases modifiées sont recalculées côté serveur (cache), sans griser l'atelier.
+   * Une réponse arrivée après une plus récente est ignorée. */
+  const refresh = async (extra: Partial<RfiRequest>) => {
+    if (!doc) return
+    const seq = ++analysisSeq.current
+    setAnalyzing(false)
+    setRefreshing(true)
+    try {
+      const a = await api.rfi.answers(doc.id, request({ fresh: false, ...extra }))
+      if (seq === analysisSeq.current) setAnalysis(a)
+    } catch (e) {
+      toast('error', e instanceof ApiError ? e.message : texts.errors.generic, e instanceof ApiError ? e.hint : undefined)
+    } finally {
+      if (seq === analysisSeq.current) setRefreshing(false)
     }
   }
 
@@ -171,7 +193,12 @@ export default function Rfi() {
     if (value === undefined) delete next[id]
     else next[id] = value
     setOverrides(next)
-    void analyze(doc, { overrides: next })
+    setResult(null)
+    // Affichage immédiat du choix (le serveur confirme juste après, en arrière-plan)
+    if (value && typeof value === 'object' && analysis) {
+      setAnalysis({ ...analysis, questions: analysis.questions.map((q) => (q.id === id ? { ...q, answer: value.text } : q)) })
+    }
+    void refresh({ overrides: next })
   }
 
   const generate = async () => {
@@ -307,7 +334,8 @@ export default function Rfi() {
                   <h2 className="text-2xl">{texts.review.title}</h2>
                   <p className="mt-1 text-sm font-semibold text-fg-2">{texts.review.lead}</p>
                 </div>
-                {analysis.stats.existing > 0 && <Switch checked={overwrite} onChange={(v) => { setOverwrite(v); void analyze(doc, { overwrite: v }) }} label={texts.rfi.overwrite} />}
+                {analysis.stats.existing > 0 && <Switch checked={overwrite} onChange={(v) => { setOverwrite(v); void refresh({ overwrite: v }) }} label={texts.rfi.overwrite} />}
+                {refreshing && <span className="text-xs font-bold text-fg-3" aria-live="polite">{texts.rfi.updating}</span>}
                 {analysis.decisions && Object.keys(analysis.decisions).length > 0 ? (
                   <p className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
                     <span className="text-fg-2">{texts.rfi.decisionsTitle} :</span>
@@ -356,7 +384,7 @@ export default function Rfi() {
             onApply={(r) => {
               const next = { ...overrides, ...r }
               setOverrides(next)
-              void analyze(doc, { overrides: next })
+              void refresh({ overrides: next })
               setCopilot(false)
             }} />
         </>

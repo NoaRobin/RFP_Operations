@@ -166,6 +166,37 @@ Barre fixe en bas : questions restantes, « Demander à Copilot », « Générer
 Tout revient « à vérifier », jamais en automatique, et une réponse Copilot n'entre pas dans la bibliothèque.
 Le classeur Excel reste disponible pour les très longs questionnaires. Détail : `docs/OMNI_ET_DOCUMENTS.md` § 3.
 
+## 7 ter. Carrousel des sources, Qvidian, « Choisir » instantané
+
+**Le carrousel.** Pour chaque case, l'atelier montre un carrousel : une carte par réponse possible.
+- Il compare toutes les sources :
+  - Fabric ;
+  - DIC et prospectus ;
+  - anciens RFI (lot 02, SharePoint, projets Qvidian importés) ;
+  - Qvidian (bibliothèque) ;
+  - Copilot ;
+  - votre saisie.
+- Des filtres limitent l'affichage à une seule source.
+- On le parcourt avec ← / → ou les flèches.
+- Chaque carte a deux boutons : « Choisir » et « Modifier avant ».
+
+**L'ordre des cartes.** Il vient de `merlin/rfi/aggregate.py`, le même calcul que pour Qvidian (voir `docs/QVIDIAN.md` § 6) :
+- les réponses identiques, ou les versions d'un même texte, sont regroupées ;
+- elles sont classées par fiabilité de la source × fréquence × récence (demi-vie d'un an) ;
+- la barre de chaque carte montre la part du score.
+
+**Qvidian.** Pour une question qualitative sans réponse Fabric, la réponse type Qvidian la plus choisie récemment est proposée, dans sa rédaction la plus récente.
+- Elle est **toujours « à vérifier »**, jamais automatique.
+- Elle n'est jamais proposée hors des choix d'une liste déroulante.
+- Elle n'entre pas dans la bibliothèque des validations.
+- La bibliothèque Qvidian de démonstration n'est utilisée qu'avec les données de démonstration.
+
+**« Choisir » instantané.** L'analyse garde chaque case calculée :
+- un choix, une saisie ou une réponse Copilot ne recalcule que la case concernée, sans relire Fabric ni les documents ;
+- avant, il fallait environ 40 secondes, atelier grisé ;
+- le choix s'affiche immédiatement ; une réponse serveur arrivée après une plus récente est ignorée ;
+- le bouton « Analyser » repart de zéro (`fresh`).
+
 ## 8. Mesurer et faire progresser
 
 - `python -m merlin.rfi.replay <bibliothèque>` : couverture et concordance sur de vrais questionnaires (voir plus haut).
