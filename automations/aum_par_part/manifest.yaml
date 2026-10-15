@@ -1,0 +1,58 @@
+id: aum_par_part
+name: Encours par part
+description: >
+  Photographie des encours (AUM) et VL de chaque part à une date d'arrêté :
+  la dernière VL connue à cette date, en devise de la part et en euro.
+  Le grand classique des questionnaires consultants.
+icon: gem
+category: Encours & VL
+type: fabric
+version: "1.0"
+tags: [AUM, VL, consultants]
+estimated_minutes_saved: 5
+params:
+  - name: as_of
+    label: Date d'arrêté
+    type: date
+    required: true
+    default: today
+    help: Merlin prend la dernière VL disponible à cette date (ou avant).
+  - name: fonds
+    label: Fonds
+    type: select
+    required: false
+    help: Laissez vide pour tous les fonds.
+    placeholder: Tous les fonds
+    options_query: >
+      SELECT DISTINCT h.ID_JUMP_FONDS AS value, h.NOM_FONDS AS label
+      FROM dbo.JUMP_portfolio_holdings h
+      WHERE h.NOM_FONDS IS NOT NULL
+      ORDER BY label
+outputs:
+  - type: excel
+    label: Classeur des encours
+  - type: table
+    label: Aperçu
+fabric:
+  query_file: query.sql
+  output: both
+  filename: "Encours_par_part_{as_of}.xlsx"
+  sheet_name: Encours
+  column_labels:
+    CODE_ISIN_PART: ISIN
+    NOM_PART: Part
+    DEVISE_VL: Devise
+    DATE_VL: Date de VL
+    VL_UNITAIRE: VL
+    NOMBRE_PARTS: Nombre de parts
+    ACTIF_NET_DEVISE_PART: Encours (devise de la part)
+    ACTIF_NET_PART_EURO: Encours part (EUR)
+    ACTIF_NET_TOTAL_EURO: Encours fonds (EUR)
+    NOM_BENCH: Indice de référence
+  number_formats:
+    VL: "#,##0.00###"
+    Nombre de parts: "#,##0.00"
+    Encours (devise de la part): "#,##0"
+    Encours part (EUR): "#,##0"
+    Encours fonds (EUR): "#,##0"
+    Date de VL: "dd/mm/yyyy"

@@ -1,0 +1,106 @@
+/*
+ * Tokens de design GRIMOIRE — « cartoon néo-brutal » (skill UI UX Pro Max : Neubrutalism + Fredoka/Nunito).
+ * Papier crème, encre violette, contours épais, ombres décalées pleines, couleurs pop.
+ * Règle des nuances : 200/300 = texte (foncé, lisible sur crème) ; 400/500 = aplats, bordures, fonds.
+ */
+@theme {
+  /* --- Papier & surfaces */
+  --color-canvas: #fff6e5;
+  --color-field: #ffffff;
+  --color-card: #ffffff;
+  --color-card-2: #fff0d6;
+  --color-card-3: #ffe7bf;
+  --color-line: rgb(27 21 48 / 0.14);
+  --color-line-strong: #1b1530;
+
+  /* --- Encre (contrastes sur --color-canvas : 15.9 / 8.7 / 5.4) */
+  --color-fg: #1b1530;
+  --color-fg-2: #463f5e;
+  --color-fg-3: #655d7c;
+  --color-on-accent: #1b1530;
+
+  /* --- Soleil (actions principales) */
+  --color-sun-200: #6e4300;
+  --color-sun-300: #845400;
+  --color-sun-400: #ffd23f;
+  --color-sun-600: #f2b705;
+  /* --- Magie (navigation, sélection) */
+  --color-magic-300: #4f33c4;
+  --color-magic-400: #9b82ff;
+  --color-magic-500: #7c5cff;
+  --color-magic-700: #4b2fb5;
+  /* --- Menthe (en cours, données vivantes) */
+  --color-mint-300: #0b6e60;
+  --color-mint-400: #2ec4b6;
+  --color-mint-500: #1fa396;
+  /* --- Bulle (fun) */
+  --color-bubble-300: #b3204f;
+  --color-bubble-400: #ff6b9a;
+
+  /* --- États */
+  --color-success: #11795a;
+  --color-danger: #c8102e;
+  --color-warning: #9a5b00;
+  --color-info: #1d4ed8;
+
+  /* --- Typographies */
+  --font-display: "Fredoka Variable", "Fredoka", "Nunito Variable", system-ui, sans-serif;
+  --font-sans: "Nunito Variable", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  /* --- Rayons & ombres (pleines, décalées : la signature cartoon) */
+  --radius-card: 1.5rem;
+  --radius-pill: 999px;
+  --shadow-pop: 4px 4px 0 0 var(--color-fg);
+  --shadow-pop-lg: 7px 7px 0 0 var(--color-fg);
+  --shadow-glow-magic: 4px 4px 0 0 var(--color-magic-500);
+  --shadow-glow-sun: 4px 4px 0 0 var(--color-fg);
+  --shadow-deep: 8px 8px 0 0 var(--color-fg);
+
+  /* --- Mouvement (miroir de src/motion/tokens.ts) */
+  --ease-out-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-premium: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-instant: 120ms;
+  --duration-fast: 200ms;
+  --duration-base: 380ms;
+  --duration-slow: 700ms;
+
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-pulse-glow: pulse-glow 1.6s var(--ease-in-out-premium) infinite;
+  --animate-spin-slow: spin 18s linear infinite;
+  --animate-wiggle: wiggle 2.8s var(--ease-in-out-premium) infinite;
+  --animate-float: float 4s var(--ease-in-out-premium) infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: inset 0 0 0 2px rgb(46 196 182 / 0.55); background-color: rgb(46 196 182 / 0.06); }
+  50% { box-shadow: inset 0 0 0 2px rgb(46 196 182 / 1); background-color: rgb(46 196 182 / 0.18); }
+}
+
+@keyframes wiggle {
+  0%, 86%, 100% { transform: rotate(0deg); }
+  89% { transform: rotate(-6deg); }
+  93% { transform: rotate(5deg); }
+  96% { transform: rotate(-3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Petit livre qui court (chargements) */
+@keyframes leg-a { from { transform: rotate(-32deg); } to { transform: rotate(32deg); } }
+@keyframes leg-b { from { transform: rotate(32deg); } to { transform: rotate(-32deg); } }
+@keyframes hop { from { transform: translateY(0); } to { transform: translateY(-3px); } }
+@keyframes pop { from { scale: 0.4; opacity: 0; } to { scale: 1; opacity: 1; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.runner-leg-a { transform-box: fill-box; transform-origin: 50% 0%; animation: leg-a 0.18s ease-in-out infinite alternate; }
+.runner-leg-b { transform-box: fill-box; transform-origin: 50% 0%; animation: leg-b 0.18s ease-in-out infinite alternate; }
+.runner-hop { animation: hop 0.18s ease-out infinite alternate; }

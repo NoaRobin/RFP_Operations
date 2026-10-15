@@ -1,0 +1,1980 @@
+# Ontologie des réponses factuelles d'un RFI / DDQ (fonds et parts).
+#
+# Un concept = une notion métier qu'un questionnaire peut demander, reliée à UNE source de données vérifiable.
+#   id        : identifiant stable (fonds.* / part.* / jump.* / perf.*)
+#   label     : « libellé FR | libellé EN »
+#   scope     : fund | share (part : nécessite l'ISIN)
+#   type      : text | long | enum | bool | percent | number | int | amount | date | time | code | list
+#   vocab     : vocabulaire contrôlé (vocabularies.yaml) pour les enum
+#   source    : table.colonne (Product Info, vérifiée contre catalog/fabric_schema.csv)
+#               ou {fr: table.colonne, en: table.colonne} (texte publié dans chaque langue)
+#               ou jump:<mesure> / perf:<mesure> / registration:<mesure> (calculés, voir values.py)
+#   terms     : expressions qui désignent le concept (une seule suffit) ; « a & b » = les deux mots, dans n'importe quel ordre
+#   require   : au moins un de ces termes doit AUSSI être présent
+#   exclude   : termes qui écartent le concept
+#   facets    : qualificatifs du concept (facets.yaml) ; une facette contraire dans la question écarte le concept
+#   default   : facettes pour lesquelles ce concept est la lecture par défaut quand la question ne précise rien
+#   ambiguous : la lecture par défaut reste discutable → jamais rempli automatiquement, toujours proposé « à vérifier »
+#   range     : bornes de vraisemblance (en unités affichées) ; hors bornes → aucune réponse
+#   validate  : isin | lei | currency
+#   transform : negate (booléen inversé) | not_null (présence d'une date / valeur)
+#   qualitative_ok : texte réglementaire publié (objectif de gestion…) : accepté même pour « Décrivez… »
+#
+# Conventions Product Info reprises d'App4everyone (domain/fields.py, README) :
+#   - pourcentages en points (1,35 = 1,35 %) — hypothèse partagée, À CONFIRMER avec l'équipe Data ;
+#   - booléens « Yes / No / Oui / Non / 1 / 0 » ;
+#   - part ↔ fonds : PI_OUT_Share.ProductID = pi_out_product_active.pi_productid.
+
+concepts:
+  # =================================================================== IDENTITÉ DU FONDS
+  - id: fonds.nom
+    label: Nom du fonds | Fund name
+    scope: fund
+    type: text
+    source: pi_out_product_active.Product_Name
+    terms: [nom du fonds, denomination & fonds, nom complet & fonds, full name & fund, legal name & fund, nom de l'opc, nom de l'opcvm, nom du compartiment, nom du produit, denomination du fonds, denomination de l'opc, libelle du fonds, nom de la strategie, fund name, name of the fund, fund's name, product name, sub-fund name, name of sub-fund, strategy name, fund legal name, fund full name, nom complet du fonds]
+    exclude: [gerant, manager, benchmark, indice, ombrelle, umbrella, sicav, maitre, master, societe de gestion, management company, part, share class, strategie, strategy]
+
+  - id: fonds.ombrelle
+    label: SICAV / fonds ombrelle | Umbrella fund
+    scope: fund
+    type: text
+    source: pi_out_product_active.Umbrella_Name
+    terms: [ombrelle, nom de la sicav, sicav ombrelle, umbrella, umbrella fund, umbrella name, name of the umbrella, nom de la sicav ombrelle]
+
+  - id: fonds.forme_juridique
+    label: Forme juridique | Legal form
+    scope: fund
+    type: enum
+    vocab: legal_form
+    source: pi_out_product_active.Legal_Form
+    terms: [forme juridique, structure juridique, type de vehicule, forme de l'opc, nature juridique, vehicule juridique, legal form, legal structure, vehicle type, type of vehicle, fund structure, legal vehicle, legal type, fund type, type of fund, legal status, nature du fonds, nature de l'opc]
+    exclude: [ucits, opcvm, aif, fia, sfdr]
+
+  - id: fonds.reglementation
+    label: Cadre réglementaire (OPCVM / FIA) | Regulatory framework (UCITS / AIF)
+    scope: fund
+    type: enum
+    vocab: regulation
+    source: pi_out_product_active.Applicable_UCI_Regulation
+    terms: [statut reglementaire, cadre reglementaire, reglementation applicable, directive applicable, opcvm ou fia, ucits or aif, ucits/aif, regulatory status, regulatory framework, regulatory regime, applicable regulation, applicable directive, fund regulation, regulatory classification]
+    exclude: [sfdr, article, esg]
+
+  - id: fonds.est_opcvm
+    label: OPCVM (UCITS) ? | UCITS fund?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Applicable_UCI_Regulation
+    transform: {in: [ucits]}
+    terms: [opcvm, ucits, ucits compliant, conforme ucits, conforme a la directive opcvm, ucits fund, is the fund ucits, coordonne]
+    exclude: [non ucits, fia, aif, statut reglementaire, regulatory status, regulatory framework, cadre reglementaire, frais, fees, commission, acquis, droits]
+
+  - id: fonds.domicile
+    label: Pays de domiciliation | Fund domicile
+    scope: fund
+    type: enum
+    vocab: country
+    source: pi_out_product_active.Domiciliation
+    terms: [domicile, domiciliation, pays de domiciliation, pays de domicile, domicilie, country of domicile, fund domicile, domiciled, jurisdiction, country of incorporation, juridiction, pays d'immatriculation, legal domicile, de quel droit, droit du fonds, droit applicable, governing law, fund law, law of the fund]
+    exclude: [enregistr, registration, registered, commercialis, distribution, investisseur, investor]
+
+  - id: fonds.date_creation
+    label: Date de création du fonds | Fund launch date
+    scope: fund
+    type: date
+    source: pi_out_product_active.Creation_Date
+    terms: [date de creation, date de lancement, creation du fonds, lancement du fonds, date d'agrement, date de constitution, inception date, launch date, fund inception, fund launch, creation date, inception, date of inception, date of launch, launched, cree le, lance le]
+    exclude: [premiere vl, first nav, gerant, manager, track record, strategie, strategy, equipe, team]
+    facets: {}
+    default: []
+
+  - id: fonds.premiere_vl
+    label: Date de première VL du fonds | Fund first NAV date
+    scope: fund
+    type: date
+    source: pi_out_product_active.First_NAV_Date
+    terms: [premiere vl, date de premiere vl, premiere valeur liquidative, first nav, first nav date, date of first nav, first valuation date]
+
+  - id: fonds.echeance
+    label: Date d'échéance | Maturity date
+    scope: fund
+    type: date
+    source: pi_out_product_active.Maturity_date
+    terms: [date d'echeance, echeance du fonds, date de maturite, maturite du fonds, maturity date, fund maturity, term date, fund term, target maturity]
+
+  - id: fonds.devise
+    label: Devise de référence du fonds | Fund base currency
+    scope: fund
+    type: enum
+    vocab: currency
+    validate: currency
+    source: pi_out_product_active.Accounting_Currency
+    terms: [devise de reference, devise du fonds, devise de comptabilisation, devise de comptabilite, devise de valorisation du fonds, devise de base, base currency, reference currency, fund currency, accounting currency, valuation currency, functional currency, denomination currency of the fund]
+    exclude: [part, share class, couverture, hedg, exposition, exposure, repartition, breakdown]
+
+  - id: fonds.lei
+    label: Code LEI du fonds | Fund LEI
+    scope: fund
+    type: code
+    validate: lei
+    source: pi_out_product_active.LEI_Code
+    terms: [lei, code lei, legal entity identifier, identifiant lei]
+    exclude: [societe de gestion, management company, manco, depositaire, depositary]
+
+  - id: fonds.code_amf
+    label: Code AMF | AMF code
+    scope: fund
+    type: code
+    source: pi_out_product_active.AMF_Code
+    terms: [code amf, amf code, numero amf, amf number, amf id]
+    exclude: [classification, categorie, category, doctrine, agrement, approval date]
+
+  - id: fonds.giin
+    label: Code GIIN | GIIN
+    scope: fund
+    type: code
+    source: pi_out_product_active.GIIN_Code
+    terms: [giin, global intermediary identification number, numero giin]
+
+  - id: fonds.statut_fatca
+    label: Statut FATCA | FATCA status
+    scope: fund
+    type: text
+    source: pi_out_product_active.FATCA_Family
+    terms: [statut fatca, classification fatca, fatca status, fatca classification, fatca category]
+
+  - id: fonds.classe_actifs
+    label: Classe d'actifs | Asset class
+    scope: fund
+    type: enum
+    vocab: asset_class
+    source: pi_out_product_active.Asset_Class
+    terms: [classe d'actifs, classe d actifs, categorie d'actifs, asset class, asset category, type d'actifs, main asset class, classe d'actif principale]
+    exclude: [repartition, allocation, breakdown, ventilation, exposition, exposure, "%", poids, weight, quantalys, morningstar, bce, ecb]
+
+  - id: fonds.zone
+    label: Zone d'investissement | Investment zone
+    scope: fund
+    type: text
+    source: pi_out_product_active.Investment_Zone
+    terms: [zone d'investissement, zone geographique, zone geographique d'investissement, region d'investissement, univers geographique, investment zone, geographical focus, geographic focus, geographical area, investment region, regional focus, geographic zone]
+    exclude: [repartition, breakdown, allocation, ventilation, exposition, exposure, "%", poids, weight]
+
+  - id: fonds.classification_amf
+    label: Classification AMF | AMF classification
+    scope: fund
+    type: text
+    source: pi_out_product_active.AMF_Classification
+    terms: [classification amf, amf classification]
+    exclude: [esg, doctrine, extra-financ, durable, isr, sustainab, categorie 1, categorie 2, categorie 3]
+
+  - id: fonds.gamme
+    label: Gamme | Fund range
+    scope: fund
+    type: text
+    source: pi_out_product_active.Fund_Range
+    terms: [gamme, gamme de fonds, fund range, product range, range of funds]
+
+  - id: fonds.indice_reference
+    label: Indicateur de référence | Benchmark
+    scope: fund
+    type: text
+    source: pi_out_product_active.Benchmark_Name
+    terms: [indice de reference, indicateur de reference, benchmark, nom de l'indice, nom du benchmark, index de reference, reference index, benchmark index, benchmark name, official benchmark, reference benchmark]
+    exclude: [performance, perf, rendement, return, volatil, tracking, ecart, surperform, outperform, esg, durable, sustainab, devise, currency, comparaison, comparison, ticker]
+
+  - id: fonds.indice_comparaison
+    label: Indice de comparaison | Comparison index
+    scope: fund
+    type: text
+    source: pi_out_product_active.Comparison_index
+    terms: [indice de comparaison, indicateur de comparaison, comparison index, comparator index, comparator benchmark, peer index]
+
+  - id: fonds.objectif_gestion
+    label: Objectif de gestion | Investment objective
+    scope: fund
+    type: long
+    qualitative_ok: true
+    source: {fr: pi_out_product_active.Investment_objective_FR, en: pi_out_product_active.Investment_objective_EN}
+    doc: kid.objective
+    terms: [objectif de gestion, objectif d'investissement, objectif du fonds, investment objective, fund objective, objective of the fund, investment goal]
+    exclude: [esg, durable, sustainab, carbon, carbone, volatil, performance fee]
+
+  - id: fonds.allocation_strategique
+    label: Allocation stratégique | Strategic allocation
+    scope: fund
+    type: long
+    qualitative_ok: true
+    source: {fr: pi_out_product_active.Strategic_allocation_FR, en: pi_out_product_active.Strategic_allocation_EN}
+    terms: [allocation strategique, strategie d'investissement, politique d'investissement, strategic allocation, investment policy, investment strategy]
+    exclude: [esg, durable, sustainab, actuelle, current, repartition, breakdown, "%", changement, change, modification, evolution, declarer, report]
+
+  - id: fonds.profil_investisseur
+    label: Profil de l'investisseur type | Typical investor profile
+    scope: fund
+    type: long
+    qualitative_ok: true
+    source: {fr: pi_out_product_active.Typical_investor_profile_FR, en: pi_out_product_active.Typical_investor_profile_EN}
+    terms: [profil de l'investisseur type, investisseur type, souscripteurs concernes et profil, typical investor profile, target investor profile, target market, marche cible, typical investor]
+
+  - id: fonds.duree_placement
+    label: Durée de placement recommandée | Recommended holding period
+    scope: fund
+    type: text
+    source: pi_out_product_active.Recommended_Investment_Period
+    doc: kid.rhp
+    terms: [duree de placement recommandee, duree minimale de placement, horizon de placement, horizon d'investissement, duree d'investissement recommandee, recommended holding period, recommended investment period, recommended investment horizon, investment horizon, minimum holding period, minimum recommended investment period, holding period]
+
+  # =================================================================== GESTION
+  - id: fonds.gerant
+    label: Gérant principal | Lead portfolio manager
+    scope: fund
+    type: text
+    source: pi_out_product_active.Portfolio_Manager
+    terms: [gerant principal, nom du gerant, gerant du fonds, gerant, gerante, gerants, lead portfolio manager, portfolio manager, fund manager, lead manager, lead pm, name of the portfolio manager, pm name, manager name, principal portfolio manager]
+    exclude: [suppleant, adjoint, co-gerant, cogerant, backup, back-up, deputy, co-manager, alternate, depuis, since, tenure, anciennete, experience, annees, years, societe, company, firm, depositaire, delegat, delegue, conseiller, advisor, biographie, biography, cv, equipe, team, nombre, number]
+    facets: {}
+
+  - id: fonds.gerant_suppleant
+    label: Gérant suppléant | Deputy portfolio manager
+    scope: fund
+    type: text
+    source: pi_out_product_active.Portfolio_Manager_backup_1
+    terms: [gerant suppleant, co-gerant, cogerant, gerant adjoint, gerant secondaire, second gerant, deputy portfolio manager, deputy manager, co-manager, co-portfolio manager, back-up manager, backup manager, backup portfolio manager, alternate portfolio manager, second portfolio manager, back up, gerant back up, gerants back up, backup pm]
+    exclude: [depuis, since, tenure, experience, annees, years, biographie, biography, anciennete, seniority]
+
+  - id: fonds.gerant_depuis
+    label: Date de prise de fonction du gérant | Portfolio manager start date
+    scope: fund
+    type: date
+    source: pi_out_product_active.Start_date_Portfolio_manager
+    terms: [gerant depuis, date de prise de fonction du gerant, date de nomination du gerant, gere le fonds depuis, gere depuis, manager since, managing the fund since, portfolio manager since, pm since, start date of the portfolio manager, date the manager took over, manager start date, tenure on the fund]
+    exclude: [suppleant, adjoint, backup, deputy, experience, years of experience, annees d'experience]
+
+  - id: fonds.societe_gestion
+    label: Société de gestion | Management company
+    scope: fund
+    type: text
+    source: pi_out_product_active.Investment_Manager
+    terms: [societe de gestion, gestionnaire financier, management company, investment manager, asset manager, manco, aifm, investment management company, nom societe de gestion, quelle est la societe de gestion, name of the management company]
+    exclude: [lei, adresse, address, encours, aum, assets under management, effectif, employees, regulateur, regulator, agrement, licence, depuis, since, created, creation, delegat, delegue, sub, conseiller, advisor, pays, country, actionnaire, shareholder, rating, notation]
+
+  - id: fonds.delegation_gestion
+    label: Délégation de la gestion financière ? | Investment management delegated?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Investment_Management_Delegation
+    terms: [delegation de gestion, delegation de la gestion financiere, gestion deleguee, delegated investment management, investment management delegated, is the management delegated, delegation of portfolio management, gere par un delegataire, geree par un delegataire, managed by a delegate]
+    exclude: [nom, name, delegataire, qui, who]
+
+  - id: fonds.delegataire_gestion
+    label: Délégataire de gestion financière | Delegated investment manager
+    scope: fund
+    type: text
+    source: pi_out_product_active.Delegation_investment_manager
+    terms: [delegataire de gestion, delegataire de la gestion financiere, gestionnaire delegue, sub-investment manager, sub investment manager, delegated investment manager, sub-advisor, sub-adviser, sub-manager, delegated fund manager, gestionnaire financier par delegation]
+
+  - id: fonds.conseiller
+    label: Conseiller en investissement | Investment advisor
+    scope: fund
+    type: text
+    source: pi_out_product_active.Investment_Advisor
+    terms: [conseiller en investissement, conseiller financier du fonds, investment advisor, investment adviser]
+
+  - id: fonds.fonds_de_fonds
+    label: Fonds de fonds ? | Fund of funds?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Fund_of_Funds
+    terms: [fonds de fonds, fund of funds, fof, multigestion]
+    exclude: [part maximale, maximum, "%", limite, limit, autres opc, other funds, ucits/ucis]
+
+  - id: fonds.nourricier
+    label: Fonds nourricier ? | Feeder fund?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Feeder_Fund_
+    terms: [fonds nourricier, nourricier, feeder fund, feeder, master-feeder, maitre nourricier]
+    exclude: [nom du fonds maitre, master fund name, name of the master]
+
+  - id: fonds.fonds_maitre
+    label: Fonds maître | Master fund
+    scope: fund
+    type: text
+    source: pi_out_product_active.External_master_fund_name
+    terms: [fonds maitre, nom du fonds maitre, master fund, master fund name, name of the master fund]
+    exclude: [isin, code]
+
+  - id: fonds.etf
+    label: ETF ? | ETF?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.ETF_Fund
+    terms: [etf, exchange traded fund, fonds indiciel cote, tracker, cote en bourse, listed fund]
+    exclude: [investit, invest in, utilise, use of, part, "%"]
+
+  # =================================================================== RISQUES
+  - id: fonds.sri
+    label: Indicateur synthétique de risque (SRI) | Summary risk indicator (SRI)
+    scope: fund
+    type: enum
+    vocab: sri
+    range: [1, 7]
+    source: pi_out_product_active.Official_Risk_Scale
+    doc: kid.sri
+    terms: [sri, indicateur de risque, indicateur synthetique de risque, echelle de risque, niveau de risque, profil de risque, classe de risque, score de risque, risque sur une echelle, summary risk indicator, risk indicator, risk class, risk level, risk scale, risk score, risk category, risk profile, risk rating, priips risk, risk/reward profile, profil rendement risque, profil de risque et de rendement]
+    exclude: [srri, label, isr, ucits risk, mois precedent, previous month, methode, method, calcul, calculation, description, decrivez, describe, gestion des risques, risk management, contrepartie, counterparty, liquidite, liquidity, credit, change, currency, durabilite, sustainability]
+
+  - id: fonds.srri
+    label: SRRI (UCITS) | SRRI (UCITS)
+    scope: fund
+    type: enum
+    vocab: sri
+    range: [1, 7]
+    source: pi_out_product_active.Official_Risk_Scale_SRRI
+    terms: [srri, synthetic risk and reward indicator, indicateur synthetique de risque et de rendement, ucits risk indicator, kiid risk indicator, risk and reward indicator]
+
+  - id: fonds.risque_global
+    label: Méthode de calcul du risque global | Global exposure method
+    scope: fund
+    type: enum
+    vocab: global_exposure
+    source: pi_out_product_active.Global_Exposure_Calculation
+    terms: [methode de calcul du risque global, calcul du risque global, risque global, methode de l'engagement, global exposure, global exposure calculation, global exposure method, risk measurement approach, method used to calculate global exposure, commitment approach or var]
+
+  - id: fonds.derives_strategie
+    label: Stratégie reposant sur des dérivés ? | Derivative-based strategy?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Strategy_based_on_derivatives
+    terms: [strategie reposant sur des derives, strategie fondee sur les derives, recours aux derives, utilisation de derives, utilise des derives, instruments derives, produits derives, derivatives, use of derivatives, uses derivatives, derivative-based strategy, derivative instruments, financial derivative instruments]
+    exclude: [exposition maximale, maximum exposure, "%", limite, limit, type de derives, which derivatives, contreparties, counterparties, collateral, garanties, couverture uniquement, hedging only, objectif, purpose, but, decrivez, describe]
+
+  - id: fonds.levier
+    label: Recours à l'effet de levier ? | Use of leverage?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Leveraged_Financial_or_Contingent_Liability_Instr
+    terms: [effet de levier, recours au levier, levier, leverage, use of leverage, leveraged, borrowing, is leverage used, leverage used, utilisation du levier]
+    exclude: [maximum, max, niveau, level, ratio, "%", methode, method, gross, brut, net, engagement, commitment]
+
+  - id: fonds.objectif_volatilite
+    label: Objectif de volatilité ? | Volatility target?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Volatility_target
+    ask_bool: true
+    terms: [objectif de volatilite, cible de volatilite, volatility target, target volatility, volatility objective]
+    exclude: ["%", niveau, level, maximum, max, valeur, value, ex post, realisee, realised, historique]
+
+  - id: fonds.volatilite_max_cible
+    label: Volatilité maximale cible (%) | Maximum target volatility (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.volatility_maximum_target_PerCent
+    terms: [volatilite maximale cible, volatilite cible maximale, objectif de volatilite maximum, niveau de volatilite cible, maximum target volatility, target volatility level, volatility target level, volatility cap, volatility budget, volatilite maximale]
+    exclude: [realisee, realised, historique, historical, ex post, 1 an, 1 year, 3 ans, 3 years, constatee]
+
+  - id: fonds.garantie_capital
+    label: Capital garanti ? | Capital guaranteed?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.No_Capital_Guarantee
+    transform: negate
+    terms: [garantie en capital, capital garanti, garantie du capital, protection du capital, capital guarantee, capital guaranteed, guaranteed capital, capital protection, capital protected, guaranteed fund]
+    exclude: [partielle, partial, niveau, level, "%"]
+
+  - id: fonds.part_min_haut_rendement
+    label: Part minimale de haut rendement (%) | Minimum high yield (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.Minimum_PerCent_of_High_Yields
+    terms: [haut rendement & minim, high yield & minim, speculative grade & minim]
+    exclude: [actuel, current, poids actuel, current weight, repartition, breakdown]
+
+  - id: fonds.part_max_haut_rendement
+    label: Part maximale de haut rendement (%) | Maximum high yield (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.Maximum_PerCent_of_High_Yields
+    terms: [haut rendement & maxim, high yield & maxim, speculative grade & maxim, limite haut rendement, high yield limit, limite high yield]
+    exclude: [actuel, current, poids actuel, current weight, repartition, breakdown, minim]
+
+  # =================================================================== ESG / SFDR (EET)
+  - id: fonds.sfdr
+    label: Classification SFDR | SFDR classification
+    scope: fund
+    type: enum
+    vocab: sfdr
+    source: pi_out_product_active.ESG_SFDR_Article
+    terms: [sfdr, classification sfdr, article sfdr, sfdr & article, sfdr & classified, sfdr & classe, sfdr regulation, reglementation sfdr, article 6, article 8, article 9, art. 8, art. 9, categorie sfdr, reglement sfdr, sfdr classification, sfdr article, sfdr category, sustainable finance disclosure regulation, article 8 or 9, article 6/8/9, art. 6/8/9]
+    exclude: [part minimale, minimum proportion, "%", pai, principales incidences, principal adverse, date, depuis, since, annexe, annex, precontractuel, pre-contractual, document, lien, link, url, raisons, reasons, pourquoi, why, decrivez, describe, explain, expliquez, min, minimum, fonds sous-jacents, underlying funds]
+
+  - id: fonds.categorie_amf_esg
+    label: Catégorie AMF (doctrine extra-financière) | AMF ESG category
+    scope: fund
+    type: enum
+    vocab: amf_esg_category
+    source: pi_out_product_active.ESG_AMF_Category
+    terms: [doctrine amf, position-recommandation amf 2020-03, doctrine 2020-03, communication extra-financiere & amf, amf doctrine, amf esg category, amf position 2020-03, amf esg classification]
+    exclude: [classification amf, amf classification]
+
+  - id: fonds.label_isr
+    label: Label ISR ? | French SRI label?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.RSI_french_label
+    terms: [label isr, isr label, french sri label, sri label, label investissement socialement responsable, labellise isr, labelled sri]
+    exclude: [depuis, since, date, obtenu, obtained, renouvel, renewal, audit, organisme, certifier, certification body]
+
+  - id: fonds.label_towards
+    label: Label Towards Sustainability ? | Towards Sustainability label?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Belgium_Towards_Sustainability_label
+    terms: [towards sustainability, febelfin, label belge, belgian label, towards sustainable, towards sustainable label]
+
+  - id: fonds.label_finansol
+    label: Label Finansol ? | Finansol label?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Finansol_Label
+    terms: [finansol, label finansol, finansol label]
+
+  - id: fonds.pai
+    label: Prise en compte des principales incidences négatives (PAI) ? | Considers principal adverse impacts (PAI)?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Does_it_consider_PAI_EET_20100
+    terms: [principales incidences negatives, principales incidences negatives & prise en compte, pai, principal adverse impacts, principal adverse impact, considers pai, consider principal adverse]
+    exclude: [lesquelles, which, liste, list, indicateurs, indicators, valeur, value, metric, emissions, carbone, carbon, empreinte, footprint, biodiversit, dechets, waste, eau, water, genre, gender]
+
+  - id: fonds.investissements_durables
+    label: Investit en investissements durables ? | Invests in sustainable investments?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Does_it_invest_in_SI_EET_20170
+    terms: [investissements durables & investit, investissement durable & investit, invest & sustainable investments, sustainable investment & does, makes sustainable investments, realise des investissements durables]
+    exclude: ["%", part minimale, minimum proportion, proportion, pourcentage, percentage, environnemental, environmental, social]
+
+  - id: fonds.part_min_investissements_durables
+    label: Part minimale d'investissements durables (%) | Minimum sustainable investments (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Min_SI_EET_20420
+    terms: [part minimale d'investissements durables, part minimum d'investissements durables, proportion minimale d'investissements durables, pourcentage minimum d'investissements durables, minimum proportion of sustainable investments, minimum share of sustainable investments, minimum percentage of sustainable investments, minimum sustainable investment, investissements durables & minim, sustainable investments & minim, min. sustainable investment, min sustainable investment, minimum sustainable investment %, part d'investissement durable, investissement durable & engagement]
+    exclude: [environnemental, environmental, social, taxonomie, taxonomy]
+
+  - id: fonds.part_min_id_environnemental
+    label: Part minimale d'investissements durables environnementaux (%) | Minimum sustainable investments with an environmental objective (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Min_SI_Env_EET_20440
+    terms: [investissements durables & environnement & minim, sustainable investments & environmental & minim]
+    exclude: [taxonomie, taxonomy, social]
+
+  - id: fonds.part_min_id_social
+    label: Part minimale d'investissements durables sociaux (%) | Minimum sustainable investments with a social objective (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Min_SI_Social_EET_20470
+    terms: [investissements durables & social & minim, sustainable investments & social & minim]
+    exclude: [environnement, environmental]
+
+  - id: fonds.part_min_caracteristiques_es
+    label: Part minimale alignée sur les caractéristiques E/S (%) | Minimum aligned with E/S characteristics (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Min_with_ES_Characteristics_EET_20400
+    terms: [caracteristiques environnementales ou sociales & minim, caracteristiques e/s & minim, e/s characteristics & minim, environmental or social characteristics & minim, aligned with e/s characteristics, alignes sur les caracteristiques e/s]
+
+  - id: fonds.alignement_taxonomie_min
+    label: Alignement taxonomie minimum, souverains inclus (%) | Minimum taxonomy alignment incl. sovereigns (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Min_Aligned_Taxonomy_Incl_Sovereing_EET_20600
+    terms: [alignement taxonomie, aligne sur la taxonomie, alignes sur la taxonomie, alignement a la taxonomie, taxonomie europeenne & minim, taxonomy alignment, taxonomy-aligned, taxonomy aligned, eu taxonomy & minim, aligne a la taxonomie, investissement aligne a la taxonomie, taxonomie & engagement]
+    exclude: [hors souverains, excluding sovereign, excl. sovereign, transition, enabling, habilitant, actuel, current, reel, actual]
+
+  - id: fonds.accord_paris
+    label: Aligné sur l'Accord de Paris ? | Aligned with the Paris Agreement?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Aligned_With_Paris_Agreement_EET_20580
+    terms: [accord de paris, paris agreement, paris-aligned, paris aligned, aligne sur l'accord de paris, aligned with the paris agreement]
+    exclude: [etats, sovereign, pays, countries, non-signataires, non ratifi]
+
+  - id: fonds.objectif_reduction_carbone
+    label: Objectif de réduction des émissions carbone ? | Carbon emissions reduction objective?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Objective_Reduction_Carbon_Emissions_EET_20570
+    terms: [objectif de reduction des emissions, objectif de reduction carbone, reduction des emissions de carbone & objectif, carbon reduction objective, carbon emissions reduction objective, objective of reducing carbon emissions, decarbonisation objective, objectif de decarbonation]
+
+  - id: fonds.indice_esg
+    label: Indice de référence durable désigné ? | Designated sustainable reference benchmark?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Reference_ESG_Benchmark_EET_20370
+    terms: [indice de reference esg, indice de reference durable, benchmark esg, indice esg, indice durable designe, esg benchmark, sustainable benchmark, designated reference benchmark, reference benchmark designated, sustainability benchmark, ctb, pab, climate transition benchmark, paris aligned benchmark]
+
+  - id: fonds.exclusion_tabac
+    label: Exclusion du tabac ? | Tobacco exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Tobacco_Exclusion_EET_52000
+    terms: [tabac, tobacco, cigarette]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, filtrage, screen, screening, restrict, restriction, interdit, prohibit, politique, policy, investit, invest]
+    exclude: ["%", seuil, threshold, chiffre d'affaires, revenue, part du ca, producteur, producer, distributeur, distributor]
+
+  - id: fonds.exclusion_armes_controversees
+    label: Exclusion des armes controversées ? | Controversial weapons exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Controversial_Weapons_Considered_EET_31140
+    terms: [armes controversees, armes non conventionnelles, controversial weapons, cluster munitions, armes a sous-munitions, mines antipersonnel, anti-personnel mines]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest, considere, consider]
+
+  - id: fonds.exclusion_armes_nucleaires
+    label: Exclusion des armes nucléaires ? | Nuclear weapons exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Nuclear_Weapons_Exclusion_EET_51400
+    terms: [armes nucleaires, nuclear weapons]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+    exclude: [etats, sovereign, pays, countries, traite, treaty]
+
+  - id: fonds.exclusion_armes_conventionnelles
+    label: Exclusion des armes conventionnelles ? | Conventional weapons exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Conventional_Weapons_Exclusion_EET_50500
+    terms: [armes conventionnelles, conventional weapons, armement conventionnel, defense & armement]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+
+  - id: fonds.exclusion_alcool
+    label: Exclusion de l'alcool ? | Alcohol exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Alcohol_Exclusion_EET_50200
+    terms: [alcool, alcohol, alcoholic beverages, boissons alcoolisees]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+
+  - id: fonds.exclusion_jeux
+    label: Exclusion des jeux d'argent ? | Gambling exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Gambling_Exclusion_EET_50900
+    terms: [jeux d'argent, jeux de hasard, casinos, gambling, gaming]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+
+  - id: fonds.exclusion_pornographie
+    label: Exclusion de la pornographie ? | Pornography exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Pornography_Exclusion_EET_50100
+    terms: [pornographie, pornography, adult entertainment, divertissement pour adultes]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+
+  - id: fonds.exclusion_petrole
+    label: Exclusion du pétrole ? | Oil exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Oil_Exclusion_EET_51500
+    terms: [petrole, oil, petroliers, oil and gas, oil & gas, petrole et gaz, sables bitumineux, oil sands, tar sands, schiste, shale]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+    exclude: [palme, palm, gaz naturel seul]
+
+  - id: fonds.exclusion_gaz
+    label: Exclusion du gaz ? | Gas exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Gas_Exclusion_EET_51000
+    terms: [gaz naturel, gaz, natural gas, gas]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+    exclude: [petrole, oil, effet de serre, greenhouse, ges, ghg, emissions]
+
+  - id: fonds.exclusion_nucleaire_civil
+    label: Exclusion de l'énergie nucléaire ? | Nuclear energy exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Nuclear_Energy_Exclusion_EET_51300
+    terms: [energie nucleaire, nucleaire civil, nuclear energy, nuclear power, centrales nucleaires]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+    exclude: [armes, weapons]
+
+  - id: fonds.exclusion_huile_palme
+    label: Exclusion de l'huile de palme ? | Palm oil exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Palm_Oil_Exclusion_EET_51700
+    terms: [huile de palme, palm oil]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+
+  - id: fonds.exclusion_ogm
+    label: Exclusion des OGM ? | GMO exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.GMO_Exclusion_EET_51200
+    terms: [ogm, gmo, organismes genetiquement modifies, genetically modified]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, restrict, interdit, prohibit, politique, policy, investit, invest]
+
+  - id: fonds.exclusion_ocde
+    label: Exclusion des violations des principes directeurs de l'OCDE ? | OECD guidelines exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.OECD_Guidelines_Exclusion_EET_52210
+    terms: [principes directeurs de l'ocde, ocde, oecd guidelines, oecd]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, violation, violations, breach, breaches]
+
+  - id: fonds.exclusion_oit
+    label: Exclusion des violations des conventions de l'OIT ? | ILO conventions exclusion?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.ILO_Exclusion_EET_52220
+    terms: [conventions de l'oit, oit, ilo conventions, ilo, organisation internationale du travail, international labour organization]
+    require: [exclu, exclusion, exclusions, exclut, exclure, exclude, excluded, excludes, excluding, filtre, screen, screening, violation, violations, breach, breaches]
+
+  # =================================================================== FRAIS (FONDS)
+  - id: fonds.frais_gestion_max
+    label: Frais de gestion maximum du fonds (%) | Fund maximum management fee (%)
+    scope: fund
+    type: percent
+    range: [0, 10]
+    source: pi_out_product_active.Max_management_fee_PerCent
+    doc: prospectus.max_management_fee
+    terms: [frais de gestion, commission de gestion, frais de gestion financiere, management fee, management fees, management charge, annual management charge, amc, investment management fee, base fee]
+    exclude: [surperformance, performance fee, variable, indirect, indirects, administratif, administratifs, administrative, admin, entree, entry, sortie, exit, souscription, subscription, rachat, redemption, retrocession, rebate, trailer, courants, ongoing, ter, total expense, transaction, base de calcul, calculation base, assiette, methode, method, mode de calcul, structure]
+    facets: {level: max}
+    default: [level]
+    ambiguous: true
+
+  - id: fonds.frais_gestion_reels
+    label: Frais de gestion réels du fonds (%) | Fund actual management fee (%)
+    scope: fund
+    type: percent
+    range: [0, 10]
+    source: pi_out_product_active.Actual_Management_Fees_PerCent
+    terms: [frais de gestion, commission de gestion, frais de gestion financiere, management fee, management fees, management charge, annual management charge, amc, investment management fee]
+    exclude: [surperformance, performance fee, variable, indirect, indirects, administratif, administratifs, administrative, admin, entree, entry, sortie, exit, souscription, subscription, rachat, redemption, retrocession, rebate, trailer, courants, ongoing, ter, total expense, transaction, base de calcul, calculation base, methode, method, mode de calcul]
+    facets: {level: actual}
+
+  - id: fonds.frais_gestion_indirects_max
+    label: Frais de gestion indirects maximum (%) | Maximum indirect management fees (%)
+    scope: fund
+    type: percent
+    range: [0, 10]
+    source: pi_out_product_active.Max_Indirect_Management_fees_PerCent
+    terms: [frais de gestion indirects, frais indirects, indirect management fees, indirect fees, underlying fund fees, frais des fonds sous-jacents]
+    exclude: [souscription, subscription, rachat, redemption, entree, sortie]
+    facets: {level: max}
+    default: [level]
+
+  - id: fonds.commission_surperformance_taux
+    label: Taux de la commission de surperformance (%) | Performance fee rate (%)
+    scope: fund
+    type: percent
+    range: [0, 50]
+    source: pi_out_product_active.PerCent_of_Surperformance
+    terms: [taux de commission de surperformance, taux de la commission de surperformance, pourcentage de surperformance, commission de surperformance & taux, commission de surperformance & %, performance fee rate, performance fee percentage, performance fee & rate, performance fee & %, participation rate, sharing rate]
+    exclude: [preleve, montant, amount, dernier exercice, last financial year, moyenne, average, 5 ans, 5 years, hurdle, seuil, formule, formula, methode, method, mode de calcul, high water mark]
+
+  - id: fonds.couts_transaction_explicites_ex_ante
+    label: Coûts de transaction explicites ex ante, moyenne 3 ans (%) | Explicit transaction costs ex ante, 3-year average (%)
+    scope: fund
+    type: percent
+    range: [-5, 10]
+    source: pi_out_product_active.Explicit_Transaction_costs_ex_ante_3_years_mean
+    terms: [couts de transaction explicites, explicit transaction costs]
+    exclude: [kid, dic, kiid]
+    facets: {timing: ex_ante}
+    default: [timing]
+
+  - id: fonds.couts_transaction_implicites_ex_ante
+    label: Coûts de transaction implicites ex ante, moyenne 3 ans (%) | Implicit transaction costs ex ante, 3-year average (%)
+    scope: fund
+    type: percent
+    range: [-5, 10]
+    source: pi_out_product_active.Implicit_trans_costs_ex_ante3Y_mean
+    terms: [couts de transaction implicites, implicit transaction costs]
+    exclude: [kid, dic, kiid]
+    facets: {timing: ex_ante}
+    default: [timing]
+
+  - id: fonds.couts_transaction_explicites_ex_post
+    label: Coûts de transaction explicites ex post (%) | Explicit transaction costs ex post (%)
+    scope: fund
+    type: percent
+    range: [-5, 10]
+    source: pi_out_product_active.Explicit_Transaction_costs_ex_post_EMT
+    terms: [couts de transaction explicites, explicit transaction costs]
+    facets: {timing: ex_post}
+
+  - id: fonds.couts_transaction_implicites_ex_post
+    label: Coûts de transaction implicites ex post (%) | Implicit transaction costs ex post (%)
+    scope: fund
+    type: percent
+    range: [-5, 10]
+    source: pi_out_product_active.Implicit_Transaction_costs_ex_post_EMT
+    terms: [couts de transaction implicites, implicit transaction costs]
+    facets: {timing: ex_post}
+
+  - id: fonds.high_water_mark
+    label: High water mark ? | High water mark?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.High_Water_Mark
+    terms: [high water mark, high-water mark, hwm, plus haut historique, mecanisme de rattrapage, high watermark]
+    exclude: [date, niveau, level, valeur, value, duree, period, periode de reference, reference period]
+
+  # =================================================================== FONCTIONNEMENT
+  - id: fonds.cloture_exercice
+    label: Date de clôture de l'exercice | Financial year end
+    scope: fund
+    type: text
+    source: pi_out_product_active.Annual_closing_date
+    terms: [date de cloture, cloture de l'exercice, cloture comptable, fin d'exercice, exercice social, financial year end, fiscal year end, accounting year end, year end, closing date of the financial year, accounting period end]
+    exclude: [premiere, first, souscription, subscription, period, periode de souscription, taxonom, alignment, alignement, performance, return, encours, aum, nav, vl, portefeuille, portfolio, at year end, au 31, as at, as of, frais, fees, charges]
+
+  - id: fonds.jour_calcul_vl
+    label: Jour de calcul de la VL | NAV calculation day
+    scope: fund
+    type: text
+    source: pi_out_product_active.NAV_Calculation_Day
+    terms: [jour de calcul de la vl, jour d'etablissement de la vl, jour de valorisation, date de calcul de la vl, nav calculation day, valuation day, dealing day, valuation point, jour de centralisation & vl, jour d'etablissement de la valeur liquidative, jour d'etablissement & valeur liquidative, jour de calcul de la valeur liquidative]
+
+  - id: fonds.depositaire
+    label: Dépositaire | Depositary
+    scope: fund
+    type: text
+    source: pi_out_product_active.Depositary
+    doc: prospectus.depositary
+    terms: [depositaire, depositary, depository, trustee, banque depositaire, depositary bank]
+    exclude: [lei, adresse, address, contact, frais, fees, commission, depuis, since, notation, rating, pays, country, conservateur, custodian & different]
+
+  - id: fonds.conservateur
+    label: Conservateur | Custodian
+    scope: fund
+    type: text
+    source: pi_out_product_active.Custodian
+    terms: [conservateur, teneur de compte conservateur, custodian, custody bank, global custodian, sub-custodian]
+    exclude: [lei, adresse, address, contact, frais, fees, commission, notation, rating, depositaire & different]
+
+  - id: fonds.valorisateur
+    label: Valorisateur / administrateur | Fund administrator
+    scope: fund
+    type: text
+    source: pi_out_product_active.Fund_Administrator
+    terms: [valorisateur, administrateur du fonds, administrateur, delegataire de la gestion administrative et comptable, gestion administrative et comptable, gestionnaire comptable, agent administratif, fund administrator, administrator, fund accountant, fund accounting, administrative agent, nav calculation agent, valuation agent]
+    exclude: [lei, adresse, address, contact, frais, fees, commission, conseil d'administration, board, administrateurs independants, independent directors]
+
+  - id: fonds.agent_transfert
+    label: Agent de transfert | Transfer agent
+    scope: fund
+    type: text
+    source: pi_out_product_active.Transfer_Agent
+    terms: [agent de transfert, teneur de registre, tenue du registre, transfer agent, registrar, registrar and transfer agent, register keeper, ta]
+    exclude: [lei, adresse, address, contact, frais, fees, sous-agent, sub-transfer, sub transfer]
+
+  - id: fonds.centralisateur
+    label: Centralisateur | Centralising agent
+    scope: fund
+    type: text
+    source: pi_out_product_active.Centralizing_Agent
+    terms: [centralisateur, etablissement en charge de la centralisation, etablissement centralisateur, centralisation des ordres & etablissement, centralising agent, centralizing agent, centralisation agent, order centralisation]
+    exclude: [heure, time, cut-off, cutoff, jour, day, lei, adresse, address]
+
+  - id: fonds.commissaire_comptes
+    label: Commissaire aux comptes | Statutory auditor
+    scope: fund
+    type: text
+    source: pi_out_product_active.Commissaire_Aux_Comptes
+    doc: prospectus.auditor
+    terms: [commissaire aux comptes, cac, auditeur, auditeur externe, auditeur legal, auditor, statutory auditor, external auditor, independent auditor, audit firm, cabinet d'audit, auditors]
+    exclude: [lei, adresse, address, contact, frais, fees, depuis, since, mandat, mandate, rotation, interne, internal, rapport, report, date]
+
+  - id: fonds.commissaire_mandat_debut
+    label: Début du mandat du commissaire aux comptes | Auditor mandate start date
+    scope: fund
+    type: date
+    source: pi_out_product_active.Auditors_Mandate_Start_Date
+    terms: [commissaire aux comptes & depuis, debut du mandat du commissaire, auditeur & depuis, auditor & since, auditor appointed, auditor mandate start, appointment of the auditor, date of appointment of the auditor]
+
+  - id: fonds.entite_suivi_risques
+    label: Entité en charge du suivi des risques | Entity in charge of risk monitoring
+    scope: fund
+    type: text
+    source: pi_out_product_active.Entity_in_charge_of_risk_monitoring
+    terms: [entite en charge du suivi des risques, suivi des risques & entite, entity in charge of risk monitoring, risk monitoring entity, risk manager entity]
+
+  - id: fonds.pea
+    label: Éligible au PEA ? | PEA eligible?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.PEA_taxation_effective_Date
+    transform: not_null
+    terms: [pea, eligible au pea, eligibilite pea, plan d'epargne en actions, pea eligible, pea-eligible]
+    exclude: [pme, pea-pme, depuis, since, date]
+
+  - id: fonds.liste_blanche_italie
+    label: Liste blanche italienne ? | Italian white list?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Italian_White_List
+    terms: [liste blanche italienne, white list & ital, italian white list]
+
+  - id: fonds.us_person
+    label: Accessible aux US Persons ? | Open to US Persons?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.OPC_Eligible_US_Person
+    terms: [us person, us persons, us investors, ressortissants americains, investisseurs americains]
+    require: [accessible, eligible, ouvert, open, autorise, allowed, permitted, souscrire, subscribe, invest, investir, available]
+    exclude: [interdit, prohibited, restricted, restriction, exclu, excluded, non]
+
+  - id: fonds.gips
+    label: Conformité GIPS | GIPS compliance
+    scope: fund
+    type: text
+    source: pi_out_product_active.Gips_Compliance
+    terms: [gips, global investment performance standards, conforme gips, gips compliant, gips compliance]
+    exclude: [composite & nom, composite name, verifi, verification, depuis, since, date]
+
+  # =================================================================== PART : IDENTITÉ
+  - id: part.nom
+    label: Nom de la part | Share class name
+    scope: share
+    type: text
+    source: PI_OUT_Share.Share_Name
+    terms: [nom de la part, libelle de la part, denomination de la part, nom de la classe de parts, nom de la classe, share class name, name of the share class, class name, share name, unit class name, nom du support, libelle du support, nom du support & part, quel est son nom, nom de la part du support]
+
+  - id: part.isin
+    label: Code ISIN | ISIN code
+    scope: share
+    type: code
+    validate: isin
+    source: PI_OUT_Share.ISIN_Code
+    terms: [isin, code isin, isin code, numero isin, identifiant isin]
+    exclude: [instrument, ligne, holding, position, sous-jacent, underlying, benchmark, indice, top]
+
+  - id: part.categorie
+    label: Catégorie de part | Share class
+    scope: share
+    type: text
+    source: PI_OUT_Share.Share_Class
+    terms: [categorie de part, categorie de parts, type de part, classe de part, share class type, share class category, type of share class, class type]
+    exclude: [nom, name, devise, currency, isin, frais, fees, couvert, hedged]
+
+  - id: part.devise
+    label: Devise de la part | Share class currency
+    scope: share
+    type: enum
+    vocab: currency
+    validate: currency
+    source: PI_OUT_Share.Subscription_Currency
+    terms: [devise de la part, devise de cotation, devise de souscription, devise de libelle, devise de la classe, share class currency, currency of the share class, share currency, denomination currency, dealing currency, subscription currency, nav currency, currency of denomination, devise de la vl, devise, vl en devise, devise de la vl, devise de cotation de la vl, units and currency, currency]
+    exclude: [fonds & reference, base currency, fund currency, couverture, hedg, exposition, exposure, repartition, breakdown, reference, comptabil, accounting, benchmark, indice, vl & montant]
+
+  - id: part.couverte
+    label: Part couverte contre le risque de change ? | Currency-hedged share class?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Share_Hedged_Against_FX_Exposure
+    terms: [couverte contre le risque de change, couverture de change, part couverte, couverte, hedged share class, currency hedged, hedged against currency, hedged, fx hedged, currency hedging, hedging of the share class]
+    exclude: [ratio, "%", niveau, level, methode, method, frequence, frequency, cout, cost, portefeuille, portfolio]
+
+  - id: part.affectation_resultats
+    label: Affectation des résultats | Distribution policy
+    scope: share
+    type: enum
+    vocab: distribution_policy
+    source: PI_OUT_Share.Income_Distribution
+    terms: [affectation des resultats, affectation des revenus, affectation des sommes distribuables, politique de distribution, capitalisation ou distribution, capitalisation/distribution, capitalisante ou distribuante, distribution policy, income treatment, income allocation, accumulation or distribution, accumulating or distributing, acc/dis, dividend policy, income policy, distribution or capitalisation, use of income, capi & distri, capi/distri, type de part & capitalisation, type de part & distribution, accumulating & distributing, capitalisation des revenus, distribution des revenus]
+    exclude: [frequence, frequency, montant, amount, date, dernier, last, rendement, yield, historique, history]
+
+  - id: part.frequence_distribution
+    label: Fréquence de distribution | Distribution frequency
+    scope: share
+    type: enum
+    vocab: frequency
+    source: PI_OUT_Share.Distribution_Frequency
+    terms: [frequence de distribution, periodicite de distribution, frequence des dividendes, frequence de versement, distribution frequency, dividend frequency, frequency of distribution, payment frequency, periodicite du revenu, periodicite des revenus, periodicite de distribution, frequence de versement des revenus, frequence des coupons, periodicite des coupons]
+
+  - id: part.type_investisseurs
+    label: Souscripteurs concernés | Target investors
+    scope: share
+    type: text
+    source: PI_OUT_Share.Investor_Type
+    terms: [souscripteurs concernes, type d'investisseurs, type de souscripteurs, investisseurs vises, investisseurs cibles, clientele cible, investor type, type of investors, target investors, eligible investors, investor category, intended investors]
+    exclude: [profil, profile, marche cible, target market & profile]
+
+  - id: part.date_creation
+    label: Date de création de la part | Share class launch date
+    scope: share
+    type: date
+    source: PI_OUT_Share.Creation_Date
+    terms: [date de creation, date de lancement, creation de la part, lancement de la part, share class launch, share class inception, inception date, launch date, creation date, inception, date of inception, date of launch]
+    exclude: [premiere vl, first nav, gerant, manager, track record, strategie, strategy]
+    facets: {}
+
+  - id: part.premiere_vl
+    label: Date de première VL de la part | Share class first NAV date
+    scope: share
+    type: date
+    source: PI_OUT_Share.First_NAV_Date
+    terms: [premiere vl, date de premiere vl, premiere valeur liquidative, first nav, first nav date, date of first nav, first valuation date, first pricing date]
+    exclude: [montant, amount, valeur, value, prix, price, niveau, level]
+
+  - id: part.vl_origine
+    label: VL d'origine | Initial NAV
+    scope: share
+    type: number
+    range: [0.0001, 10000000]
+    source: PI_OUT_Share.Initial_NAV
+    terms: [vl d'origine, vl initiale, valeur liquidative d'origine, valeur liquidative initiale, vl de lancement, prix de lancement, initial nav, launch nav, launch price, initial offer price, initial price, initial net asset value, issue price]
+
+  - id: part.minimum_souscription
+    label: Minimum de souscription initiale | Minimum initial subscription
+    scope: share
+    type: amount
+    range: [0, 1000000000]
+    source: PI_OUT_Share.Initial_Subscription_Minimum_Amount
+    terms: [minimum de souscription initiale, montant minimum de souscription, souscription minimale, souscription initiale minimale, montant minimum d'investissement, investissement minimum, minimum initial subscription, minimum subscription, minimum investment, minimum initial investment, minimum subscription amount, minimum holding, minimum investment amount, min. subscription, souscription initiale & minim, souscription & minim, investissement & minim, subscription & minim, investment & minim, initial investment & minim, minimum d'investissement, min. investment, min investment, minimum de souscription initial]
+    exclude: [ulterieure, subsequent, additionnelle, additional, nombre de parts, number of shares, number of units, nombre, durable, sustainab, esg, isr, taxonomi, "%", pourcentage, percentage, proportion]
+
+  - id: part.minimum_souscription_parts
+    label: Minimum de souscription initiale (en parts) | Minimum initial subscription (shares)
+    scope: share
+    type: number
+    range: [0, 100000000]
+    source: PI_OUT_Share.Initial_Subscription_Minimum_Quantity
+    terms: [minimum de souscription & parts, nombre minimum de parts, minimum subscription & shares, minimum number of shares, minimum number of units]
+    exclude: [ulterieure, subsequent, montant, amount]
+
+  - id: part.ticker_bloomberg
+    label: Ticker Bloomberg | Bloomberg ticker
+    scope: share
+    type: code
+    source: PI_OUT_Share.Bloomberg_Ticker
+    terms: [ticker bloomberg, code bloomberg, bloomberg ticker, bloomberg code, bloomberg id, bloomberg, ticker, ticker bloomberg & etf]
+    exclude: [indice, index, benchmark, instrument, holding]
+
+  - id: part.ric
+    label: Code RIC (Reuters) | RIC code
+    scope: share
+    type: code
+    source: PI_OUT_Share.Code_RIC
+    terms: [ric, code ric, reuters, reuters code, ric code, refinitiv, lseg]
+    exclude: [indice, index, benchmark]
+
+  - id: part.wkn
+    label: Code WKN | WKN
+    scope: share
+    type: code
+    source: PI_OUT_Share.Wkn_Number
+    terms: [wkn, code wkn, wkn code, wertpapierkennnummer]
+
+  - id: part.sedol
+    label: Code SEDOL | SEDOL
+    scope: share
+    type: code
+    source: PI_OUT_Share.Sedol_Code
+    terms: [sedol, code sedol, sedol code]
+
+  - id: part.valor
+    label: Numéro Valor | Valor number
+    scope: share
+    type: code
+    source: PI_OUT_Share.Swiss_Valor_Number
+    terms: [valor, numero valor, valoren, valor number, swiss valor, telekurs]
+    exclude: [valorisation, valorise, valuation, valoriser, delai, preavis]
+
+  - id: part.note_morningstar
+    label: Note Morningstar (étoiles) | Morningstar rating (stars)
+    scope: share
+    type: int
+    range: [1, 5]
+    source: PI_OUT_Share.Morningstar_rating
+    terms: [note morningstar, notation morningstar, etoiles morningstar, morningstar rating, morningstar stars, morningstar star rating, rating morningstar]
+    exclude: [categorie, category, medal, medaille, analyst, analyste, esg, sustainability, durabilite, globe]
+
+  - id: part.date_note_morningstar
+    label: Date de la note Morningstar | Morningstar rating date
+    scope: share
+    type: date
+    source: PI_OUT_Share.Morningstar_rating_date
+    terms: [date de la note morningstar, morningstar rating date, date of the morningstar rating, note morningstar & au, morningstar & as of]
+
+  - id: part.part_principale
+    label: Part principale ? | Main share class?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Main_Share
+    terms: [part principale, part de reference, main share class, primary share class, representative share class, main share]
+
+  # =================================================================== PART : FRAIS
+  - id: part.frais_courants_ex_post
+    label: Frais courants ex post (%) | Ongoing charges ex post (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Ongoing_Charges_ex_post
+    asof: PI_OUT_Share.Ongoing_Charges_ex_postCalculation_Date
+    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais de fonctionnement et de gestion, oc, frais courants dic]
+    exclude: [date, calcul au, calculated as of, methode, method, transaction, entree, sortie, entry, exit, souscription, rachat, subscription, redemption, surperformance, performance fee, retrocession, trailer]
+    facets: {timing: ex_post}
+    default: [timing]
+
+  - id: part.frais_courants_ex_ante
+    label: Frais courants ex ante (%) | Ongoing charges ex ante (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Ongoing_Charges_ex_ante
+    doc: kid.ongoing_costs
+    asof: PI_OUT_Share.Ongoing_Charges_ex_ante_Calculation_Date
+    terms: [frais courants, frais courant, ongoing charges, ongoing charge, ongoing charges figure, ongoing costs, ocf, couts recurrents, recurring costs, frais courants dic, frais de gestion & kid, frais de gestion & dic, frais de gestion et autres frais administratifs et d'exploitation]
+    exclude: [date, calcul au, calculated as of, methode, method, transaction, entree, sortie, entry, exit, souscription, rachat, subscription, redemption, surperformance, performance fee, retrocession, trailer]
+    facets: {timing: ex_ante}
+
+  - id: part.date_frais_courants
+    label: Date de calcul des frais courants ex post | Ongoing charges ex post calculation date
+    scope: share
+    type: date
+    source: PI_OUT_Share.Ongoing_Charges_ex_postCalculation_Date
+    terms: [frais courants & date, ongoing charges & date, ocf & date, ongoing charges & as of]
+    facets: {timing: ex_post}
+    default: [timing]
+
+  - id: part.ter_max
+    label: TER maximum (%) | Maximum TER (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.TER_Max
+    terms: [ter, total expense ratio, ratio des frais totaux, frais totaux]
+    exclude: [date, methode, method, synthetic, synthetique, ter & fonds sous-jacents]
+    facets: {level: max}
+    default: [level]
+    ambiguous: true
+
+  - id: part.frais_gestion_max
+    label: Frais de gestion financière maximum (%) | Maximum management fee (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Max_Financial_Management_Fees
+    doc: prospectus.max_management_fee
+    terms: [frais de gestion, commission de gestion, frais de gestion financiere, management fee, management fees, management charge, annual management charge, amc, investment management fee, frais de gestion fixes, fixed management fee]
+    exclude: [surperformance, performance fee, variable, indirect, indirects, administratif, administratifs, administrative, admin, entree, entry, sortie, exit, souscription, subscription, rachat, redemption, retrocession, rebate, trailer, courants, ongoing, ter, total expense, transaction, base de calcul, calculation base, assiette, methode, method, mode de calcul, structure]
+    facets: {level: max}
+    default: [level]
+    ambiguous: true
+
+  - id: part.frais_gestion_reels
+    label: Frais de gestion financière réels (%) | Actual management fee (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Actual_Financial_Management_Fees
+    terms: [frais de gestion, commission de gestion, frais de gestion financiere, management fee, management fees, management charge, annual management charge, amc, investment management fee, frais de gestion fixes, fixed management fee]
+    exclude: [surperformance, performance fee, variable, indirect, indirects, administratif, administratifs, administrative, admin, entree, entry, sortie, exit, souscription, subscription, rachat, redemption, retrocession, rebate, trailer, courants, ongoing, ter, total expense, transaction, base de calcul, calculation base, methode, method, mode de calcul]
+    facets: {level: actual}
+
+  - id: part.frais_administratifs_max
+    label: Frais administratifs externes maximum (%) | Maximum administrative fees (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Max_admin_fees
+    terms: [frais administratifs, frais administratifs externes, frais de fonctionnement et autres services, frais de fonctionnement, administrative fees, admin fees, administration fee, administrative expenses, operating expenses, operating and administrative expenses]
+    facets: {level: max}
+    default: [level]
+
+  - id: part.frais_administratifs_reels
+    label: Frais administratifs réels (%) | Actual administrative fees (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Actual_admin_fees
+    terms: [frais administratifs, frais administratifs externes, frais de fonctionnement et autres services, frais de fonctionnement, administrative fees, admin fees, administration fee, administrative expenses, operating expenses]
+    facets: {level: actual}
+
+  - id: part.commission_surperformance
+    label: Commission de surperformance ? | Performance fee?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Performance_fees
+    doc: kid.performance_fee
+    terms: [commission de surperformance, commissions de surperformance, frais de surperformance, commission de performance, frais variables de gestion, performance fee, performance fees, incentive fee, outperformance fee, carried interest, commissions de sur-performance, commission de sur-performance, sur-performance]
+    exclude: [taux, rate, "%", pourcentage, percentage, montant, amount, preleve, charged, dernier exercice, last financial year, moyenne, average, formule, formula, methode, method, mode de calcul, calculation, hurdle, seuil, indice, benchmark, high water mark, hwm, periode, period, cristallisation, crystallisation, plafond, cap]
+
+  - id: part.commission_surperformance_formule
+    label: Mode de calcul de la commission de surperformance | Performance fee calculation method
+    scope: share
+    type: long
+    qualitative_ok: true
+    source: PI_OUT_Share.Performance_Fee_Formula
+    terms: [commission de surperformance & calcul, commission de surperformance & methode, commission de surperformance & formule, commission de surperformance & modalites, performance fee & calculation, performance fee & methodology, performance fee & formula, performance fee & mechanism, performance fee & description]
+
+  - id: part.commission_surperformance_dernier_exercice
+    label: Commission de surperformance prélevée au dernier exercice (%) | Performance fee charged over the last financial year (%)
+    scope: share
+    type: percent
+    range: [0, 20]
+    source: PI_OUT_Share.Performance_Fee_on_Last_Accounting_Period
+    terms: [commission de surperformance & dernier exercice, commission de surperformance & prelevee, performance fee & last financial year, performance fee & charged, performance fee & last year, performance fee & paid]
+
+  - id: part.droits_entree_max
+    label: Droits d'entrée maximum non acquis (%) | Maximum entry charge (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Maximum_Subscription_Fee_Rate_Not_Retained
+    doc: [kid.entry_costs, prospectus.max_entry_fee]
+    terms: [droits d'entree, droit d'entree, frais d'entree, commission de souscription, commissions de souscription, frais de souscription, entry fee, entry fees, entry charge, entry charges, entry load, subscription fee, subscription fees, subscription charge, initial charge, front-end load, front end load, sales charge, sales load, entry costs, subs fee, subscription fees, droit d'entree]
+    exclude: [rachat, redemption, sortie, exit, back-end, retrocession, trailer]
+    facets: {retention: not_retained, level: max}
+    default: [retention, level]
+
+  - id: part.droits_entree_acquis
+    label: Commission de souscription acquise au fonds (%) | Subscription fee retained by the fund (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Subscription_Fee_Retained
+    terms: [droits d'entree, droit d'entree, frais d'entree, commission de souscription, frais de souscription, entry fee, entry charge, subscription fee, subscription charge, initial charge]
+    exclude: [rachat, redemption, sortie, exit]
+    facets: {retention: retained}
+
+  - id: part.droits_sortie_max
+    label: Droits de sortie maximum non acquis (%) | Maximum exit charge (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Maximum_Redemption_Fee_Rate_Not_Retained
+    doc: [kid.exit_costs, prospectus.max_exit_fee]
+    terms: [droits de sortie, droit de sortie, frais de sortie, commission de rachat, commissions de rachat, frais de rachat, exit fee, exit fees, exit charge, exit charges, exit load, redemption fee, redemption fees, redemption charge, back-end load, back end load, deferred sales charge, exit costs, redemption fee, droit de sortie]
+    exclude: [souscription, subscription, entree, entry, front-end, retrocession, trailer]
+    facets: {retention: not_retained, level: max}
+    default: [retention, level]
+
+  - id: part.droits_sortie_acquis
+    label: Commission de rachat acquise au fonds (%) | Redemption fee retained by the fund (%)
+    scope: share
+    type: percent
+    range: [0, 10]
+    source: PI_OUT_Share.Redemption_Fee_Retained
+    terms: [droits de sortie, droit de sortie, frais de sortie, commission de rachat, frais de rachat, exit fee, exit charge, redemption fee, redemption charge]
+    exclude: [souscription, subscription, entree, entry]
+    facets: {retention: retained}
+
+  - id: part.retrocession_standard
+    label: Rétrocession standard (%) | Standard trailer fee (%)
+    scope: share
+    type: percent
+    range: [0, 5]
+    source: PI_OUT_Share.Standard_Trailer_Fees_Holdings
+    terms: [retrocession, retrocessions, taux de retrocession, commission de placement, commission de distribution, trailer fee, trailer fees, trail commission, retrocession rate, rebate, distribution fee, kickback, inducement]
+    exclude: [premium, preferentiel, preferential, entree, entry, sortie, exit, frais de gestion & autre]
+    default: []
+
+  # =================================================================== PART : SOUSCRIPTIONS / RACHATS
+  - id: part.frequence_vl
+    label: Fréquence de valorisation | NAV frequency
+    scope: share
+    type: enum
+    vocab: frequency
+    source: PI_OUT_Share.NAV_Frequency
+    doc: prospectus.nav_frequency
+    terms: [frequence de valorisation, frequence de calcul de la vl, frequence de la vl, periodicite de la vl, periodicite de valorisation, frequence de publication de la vl, liquidite du fonds, frequence de liquidite, nav frequency, valuation frequency, dealing frequency, frequency of nav calculation, frequency of valuation, pricing frequency, liquidity frequency, frequency of dealing, liquidity, liquidite, subscriptions and redemptions frequency, dealing, periodicite de la vl, periodicite de calcul, periodicite & vl, periodicite & valeur liquidative, frequence & vl, frequence & valeur liquidative, publication de la valeur liquidative, periodicite de valorisation]
+    exclude: [jour, day, heure, time, cut-off, cutoff, delai, settlement, reglement, preavis, notice, gate, swing, ratio, "%", portefeuille & liquidite, portfolio liquidity, risque, risk, stress, horizon, jours pour liquider, days to liquidate]
+
+  - id: part.cut_off_souscription
+    label: Heure limite de souscription (cut-off) | Subscription cut-off time
+    scope: share
+    type: time
+    source: PI_OUT_Share.Subscription_cut_off_time
+    doc: prospectus.cutoff
+    terms: [heure limite, heure de centralisation, heure de cut-off, cut-off, cut off, cutoff, heure limite de reception des ordres, dealing cut-off, dealing deadline, cut-off time, order cut-off, centralisation des ordres]
+    exclude: [jour, day & settlement, reglement, settlement, preavis, notice period, fuseau, time zone]
+    facets: {direction: subscription}
+    default: [direction]
+    ambiguous: true
+
+  - id: part.cut_off_rachat
+    label: Heure limite de rachat (cut-off) | Redemption cut-off time
+    scope: share
+    type: time
+    source: PI_OUT_Share.Redemption_cut_off_time
+    doc: prospectus.cutoff
+    terms: [heure limite, heure de centralisation, heure de cut-off, cut-off, cut off, cutoff, heure limite de reception des ordres, dealing cut-off, dealing deadline, cut-off time, order cut-off, centralisation des ordres]
+    exclude: [jour, day & settlement, reglement, settlement, preavis, notice period, fuseau, time zone]
+    facets: {direction: redemption}
+
+  - id: part.reglement_souscription
+    label: Délai de règlement des souscriptions | Subscription settlement
+    scope: share
+    type: text
+    source: PI_OUT_Share.Subscription_Settlement_Date
+    doc: prospectus.settlement
+    terms: [date de reglement, delai de reglement, reglement livraison, date de valeur, reglement des souscriptions, settlement date, settlement period, settlement cycle, settlement, settlement delay, payment date, value date, reglement, reglement-livraison, delai de reglement-livraison, reglement / livraison, delai de reglement livraison]
+    exclude: [heure, time, cut-off, cutoff, devise, currency, monnaie, mode de reglement, method of payment, compte, account, plateforme, platform, euroclear, clearstream]
+    facets: {direction: subscription}
+    default: [direction]
+    ambiguous: true
+
+  - id: part.reglement_rachat
+    label: Délai de règlement des rachats | Redemption settlement
+    scope: share
+    type: text
+    source: PI_OUT_Share.Redemption_Settlement_Date
+    doc: prospectus.settlement
+    terms: [date de reglement, delai de reglement, reglement livraison, date de valeur, reglement des rachats, settlement date, settlement period, settlement cycle, settlement, settlement delay, payment date, value date, reglement]
+    exclude: [heure, time, cut-off, cutoff, devise, currency, monnaie, mode de reglement, method of payment, compte, account, plateforme, platform, euroclear, clearstream]
+    facets: {direction: redemption}
+
+  - id: part.centralisation
+    label: Jour de centralisation | Centralisation day
+    scope: share
+    type: text
+    source: PI_OUT_Share.Centralisation_day
+    terms: [jour de centralisation, centralisation des ordres & jour, date de centralisation, centralisation day, order centralisation day, trade date]
+    exclude: [heure, time, etablissement, agent]
+
+  - id: part.decimalisation
+    label: Décimalisation | Decimalisation
+    scope: share
+    type: text
+    source: PI_OUT_Share.Share_Class_Decimalisation
+    terms: [decimalisation, fractions de parts, millieme, decimalisation of shares, fractional shares, fractions of shares]
+
+  - id: part.swing_pricing
+    label: Swing pricing ? | Swing pricing?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Swing_Pricing
+    doc: prospectus.swing_pricing
+    terms: [swing pricing, swing price, mecanisme d'ajustement de la vl, ajustement de la valeur liquidative, swing factor, dilution adjustment]
+    exclude: [seuil, threshold, facteur maximal, maximum factor, "%", niveau, level, frequence, frequency, combien, how many, nombre, number, applique & fois]
+
+  - id: part.gates
+    label: Plafonnement des rachats (gates) ? | Redemption gates?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Gate
+    doc: prospectus.gates
+    terms: [gate, gates, plafonnement des rachats, mecanisme de plafonnement, redemption gate, redemption gates, gating, limitation des rachats, redemption limit]
+    exclude: [seuil, threshold, "%", niveau, level, taux, rate, active, activated, declenche, triggered, historique, history, deja]
+
+  - id: part.seuil_gates
+    label: Seuil de déclenchement des gates (%) | Gate threshold (%)
+    scope: share
+    type: percent
+    range: [0, 100]
+    source: PI_OUT_Share.Gaterate
+    terms: [gate & seuil, gates & seuil, plafonnement des rachats & seuil, gate & threshold, gates & threshold, gate & %, gate level, gate rate, seuil de declenchement des gates]
+
+  - id: part.preavis_rachat
+    label: Préavis de rachat (jours) | Redemption notice period (days)
+    scope: share
+    type: int
+    range: [0, 400]
+    source: PI_OUT_Share.Redemption_Notice
+    terms: [preavis de rachat, preavis, delai de preavis, notice period, redemption notice, notice for redemption, notice period for redemptions, prior notice, preavis en cas de rachat, preavis & rachat]
+    exclude: [souscription, subscription]
+
+  - id: part.clients_non_professionnels
+    label: Accessible aux clients non professionnels ? | Available to retail investors?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Investor_Type_Retail
+    terms: [clients non professionnels, investisseurs non professionnels, particuliers, retail investors, retail clients, non-professional investors]
+    require: [accessible, eligible, ouvert, ouverte, open, autorise, autorisee, available, disponible, commercialis, distribu, souscri, subscrib, destine, intended, pour]
+
+  - id: part.clients_professionnels
+    label: Accessible aux clients professionnels ? | Available to professional investors?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Investor_Type_Professional
+    terms: [clients professionnels, investisseurs professionnels, professional investors, professional clients]
+    require: [accessible, eligible, ouvert, ouverte, open, autorise, autorisee, available, disponible, commercialis, distribu, souscri, subscrib, destine, intended, pour]
+    exclude: [non professionnels, non-professional, retail]
+
+  # =================================================================== PART : PLATEFORMES & FISCALITÉ
+  - id: part.euroclear
+    label: Admission Euroclear France ? | Euroclear France eligible?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Euroclear_France_Admission
+    terms: [euroclear france, euroclear, admis en euroclear, admission euroclear, euroclear eligible, euroclear eligibility, settled through euroclear, enregistre sur euroclear]
+    exclude: [plateforme, platform, code, numero, number, compte, account]
+
+  - id: part.clearstream
+    label: Référencée chez Clearstream ? | Clearstream referenced?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Clearstream_Referencing
+    terms: [clearstream, vestima, clearstream eligible, clearstream referencing, settled through clearstream]
+    exclude: [code, numero, number, compte, account]
+
+  - id: part.fundsettle
+    label: Référencée sur FundSettle ? | FundSettle referenced?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Fundsettle_Referencing
+    terms: [fundsettle, fund settle]
+    exclude: [code, numero, number, compte, account]
+
+  - id: part.allfunds
+    label: Référencée chez Allfunds ? | Available on Allfunds?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_AllFunds
+    terms: [allfunds, all funds bank, allfunds bank]
+    exclude: [code, numero, number, compte, account]
+
+  - id: part.iznes
+    label: Référencée sur Iznes ? | Available on Iznes?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Iznes_Referencing
+    terms: [iznes]
+
+  - id: part.uk_reporting
+    label: Statut « reporting fund » au Royaume-Uni ? | UK reporting fund status?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Tax_StatusUK
+    terms: [reporting fund, uk reporting, uk reporting status, uk reporting fund status, statut fiscal britannique, hmrc reporting]
+    exclude: [date, depuis, since, fin, end]
+
+  - id: part.transparence_allemagne
+    label: Transparence fiscale en Allemagne ? | German tax transparency?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Fiscal_Transparency_In_Germany
+    terms: [transparence fiscale & allemagne, transparence fiscale allemande, german tax transparency, german tax reporting, tax transparent in germany, investmentsteuergesetz, invstg]
+
+  - id: part.transparence_autriche
+    label: Transparence fiscale en Autriche ? | Austrian tax transparency?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Fiscal_Transparency_In_Austria
+    terms: [transparence fiscale & autriche, austrian tax transparency, austrian tax reporting, oekb, tax transparent in austria]
+
+  - id: part.transparence_suisse
+    label: Transparence fiscale en Suisse ? | Swiss tax transparency?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Fiscal_Transparency_In_Switzerland
+    terms: [transparence fiscale & suisse, swiss tax transparency, swiss tax reporting, estv, tax transparent in switzerland]
+
+  - id: part.priips
+    label: Part relevant de PRIIPs (DIC) ? | PRIIPs share class (KID)?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Priips_Share
+    terms: [priips, dic priips, kid priips, document d'informations cles, key information document]
+    require: [part, share, soumis, subject, concerne, concerned, relevant, applicable, disponible, available, existe, exist, kid, dic]
+    exclude: [lien, link, url, date, mise a jour, update, sri, risque, risk, scenario, cout, cost, frais]
+
+  - id: part.mifid2
+    label: Part MiFID II ? | MiFID II share class?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Mifid2_Share
+    terms: [mifid ii, mifid 2, mifid2, directive mif 2, mif ii, mif 2]
+    require: [part, share, soumis, subject, concerne, concerned, relevant, applicable, eligible, conforme, compliant]
+    exclude: [marche cible, target market, emt, cout, cost, frais, charges, retrocession, inducement]
+
+  - id: part.date_dic
+    label: Date de mise à jour du DIC | KID last update date
+    scope: share
+    type: date
+    source: PI_OUT_Share.Last_DIC_Modification_Date
+    terms: [date du dic, date de mise a jour du dic, dic & date, kid & date, date of the kid, kid last updated, kid update date, kiid date, date du dici]
+
+  # =================================================================== PAYS D'ENREGISTREMENT
+  - id: part.pays_enregistrement
+    label: Pays d'enregistrement de la part | Countries of registration
+    scope: share
+    type: list
+    vocab: country
+    source: registration:countries
+    terms: [pays d'enregistrement, pays de commercialisation, pays ou le fonds est enregistre, pays ou la part est autorisee, pays d'autorisation, autorise a la commercialisation, enregistre a la commercialisation, countries of registration, country of registration, registered for sale, registered for distribution, distribution countries, countries where the fund is registered, registration countries, passported, marketing authorisation, authorised for sale, eligible a la vente, dans quels pays, in which countries]
+    exclude: [date, depuis, since, domicile, domiciliation, est-il enregistre, est-il autorise, est-il commercialisable, is it registered, is the fund registered in]
+
+  - id: part.enregistree_pays
+    label: Enregistrée dans le pays demandé ? | Registered in the requested country?
+    scope: share
+    type: bool
+    source: registration:in_country
+    terms: [enregistre, enregistree, enregistres, autorise, autorisee, commercialisable, registered, authorised, authorized, approved for sale, passported, notified, disponible a la vente, disponible a la commercialisation, eligible a la vente, available for sale, distributed in]
+    require: [country_mention]
+    exclude: [pays d'enregistrement, countries of registration, liste, list, lesquels, which countries]
+
+  # =================================================================== JUMP : ENCOURS, VL, PORTEFEUILLE
+  - id: jump.encours_fonds
+    label: Encours du fonds | Fund AUM
+    scope: fund
+    type: amount
+    range: [0, 1000000000000]
+    source: jump:fund_aum
+    terms: [encours du fonds, encours, actif net du fonds, actif net, actifs nets, actifs sous gestion du fonds, taille du fonds, aum du fonds, fund aum, aum, assets under management, fund size, size of the fund, net assets, total net assets, fund assets, tna, total assets of the fund, encours total, total aum, actif & millions, actif du fonds, quel est l'actif, encours du support & toutes parts, encours du support, encours fonds, current size, fund size, size of the fund, taille du fonds, taille actuelle]
+    exclude: [strategie, strategy, strategies, vehicules, vehicles, tous vehicules, all vehicles, mandats & fonds, mandates & funds, part, share class, classe de parts, societe de gestion, management company, firm, groupe, group, strategie, strategy & total, composite, maison, house, equipe, team, gerant & total, evolution, historique, history, collecte, flows, flux, souscriptions nettes, net inflows, client, investisseur, investor, plus grand, largest, concentration, "%", minimum, seuil, threshold, mandat, mandates, dedie, dedicated, capacite, capacity, provenant, origine, from france, de france, part retail, part clean, sdg, societe de gestion, groupement]
+    facets: {}
+
+  - id: jump.encours_part
+    label: Encours de la part | Share class AUM
+    scope: share
+    type: amount
+    range: [0, 1000000000000]
+    source: jump:share_aum
+    terms: [encours de la part, actif net de la part, encours, actif net, aum de la part, share class aum, share class assets, share class size, net assets of the share class, aum, assets under management, net assets]
+    require: [part, share class, classe de parts, share, unit class, classe]
+    exclude: [societe de gestion, management company, firm, groupe, group, strategie, strategy, composite, evolution, historique, history, collecte, flows, flux, "%", fonds & total, total fund]
+
+  - id: jump.date_encours
+    label: Date de l'encours (dernière VL) | AUM date (latest NAV date)
+    scope: fund
+    type: date
+    source: jump:fund_aum_date
+    terms: [date de l'encours, encours au, date de la derniere vl, date de vl, date de valorisation, derniere date de valorisation, aum date, aum as of, as of date, date of the latest nav, nav date, latest nav date, valuation date, reporting date]
+    exclude: [premiere, first, frequence, frequency, jour de calcul, calculation day, withdrawal, retrait, rachat, redemption]
+
+  - id: jump.vl
+    label: Dernière valeur liquidative | Latest NAV per share
+    scope: share
+    type: number
+    range: [0.0001, 100000000]
+    source: jump:nav
+    terms: [valeur liquidative, derniere vl, vl de la part, vl actuelle, vl, nav, net asset value per share, nav per share, nav per unit, latest nav, current nav, unit price, share price, prix de la part, montant de la derniere vl, derniere vl connue, prix de la part]
+    exclude: [frequence, frequency, premiere, first, initial, origine, d'origine, launch, lancement, date, jour, day, calcul, calculation, publication, published, methode, method, swing, ajustement, adjustment, encours, aum, total, actif net du fonds, net assets of the fund, devise, currency, plus haut, highest, plus bas, lowest]
+
+  - id: jump.nombre_parts
+    label: Nombre de parts en circulation | Shares outstanding
+    scope: share
+    type: number
+    range: [0, 100000000000]
+    source: jump:shares_outstanding
+    terms: [nombre de parts en circulation, nombre de parts, parts en circulation, number of shares outstanding, shares outstanding, units outstanding, number of units, shares in issue, units in issue]
+    exclude: [minimum, porteurs, holders, investisseurs, investors, classes, categories]
+
+  - id: jump.nombre_lignes
+    label: Nombre de lignes en portefeuille | Number of holdings
+    scope: fund
+    type: int
+    range: [0, 100000]
+    source: jump:holdings_count
+    terms: [nombre de lignes, nombre de titres, nombre de positions, nombre d'emetteurs, nombre de valeurs, lignes en portefeuille, number of holdings, number of positions, number of securities, number of lines, number of stocks, number of issuers, holdings count, number of names]
+    exclude: [minimum, maximum, cible, target, fourchette, range, typique, typical, moyenne, average, historique, history, attendu, expected, univers, universe, top]
+
+  - id: jump.poids_top10
+    label: Poids des 10 premières lignes (%) | Top 10 holdings weight (%)
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: jump:top10_weight
+    terms: [poids des 10 premieres lignes, poids des dix premieres lignes, 10 premieres lignes & poids, 10 premieres positions & poids, concentration des 10 premieres lignes, top 10 & weight, top 10 & %, top ten & weight, top 10 holdings & weight, weight of top 10, concentration & top 10, 10 largest holdings & weight, top 10 concentration]
+    exclude: [liste, list, nom, name, emetteur & liste]
+
+  - id: jump.top10
+    label: 10 premières lignes | Top 10 holdings
+    scope: fund
+    type: list
+    source: jump:top10_list
+    terms: [10 premieres lignes, dix premieres lignes, 10 principales lignes, 10 premieres positions, principales positions, principales lignes, top 10, top ten, top 10 holdings, ten largest holdings, 10 largest holdings, largest holdings, main holdings, top holdings]
+    exclude: [poids total, total weight, concentration, "%", emetteurs, issuers, secteur, sector, pays, country, contribut]
+
+  - id: jump.repartition_classes_actifs
+    label: Répartition par classe d'actifs (%) | Asset allocation (%)
+    scope: fund
+    type: list
+    source: jump:allocation_asset
+    terms: [repartition par classe d'actifs, allocation par classe d'actifs, ventilation par classe d'actifs, allocation d'actifs actuelle, asset allocation, breakdown by asset class, asset class breakdown, asset class allocation, allocation by asset class, asset mix]
+    exclude: [strategique, strategic, cible, target, neutre, neutral, fourchette, range, minimum, maximum, historique, history, evolution]
+
+  - id: jump.repartition_devises
+    label: Répartition par devise (%) | Currency breakdown (%)
+    scope: fund
+    type: list
+    source: jump:allocation_currency
+    terms: [repartition par devise, ventilation par devise, exposition par devise, allocation par devise, currency breakdown, breakdown by currency, currency allocation, currency exposure, exposure by currency]
+    exclude: [couverte, hedged, apres couverture, after hedging, net, cible, target, maximum]
+
+  - id: jump.nombre_parts_classes
+    label: Nombre de catégories de parts | Number of share classes
+    scope: fund
+    type: int
+    range: [1, 200]
+    source: jump:share_classes
+    terms: [nombre de parts du fonds, nombre de categories de parts, nombre de classes de parts, nombre de types de parts, number of share classes, how many share classes, share classes available & number]
+    exclude: [circulation, outstanding, porteurs, holders]
+
+  # =================================================================== PERFORMANCES & RISQUES CALCULÉS (JUMP)
+  # Indice de performance repris d'App4everyone (analytics.adjusted_index) :
+  #   r_t = (VL_t + dividende_t) × coefficient_OST_t / VL_{t−1} − 1  (dividendes réinvestis, opérations sur titres neutralisées)
+  # La période (YTD, 1 an, 3 ans…, année civile) et le caractère annualisé sont lus dans la question.
+  - id: perf.part
+    label: Performance de la part (%) | Share class performance (%)
+    scope: share
+    type: percent
+    range: [-100, 1000]
+    source: perf:return
+    terms: [performance, performances, perf, rendement, rendements, return, returns, total return, rentabilite]
+    require: [period_mention]
+    exclude: [commission, fee, frais, objectif, objective, cible, target, attribution, contribution, scenario, scenarios, simulation, garantie, guarantee, attendu, expected, prevu, peer, pairs, quartile, rang, rank, percentile, categorie, category, gips, composite, mandat, mandate, attribution, sharpe, information ratio, alpha, beta, risque, risk, volatil, ecart, tracking]
+    facets: {}
+
+  - id: perf.indice
+    label: Performance de l'indicateur de référence (%) | Benchmark performance (%)
+    scope: share
+    type: percent
+    range: [-100, 1000]
+    source: perf:bench_return
+    terms: [performance, performances, perf, rendement, rendements, return, returns, total return, rentabilite]
+    require: [period_mention]
+    exclude: [commission, fee, frais, objectif, objective, cible, target, attribution, contribution, scenario, scenarios, simulation, garantie, guarantee, attendu, expected, peer, pairs, quartile, rang, rank, percentile, categorie, category, gips, composite, sharpe, information ratio, alpha, beta, risque, risk, volatil, ecart, tracking, relative, relatif, excess, exces, surperformance, outperformance]
+    facets: {subject: benchmark}
+
+  - id: perf.volatilite
+    label: Volatilité annualisée de la part (%) | Annualised share class volatility (%)
+    scope: share
+    type: percent
+    range: [0, 200]
+    source: perf:volatility
+    terms: [volatilite, volatility, ecart-type, standard deviation, std dev]
+    exclude: [objectif, target, cible, maximum, max, budget, plafond, cap, indice, benchmark, implicite, implied]
+    facets: {}
+
+  - id: perf.perte_max
+    label: Perte maximale (max drawdown) (%) | Maximum drawdown (%)
+    scope: share
+    type: percent
+    range: [-100, 0]
+    source: perf:max_drawdown
+    terms: [perte maximale, perte maximum, max drawdown, maximum drawdown, drawdown, baisse maximale, plus forte baisse, perte maximale historique]
+    exclude: [duree, duration, recuperation, recovery, indice, benchmark, tolerance, budget, limite, limit]
+
+  - id: perf.tracking_error
+    label: Tracking error (%) | Tracking error (%)
+    scope: share
+    type: percent
+    range: [0, 100]
+    source: perf:tracking_error
+    terms: [tracking error, ecart de suivi, erreur de suivi, tracking-error, ex post tracking error, te ex post]
+    exclude: [ex ante, ex-ante, previsionnel, cible, target, maximum, budget, limite, limit, attendue, expected]
+
+  # =================================================================== AJOUTS LOT 02 (vocabulaire réel des RFI 2026)
+  - id: meta.date_arrete
+    label: Date des données (date d'arrêté) | Data as of date
+    scope: fund
+    type: date
+    source: meta:as_of
+    terms: [date des donnees, date des donnees renseignees, donnees au, donnees arretees au, date d'arrete, date de reference des donnees, as of, data as of, as at, reference date, statistiques en date du, date of the data]
+    exclude: [creation, lancement, launch, inception, vl, nav, cloture, closing, echeance, maturity, premiere, first, gerant, manager, dic, kid, encours & au, "%", withdrawal, retrait, pourcentage, percentage, part de, share of]
+
+  - id: meta.date_formulaire
+    label: Date de rédaction du formulaire | Form completion date
+    scope: fund
+    type: date
+    source: meta:today
+    terms: [date de redaction du formulaire, date de redaction, date du formulaire, date de remplissage, date of completion, completion date, date of signature, date de signature]
+
+  - id: jump.position_nom
+    label: Nom de la Nième position du portefeuille | Name of the Nth holding
+    scope: fund
+    type: text
+    source: jump:position_name
+    terms: [intitule & position, nom & position, libelle & position, name & holding, name & position]
+    require: [premiere, deuxieme, troisieme, quatrieme, cinquieme, sixieme, septieme, huitieme, neuvieme, dixieme, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, "1ere", "1er", "n°", rank, rang]
+    exclude: [poids, weight, "%", secteur, sector, pays, country, emetteur & liste]
+
+  - id: jump.position_poids
+    label: Poids de la Nième position du portefeuille (%) | Weight of the Nth holding (%)
+    scope: fund
+    type: percent
+    range: [-100, 100]
+    source: jump:position_weight
+    terms: [poids & position, weight & holding, weight & position, poids & ligne]
+    require: [premiere, deuxieme, troisieme, quatrieme, cinquieme, sixieme, septieme, huitieme, neuvieme, dixieme, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, "1ere", "1er", "n°", rank, rang]
+    exclude: [10 premieres, top 10, dix premieres, total, cumul]
+
+  - id: fonds.code_cic
+    label: Code CIC | CIC code
+    scope: fund
+    type: code
+    source: pi_out_product_active.Code_CIC
+    terms: [code cic, cic code, complementary identification code, cic]
+
+  - id: fonds.categorie_bce
+    label: Catégorie BCE | ECB classification
+    scope: fund
+    type: text
+    source: pi_out_product_active.ECB_Classification
+    terms: [categorie bce, classification bce, ecb classification, ecb category, categorie banque centrale europeenne, bce]
+    exclude: [code bce]
+
+  - id: fonds.code_bce
+    label: Code BCE (lu dans la classification BCE) | ECB code
+    scope: fund
+    type: text
+    source: pi_out_product_active.ECB_Classification
+    ambiguous_always: true
+    terms: [code bce, ecb code]
+
+  - id: fonds.reserve_20_porteurs
+    label: Fonds réservé à 20 porteurs au plus ? | Fund reserved to 20 unitholders at most?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Fund_reserved_to_20_unit_shareholders
+    terms: [20 porteurs, vingt porteurs, 20 unitholders, 20 shareholders, 20 investors]
+
+  - id: fonds.dedie
+    label: Fonds dédié ? (lu comme « réservé à 20 porteurs ») | Dedicated fund?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Fund_reserved_to_20_unit_shareholders
+    ambiguous_always: true
+    terms: [fonds dedie, dedicated fund, dedie a, dedicated to]
+    exclude: [20 porteurs, vingt porteurs, quel, quels, which, cabinet, cgp, nom, name]
+
+  - id: fonds.a_maturite
+    label: Fonds à échéance ? | Fund with a maturity date?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Maturity_date
+    transform: present
+    ask_bool: true
+    terms: [fonds a maturite, fonds a echeance, fonds datee, maturity fund, target maturity fund, term fund, dated fund]
+
+  - id: fonds.agree_amf
+    label: Agréé AMF ? (déduit du code AMF) | AMF approved? (from AMF code)
+    scope: fund
+    type: bool
+    source: pi_out_product_active.AMF_Code
+    transform: present
+    ask_bool: true
+    ambiguous_always: true
+    terms: [agree amf, agree par l'amf, agrement amf, amf approved, approved by the amf, authorised by the amf]
+
+  - id: fonds.dic_genere
+    label: DIC produit ? (génération du DIC) | KID produced?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.KID_Generation
+    ask_bool: true
+    ambiguous_always: true
+    terms: [dic en francais, kid en francais, dic disponible, kid available, existe-t-il un dic, dic & existe, kid & exist, document d'informations cles & disponible]
+
+  - id: fonds.eet
+    label: Reporting EET produit ? | EET produced?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.EET_Fund
+    ask_bool: true
+    ambiguous_always: true
+    terms: [reporting eet, eet, european esg template, fichier eet]
+    exclude: [ept, emt]
+
+  - id: part.export_quantalys
+    label: Données transmises à Quantalys ? | Data sent to Quantalys?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Quantalys
+    terms: [quantalys]
+    exclude: [morningstar, categorie, category, classe d'actif, etoiles, stars, notation, rating]
+
+  - id: part.export_morningstar
+    label: Données transmises à Morningstar ? | Data sent to Morningstar?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Morningstar
+    terms: [morningstar]
+    require: [donnees, data, fournissez, provide, transmis, sent, present, available, disponible, diffus, export, referenc]
+    exclude: [quantalys, rating, note, notation, etoiles, stars, categorie, category, medal]
+
+  - id: part.export_six
+    label: Données transmises à Six Financial ? | Data sent to SIX Financial?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Six_Financial_Information
+    terms: [six financial, six telekurs]
+
+  - id: part.export_bloomberg
+    label: Données transmises à Bloomberg ? | Data sent to Bloomberg?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Export_Bloomberg
+    terms: [bloomberg]
+    require: [donnees, data, fournissez, provide, transmis, sent, diffus, export]
+    exclude: [ticker, code, id]
+
+  - id: part.decimalisable
+    label: Part décimalisable ? | Fractional shares?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.Share_Class_Decimalisation
+    transform: present
+    ask_bool: true
+    terms: [decimalisable, decimalisee, fractionnable, fractions de parts, fractional shares, fractional units]
+
+  - id: part.adl
+    label: Anti-dilution levy (ADL) ? | Anti-dilution levy?
+    scope: share
+    type: bool
+    source: PI_OUT_Share.ADL
+    terms: [anti dilution levy, anti-dilution levy, adl, droits ajustables]
+
+  - id: part.ouverte_tous
+    label: Part ouverte à tout souscripteur ? | Open to all investors?
+    scope: share
+    type: enum
+    vocab: investor_type
+    source: PI_OUT_Share.Investor_Type
+    terms: [ouverte a tout souscripteur, ouverte a tous les souscripteurs, tout souscripteur, tous souscripteurs, open to all investors, all investors]
+
+  - id: fonds.sri_precedent
+    label: SRI du mois précédent | Previous month SRI
+    scope: fund
+    type: enum
+    vocab: sri
+    range: [1, 7]
+    source: pi_out_product_active.Previous_month_SRI
+    terms: [sri & mois precedent, sri & previous month, sri du mois precedent, previous month sri, sri le mois precedent]
+
+  # =================================================================== SOCIÉTÉ DE GESTION (aucune donnée Fabric : réponses tirées des anciens RFI)
+  - id: societe.signataire_pri
+    label: Société de gestion signataire des PRI ? | Management company PRI signatory?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [signataire & pri, signataire & unpri, signataire pri, signatory & pri, signatory & unpri, unpri signatory, pri signatory, principes pour l'investissement responsable, principles for responsible investment, principes & investissement responsable & nations unies]
+    exclude: [score, transparency, transparence, notation, rating, note, depuis, since, date, annee, year, rapport, report, evaluation, assessment]
+
+  - id: societe.sanction_amf
+    label: Sanction du régulateur (AMF) récente ? | Regulatory sanction (AMF)?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [sanction amf, sanction & amf, sanction & regulateur, sanctions & regulateur, regulatory sanction, sanctioned & regulator, sanction & autorite des marches financiers]
+
+  - id: societe.actionnaire_majoritaire
+    label: Actionnaire majoritaire de la société de gestion | Majority shareholder of the management company
+    scope: fund
+    type: text
+    source: precedent:firm
+    terms: [actionnaire majoritaire, actionnaire & plus de 50, actionnaire principal, majority shareholder, main shareholder, actionnaire & capital]
+    exclude: [fonds, fund, porteur, unitholder, structure, evolution, changement, change]
+
+  - id: societe.politique_vote
+    label: Politique de vote publiée ? | Published voting policy?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [politique de vote, voting policy, politique de vote & publi, voting policy & publicly]
+    exclude: [rapport, report, exercice des droits & taux, statistiques, statistics, pourcentage, percentage, "%", lien, link, url, isr, esg, criteres, criteria, durabilite, sustainability, extra-financ]
+
+  - id: societe.politique_engagement
+    label: Politique d'engagement publiée ? | Published engagement policy?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [politique d'engagement, engagement policy, politique d'engagement actionnarial]
+    exclude: [rapport, report, exemples, examples, nombre, number, "%", lien, link, url]
+
+  - id: societe.net_zero_am
+    label: Membre de Net Zero Asset Managers ? | Net Zero Asset Managers member?
+    scope: fund
+    type: bool
+    source: precedent:firm
+    terms: [net zero asset manager, net zero asset managers, nzam]
+
+  # =================================================================== DONNÉES CALCULÉES À PARTIR DE COLONNES EXISTANTES
+  - id: fonds.est_labellise
+    label: Fonds labellisé ? (ISR, Towards Sustainability, Finansol) | Labelled fund?
+    scope: fund
+    type: bool
+    source: fund:labelled
+    terms: [labellise, labelise, labelises, fonds labellise, support labellise, labelled, labeled, has a label, holds a label, label de durabilite, sustainability label, labels de durabilite]
+    exclude: [quel label, quels labels, which label, which labels, isr, finansol, towards, greenfin, relance, depuis, since, date, obtention, organisme, autre label, other label]
+
+  - id: fonds.labels
+    label: Labels du fonds (parmi ISR, Towards Sustainability, Finansol) | Fund labels
+    scope: fund
+    type: text
+    source: fund:labels
+    terms: [quel label, quels labels, labels obtenus, label du fonds, labels du fonds, which label, which labels, label esg, labels esg, fund labels, responsible investment labels]
+    exclude: [depuis, since, date, obtenu le, renouvel, audit, organisme, certification body, autre label, other label, other responsible]
+
+  - id: fonds.couts_transaction_dic
+    label: Coûts de transaction du DIC (explicites + implicites, ex ante — À CONFIRMER) | KID transaction costs
+    scope: fund
+    type: percent
+    range: [-5, 10]
+    source: fund:transaction_costs_kid
+    doc: kid.transaction_costs
+    ambiguous_always: true
+    terms: [couts de transaction, frais de transaction, frais de transactions, transaction costs, couts de transaction & kid, couts de transaction & dic, frais de transactions dic, transaction costs & kid, portfolio transaction costs]
+    exclude: [explicite, explicit, implicite, implicit, ex post, ex-post, realise, realised, actual, hors frais de transaction, excluding transaction, methode, method, calcul, calculation]
+
+  # =================================================================== EET : PAI détaillés, ODD, fonds Article 8 (colonnes Product Info)
+  - id: fonds.pai_ges
+    label: "PAI pris en compte — émissions de GES ? | PAI considered — GHG emissions?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.GHG_Emissions_Scope123_Considered_EET_30190
+    terms: [emissions de ges, emissions de gaz a effet de serre, ghg emissions, greenhouse gas emissions, emissions & scope]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_empreinte_carbone
+    label: "PAI pris en compte — empreinte carbone ? | PAI considered — carbon footprint?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Carbon_Footprint_Scope_123_Considered_EET_30270
+    terms: [empreinte carbone, carbon footprint]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_intensite_carbone
+    label: "PAI pris en compte — intensité GES des entreprises ? | PAI considered — GHG intensity?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.GHG_Intensity_Scope_123_Considered_EET_30350
+    terms: [intensite carbone, intensite ges, intensite de ges, ghg intensity, carbon intensity]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_fossiles
+    label: "PAI pris en compte — exposition aux combustibles fossiles ? | PAI considered — fossil fuel exposure?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Exposure_to_Fossil_Fuel_Considered_EET_30390
+    terms: [combustibles fossiles, energies fossiles, fossil fuel, fossil fuels]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_biodiversite
+    label: "PAI pris en compte — biodiversité ? | PAI considered — biodiversity?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Biodiversity_Considered_EET_30870
+    terms: [biodiversite, biodiversity]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_eau
+    label: "PAI pris en compte — rejets dans l'eau ? | PAI considered — emissions to water?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Water_Emissions_Considered_EET_30910
+    terms: [rejets dans l'eau, emissions dans l'eau, emissions to water, water emissions]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_dechets
+    label: "PAI pris en compte — déchets dangereux ? | PAI considered — hazardous waste?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Hazardous_Waste_Considered_EET_30950
+    terms: [dechets dangereux, dechets radioactifs, hazardous waste, radioactive waste]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_ungc
+    label: "PAI pris en compte — violations du Pacte mondial / OCDE ? | PAI considered — UNGC / OECD violations?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Violation_UNGC_OECD_Considered_EET_30990
+    terms: [pacte mondial, global compact, ungc, principes directeurs de l'ocde, oecd guidelines]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_ecart_remuneration
+    label: "PAI pris en compte — écart de rémunération femmes-hommes ? | PAI considered — gender pay gap?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Gender_Pay_Gap_Considered_EET_31060
+    terms: [ecart de remuneration, gender pay gap, egalite salariale]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_mixite
+    label: "PAI pris en compte — mixité des conseils ? | PAI considered — board gender diversity?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Board_Gender_Diversity_Considered_EET_31100
+    terms: [mixite au sein des organes de gouvernance, mixite des conseils, board gender diversity, diversite des genres au conseil]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.pai_armes_controversees
+    label: "PAI pris en compte — armes controversées ? | PAI considered — controversial weapons?"
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Controversial_Weapons_Considered_EET_31140
+    terms: [armes controversees, controversial weapons]
+    require: [pai, incidences negatives, incidence negative, principal adverse, adverse impact, prise en compte, pris en compte, prend en compte, considere, consideres, considered, consider, considers]
+    exclude: [valeur, value, montant, amount, mesure, measure, metric, "%", tonnes, tons, objectif, target, exclusion, exclu, exclude, excluded, politique, policy, approche, approach]
+
+  - id: fonds.alignement_odd
+    label: Alignement sur les objectifs de développement durable (ODD) ? | Alignment with the UN SDGs?
+    scope: fund
+    type: bool
+    source: pi_out_product_active.Alignment_With_SDG_EET_20300
+    terms: [objectifs de developpement durable, odd, sdg, sdgs, sustainable development goals, un sdg]
+    require: [alignement, aligne, alignes, aligned, alignment, s'engage, engage, commits, committed, contribue, contribution, contribute, poursuit, pursue]
+    exclude: [lesquels, lesquelles, which, liste, list, pas de pauvrete, no poverty, faim, hunger, sante, health, education, egalite entre les sexes, eau propre, clean water, energie propre, clean energy, travail decent, decent work, industrie, industry, inegalites, inequalities, villes, cities, consommation, consumption, climat, climate, vie aquatique, life below water, vie terrestre, life on land, paix, peace, partenariats, partnerships]
+
+  - id: fonds.part_min_fonds_article8
+    label: Part minimale de fonds Article 8 (fonds de fonds) | Minimum share of SFDR Article 8 funds
+    scope: fund
+    type: percent
+    range: [0, 100]
+    source: pi_out_product_active.PerCent_Of_Min_SFDR_Art_8_Funds_EET_20070
+    terms: [min. sfdr art. 8 funds, minimum sfdr article 8 funds, fonds article 8 & minim, part minimale de fonds article 8, article 8 funds & minimum, art. 8 funds]
+
+  - id: fonds.track_record
+    label: Historique (track record) supérieur au seuil cité ? (d'après la première VL) | Track record longer than the threshold?
+    scope: fund
+    type: bool
+    source: fund:track_record
+    ask_bool: true
+    terms: [track record, historique de performance, anciennete du fonds, existence depuis, performance history]
+    exclude: [gerant, manager, equipe, team, strategie, strategy, description, decrire, describe]
+
+  - id: fonds.anciennete_gerant
+    label: Ancienneté du gérant principal sur le fonds supérieure au seuil cité ? | Lead PM tenure above the threshold?
+    scope: fund
+    type: bool
+    source: fund:pm_tenure
+    ask_bool: true
+    terms: [anciennete du gerant, anciennete & gerant principal, anciennete du gerant principal, tenure & portfolio manager, pm tenure, manager tenure]
+    exclude: [back up, backup, suppleant, adjoint, deputy, co-gerant, equipe, team, moyenne, average]
+
+  - id: part.mecanisme_anti_dilution
+    label: Mécanisme anti-dilution (swing pricing ou ADL) ? | Anti-dilution mechanism (swing pricing or ADL)?
+    scope: share
+    type: bool
+    source: share:anti_dilution
+    terms: [limiter la dilution, mecanisme anti-dilution, mecanisme d'anti-dilution, politique d'anti-dilution, anti-dilution mechanism, anti-dilution, anti dilution, swing pricing or an anti-dilution levy, swing pricing ou adl]
+    exclude: [levy & seuil, seuil, threshold, declenchement, trigger, facteur, factor]
+
+  - id: part.statut_commercialisation
+    label: Statut de la part (ouverte / fermée) — valeurs Product Info À CONFIRMER | Share status (open / closed)
+    scope: share
+    type: text
+    source: PI_OUT_Share.Investment_status
+    ambiguous_always: true
+    terms: [statut du fonds, statut de la part, soft closed, hard closed, soft close, hard close, ouvert & ferme, open & closed, fund status, share class status]
+    exclude: [ordre du jour, envisage, planned, prevu, limite de capacite, capacity]

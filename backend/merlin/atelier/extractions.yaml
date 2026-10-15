@@ -1,0 +1,175 @@
+# Catalogue des extractions proposées dans l'Atelier Excel.
+#
+# Chaque extraction renvoie un couple (cle, valeur) pour une date d'arrêté :as_of.
+# - `template: aum_latest`      → dernière ligne de JUMP_portfolio_aum par ISIN de part (DATE_VL <= :as_of)
+# - `template: instrument_latest` → dernière ligne de JUMP_portfolio_holdings par ISIN d'instrument
+# - `sql:` → requête libre (doit renvoyer les colonnes `cle` et `valeur`)
+# Toutes les requêtes sont validées contre catalog/fabric_schema.csv au démarrage.
+
+key_types:
+  isin_part:
+    label: ISIN de la part
+    synonyms: [isin, code isin, isin code, share class isin, isin part, isin de la part, code isin part, isin share]
+    pattern: '^[A-Z]{2}[A-Z0-9]{9}[0-9]$'
+  isin_instrument:
+    label: ISIN de l'instrument
+    synonyms: [isin instrument, isin titre, security isin, isin ligne, isin valeur, isin holding]
+    pattern: '^[A-Z]{2}[A-Z0-9]{9}[0-9]$'
+
+extractions:
+  # ------------------------------------------------------------ Encours & VL
+  - id: aum.nom_part
+    label: Nom de la part
+    group: Identité de la part
+    key: isin_part
+    template: aum_latest
+    column: NOM_PART
+    format: text
+    synonyms: [share class name, nom part, libelle part, name, nom, share class, denomination]
+  - id: aum.devise_vl
+    label: Devise de la part
+    group: Identité de la part
+    key: isin_part
+    template: aum_latest
+    column: DEVISE_VL
+    format: text
+    synonyms: [devise, currency, share class currency, ccy, devise de cotation]
+  - id: aum.devise_fonds
+    label: Devise du fonds
+    group: Identité de la part
+    key: isin_part
+    template: aum_latest
+    column: DEVISE_FONDS
+    format: text
+    synonyms: [fund currency, devise fonds, base currency, devise de reference]
+  - id: aum.nom_bench
+    label: Indice de référence
+    group: Identité de la part
+    key: isin_part
+    template: aum_latest
+    column: NOM_BENCH
+    format: text
+    synonyms: [benchmark, indice, index, reference index, indicateur de reference]
+  - id: aum.date_vl
+    label: Date de VL
+    group: Encours & VL
+    key: isin_part
+    template: aum_latest
+    column: DATE_VL
+    format: date
+    synonyms: [nav date, date vl, date de valorisation, valuation date, as of date]
+  - id: aum.vl_unitaire
+    label: VL unitaire
+    group: Encours & VL
+    key: isin_part
+    template: aum_latest
+    column: VL_UNITAIRE
+    format: number
+    synonyms: [nav, vl, nav per share, valeur liquidative, net asset value per share, prix]
+  - id: aum.actif_net_part_eur
+    label: Encours de la part (EUR)
+    group: Encours & VL
+    key: isin_part
+    template: aum_latest
+    column: ACTIF_NET_PART_EURO
+    format: amount
+    synonyms: [share class aum, aum part, encours part, actif net part, share class assets, aum eur, encours]
+  - id: aum.actif_net_total_eur
+    label: Encours total du fonds (EUR)
+    group: Encours & VL
+    key: isin_part
+    template: aum_latest
+    column: ACTIF_NET_TOTAL_EURO
+    format: amount
+    synonyms: [fund aum, aum fonds, encours fonds, actif net total, total net assets, fund size, encours total]
+  - id: aum.actif_net_part_devise
+    label: Encours de la part (devise de la part)
+    group: Encours & VL
+    key: isin_part
+    template: aum_latest
+    column: ACTIF_NET_DEVISE_PART
+    format: amount
+    synonyms: [aum share class currency, encours devise part, actif net devise]
+  - id: aum.nombre_parts
+    label: Nombre de parts
+    group: Encours & VL
+    key: isin_part
+    template: aum_latest
+    column: NOMBRE_PARTS
+    format: number
+    synonyms: [shares outstanding, nombre de parts, units outstanding, number of shares]
+  # ------------------------------------------------------------ Fonds (jointure à confirmer)
+  - id: fonds.nom_fonds
+    label: Nom du fonds
+    group: Fonds
+    key: isin_part
+    format: text
+    caution: "Jointure AUM → Holdings par ID_JUMP_FONDS : À CONFIRMER"
+    synonyms: [fund name, nom du fonds, fonds, fund, nom fonds]
+    sql: |
+      SELECT a.CODE_ISIN_PART AS cle, MAX(h.NOM_FONDS) AS valeur
+      FROM dbo.JUMP_portfolio_aum a
+      JOIN dbo.JUMP_portfolio_holdings h ON h.ID_JUMP_FONDS = a.ID_JUMP_FONDS
+      WHERE a.DATE_VL <= :as_of
+      GROUP BY a.CODE_ISIN_PART
+  - id: fonds.nombre_lignes
+    label: Nombre de lignes en portefeuille
+    group: Fonds
+    key: isin_part
+    format: number
+    caution: "Jointure AUM → Holdings par ID_JUMP_FONDS : À CONFIRMER"
+    synonyms: [number of holdings, nombre de lignes, nb lignes, number of positions, holdings count, nombre de titres]
+    sql: |
+      WITH parts AS (
+        SELECT DISTINCT CODE_ISIN_PART, ID_JUMP_FONDS FROM dbo.JUMP_portfolio_aum WHERE DATE_VL <= :as_of
+      ), inv AS (
+        SELECT ID_JUMP_FONDS, MAX(DATE_INVENTAIRE) AS d
+        FROM dbo.JUMP_portfolio_holdings WHERE DATE_INVENTAIRE <= :as_of GROUP BY ID_JUMP_FONDS
+      )
+      SELECT p.CODE_ISIN_PART AS cle, COUNT(*) AS valeur
+      FROM parts p
+      JOIN inv ON inv.ID_JUMP_FONDS = p.ID_JUMP_FONDS
+      JOIN dbo.JUMP_portfolio_holdings h ON h.ID_JUMP_FONDS = inv.ID_JUMP_FONDS AND h.DATE_INVENTAIRE = inv.d
+      WHERE h.TYPE_HOLDING <> 'CASH' OR h.TYPE_HOLDING IS NULL
+      GROUP BY p.CODE_ISIN_PART
+  # ------------------------------------------------------------ Instruments
+  - id: instr.nom
+    label: Libellé de l'instrument
+    group: Instruments
+    key: isin_instrument
+    template: instrument_latest
+    column: NOM_INSTRUMENT
+    format: text
+    synonyms: [security name, libelle, instrument, nom du titre, issuer, emetteur, name]
+  - id: instr.classe_actif
+    label: Classe d'actifs
+    group: Instruments
+    key: isin_instrument
+    template: instrument_latest
+    column: CLASSE_ACTIF
+    format: text
+    synonyms: [asset class, classe d actifs, type d actif, asset type]
+  - id: instr.devise
+    label: Devise de l'instrument
+    group: Instruments
+    key: isin_instrument
+    template: instrument_latest
+    column: DEVISE_INSTRUMENT
+    format: text
+    synonyms: [currency, devise, ccy, security currency]
+  - id: instr.bloomberg
+    label: Code Bloomberg
+    group: Instruments
+    key: isin_instrument
+    template: instrument_latest
+    column: CODE_BLOOMBERG
+    format: text
+    synonyms: [bloomberg, ticker, bbg, bloomberg ticker, code bloomberg]
+  - id: instr.type_dette
+    label: Type de dette
+    group: Instruments
+    key: isin_instrument
+    template: instrument_latest
+    column: TYPE_DETTE
+    format: text
+    synonyms: [seniority, rang, type de dette, debt type, subordination]

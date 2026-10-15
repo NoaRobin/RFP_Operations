@@ -1,0 +1,32 @@
+id: controle_encours
+name: Détecteur d'anomalies d'encours
+description: >
+  Compare les deux dernières VL de chaque part et signale les variations
+  d'encours suspectes, les VL manquantes et les parts disparues.
+  À lancer avant d'envoyer des chiffres à un consultant.
+icon: eye
+category: Contrôles
+type: python
+version: "1.0"
+tags: [contrôle qualité, AUM]
+estimated_minutes_saved: 10
+steps:
+  - Chargement des VL
+  - Analyse des variations
+  - Rédaction du rapport
+params:
+  - name: as_of
+    label: Date d'arrêté
+    type: date
+    required: true
+    default: today
+  - name: seuil
+    label: Seuil d'alerte de variation (%)
+    type: number
+    default: 10
+    min: 0.5
+    max: 100
+    help: Une variation d'encours supérieure à ce seuil entre deux VL est signalée.
+outputs:
+  - type: excel
+    label: Rapport d'anomalies

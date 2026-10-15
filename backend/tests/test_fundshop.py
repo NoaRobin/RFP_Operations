@@ -1,0 +1,386 @@
+"""Documents des fonds : adresse directe, mémoire, lien collé, explications en clair, liste Excel vierge, mois relatifs.
+Réseau simulé, identifiants et ISIN fictifs (QZ…)."""
+import io
+from datetime import date
+
+from openpyxl import Workbook, load_workbook
+
+from pdfgen import kid_lines, make_pdf
+
+SHARE_GUID = "11111111-2222-3333-4444-555555555555"
+PRODUCT_GUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+ISIN = "QZ2228LUXT99"
+OTHER = "QZYM908XINV7"
+BASE = "https://docs.test"
+
+
+class FakeData:
+    """Product Info minimal : la part et le fonds avec leurs GUID Dynamics."""
+    mode = "mock"
+
+    def query(self, sql, params):
+        import pandas as pd
+
+        if "PI_OUT_Share" in sql:
+            return pd.DataFrame([{"pi_shareid": SHARE_GUID, "Id": "not-a-guid", "ProductID": "P1", "Share_Name": "Fonds Fictif C EUR"}])
+        return pd.DataFrame([{"pi_productid": PRODUCT_GUID, "Id": None, "Product_Global_ID": None, "Product_Name": "Fonds Fictif"}])
+
+
+class FakeNet:
+    """Site simulé : une table d'adresses ; `down` simule un réseau bloqué."""
+    active = "test"
+
+    def __init__(self, served: dict[str, bytes], down: str | None = None):
+        self.served, self.down, self.calls = served, down, []
+
+    def get(self, url):
+        from merlin.fundshop.net import NetError, Reply
+
+        self.calls.append(url)
+        if self.down:
+            raise NetError(self.down, "simulé", "docs.test")
+        if url in self.served:
+            body = self.served[url]
+            return Reply(200, body, "application/pdf" if body.startswith(b"%PDF") else "text/html", url)
+        return Reply(404, b"<!doctype html>", "text/html", url)
+
+    def check(self, url):
+        try:
+            return True, None, self.get(url).status
+        except Exception as error:  # noqa: BLE001
+            return False, error, 0
+
+
+def resolver(tmp_path, served, data=FakeData(), down=None):
+    from merlin.fundshop.memory import Memory
+    from merlin.fundshop.resolver import Resolver
+
+    return Resolver(data, Memory(tmp_path / "learned.json"), net=FakeNet(served, down), docs_base=BASE, site_base="https://site.test/fonds/")
+
+
+def kid(isin=ISIN):
+    return make_pdf(kid_lines(isin, "Fonds Fictif C EUR"))
+
+
+def test_relative_months_are_kept_for_the_loop():
+    from merlin.fundshop.period import month_spec, resolve
+
+    today = date(2026, 10, 13)
+    assert (resolve("M-1", today).month, resolve("M-1", today).year) == (9, 2026)
+    assert resolve("M-10", today).year == 2025 and resolve("il y a 2 mois", today).month == 8
+    assert month_spec("Mois précédent") == "M-1" and month_spec("Il y a 3 mois") == "M-3"
+    assert month_spec("juillet 2026") == "2026-07" and month_spec("juillet", 2025) == "2025-07"
+
+
+def test_direct_address_from_product_info_is_learned(tmp_path):
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+
+    report = make_pdf([[f"Reporting mensuel fictif - ISIN {ISIN}"] + [f"Ligne fictive {n}" for n in range(30)]])
+    served = {f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(), f"{BASE}/REPM_{SHARE_GUID}_FR_FR_20260731.pdf": report,
+              f"{BASE}/PROS_{PRODUCT_GUID}_FR_FR.pdf": make_pdf([["Prospectus fictif"] + [f"Article {n}" for n in range(40)]])}
+    res = resolver(tmp_path, served)
+    ident = res.identity(ISIN)
+    found = res.find(ident, doc_type("dic"), Period())
+    assert found.strategy == "construite" and found.url.endswith(f"DIPR_{SHARE_GUID}_FR_FR.pdf")
+    assert res.memory.data["id_column"]["share"] == "PI_OUT_Share.pi_shareid"  # la bonne colonne est apprise
+    assert res.find(ident, doc_type("prospectus"), Period()).url.endswith(f"PROS_{PRODUCT_GUID}_FR_FR.pdf")
+    assert res.find(ident, doc_type("reporting mensuel"), Period(7, 2026)).url.endswith("_20260731.pdf")
+    res2 = resolver(tmp_path, served, data=None)  # sans Fabric : la mémoire suffit
+    res2.memory = res.memory
+    assert res2.find(res2.identity(ISIN), doc_type("dic"), Period()).strategy == "mémorisée"
+
+
+def test_failures_are_explained_in_plain_words(tmp_path):
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+    from merlin.fundshop.problems import DocumentProblem
+
+    def why(res, kind="dic", period=Period()):
+        try:
+            res.find(res.identity(ISIN, "Fonds Fictif"), doc_type(kind), period)
+        except DocumentProblem as error:
+            return error.problem
+        raise AssertionError("aurait dû échouer")
+
+    # réseau bloqué : on le dit, avec quoi faire
+    p = why(resolver(tmp_path, {}, down="proxy"))
+    assert p.code == "proxy" and "Edge" in p.fix
+    # aucune adresse connue (rien ne répond) : on explique comment donner le lien une fois
+    p = why(resolver(tmp_path, {}, data=None))
+    assert p.code == "adresse-inconnue" and "J'ai le lien" in p.fix and p.link.startswith("https://site.test/fr/nos-fonds/fonds-fictif")
+    # PDF d'une autre part : refusé, et son adresse est retenue pour l'autre part
+    res = resolver(tmp_path, {f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(OTHER)})
+    p = why(res)
+    assert p.code == "autre-part" and OTHER in p.why and res.memory.guid(OTHER, "share") == SHARE_GUID
+    # adresse connue mais mois pas encore publié : « pas sur le site » + quand réessayer
+    res = resolver(tmp_path, {f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid()})
+    res.find(res.identity(ISIN), doc_type("dic"), Period())
+    p = why(res, "reporting mensuel", Period(9, 2026))
+    assert p.code == "absent" and "septembre 2026" in p.title and "mois suivant" in p.fix
+    # mois manquant
+    assert why(res, "reporting mensuel", Period()).code == "mois"
+
+
+def test_pasted_link_teaches_the_whole_share(tmp_path):
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+
+    report = make_pdf([[f"Reporting fictif {ISIN}"] + [f"Ligne {n}" for n in range(30)]])
+    served = {f"{BASE}/REPM_{SHARE_GUID}_FR_FR_20260630.pdf": report, f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid()}
+    res = resolver(tmp_path, served, data=None)
+    msg = res.learn_link(ISIN, f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf")
+    assert "cette part" in msg
+    assert res.find(res.identity(ISIN), doc_type("reporting mensuel"), Period(6, 2026)).strategy == "mémorisée"
+    # le lien d'un DIC d'une autre part est refusé, avec la raison
+    res2 = resolver(tmp_path, {f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(OTHER)}, data=None)
+    try:
+        res2.learn_link(ISIN, f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf")
+        raise AssertionError("lien d'une autre part accepté")
+    except ValueError as error:
+        assert OTHER in str(error)
+    assert "page du fonds" in res.learn_link(ISIN, "https://site.test/fonds/fonds-fictif/").lower()
+
+
+def test_blank_template_roundtrip_and_run(tmp_path):
+    from merlin.fundshop.runner import precheck, run_list
+    from merlin.fundshop.shopping import from_excel
+    from merlin.fundshop.template import build
+
+    directory = [{"name": "Fonds Fictif", "shares": [{"isin": ISIN, "name": "C EUR"}, {"isin": OTHER, "name": "I EUR"}]}]
+    wb = load_workbook(io.BytesIO(build(directory)))
+    ws = wb["Liste de courses"]
+    assert [c.value for c in ws[1]][:4] == ["Part (choisir dans la liste)", "ISIN", "Document", "Mois"]
+    assert wb["Parts"].max_row == 3 and ws.data_validations.dataValidation
+    ws["A2"], ws["C2"] = f"Fonds Fictif · C EUR ({ISIN})", "DIC"
+    ws["A3"], ws["C3"], ws["D3"] = f"Fonds Fictif · C EUR ({ISIN})", "Reporting mensuel", "Mois précédent"
+    ws["B4"], ws["C4"] = "PAS-UN-ISIN", "DIC"
+    path = tmp_path / "liste.xlsx"
+    wb.save(path)
+    items, errors = from_excel(path)
+    assert len(items) == 2 and items[0].fund == "Fonds Fictif" and items[0].part == "C EUR"
+    assert items[1].month == "M-1"  # le relatif est gardé : la liste resservira chaque mois
+    assert len(errors) == 1 and "Ligne 4" in errors[0]
+
+    res = resolver(tmp_path, {f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid()})
+    dest = tmp_path / "docs"
+    assert precheck(res, dest) is None
+    results = {r.kind: r for r in run_list(items, res, dest)}
+    assert results["DIC"].status == "OK" and results["DIC"].title == "Téléchargé"
+    assert results["Reporting mensuel"].status == "ÉCHEC" and results["Reporting mensuel"].fix
+    again = {r.kind: r for r in run_list(items, res, dest)}
+    assert again["DIC"].status == "DÉJÀ PRÉSENT" and "Remplacer" in again["DIC"].fix  # jamais d'écrasement sans demande
+
+
+def test_blocked_network_gives_one_clear_reason(tmp_path):
+    from merlin.fundshop.runner import precheck, run_list
+    from merlin.fundshop.shopping import Item
+
+    res = resolver(tmp_path, {}, down="certificat")
+    blocked = precheck(res, tmp_path / "docs")
+    assert blocked.code == "certificat" and "run.bat" in blocked.fix
+    out = run_list([Item(isin=ISIN, kind="dic")], res, tmp_path / "docs", blocked=blocked)
+    assert out[0].code == "certificat" and out[0].status == "ÉCHEC"
+
+
+def test_old_shopping_list_format_still_reads(tmp_path):
+    from merlin.fundshop.shopping import from_excel
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Liste de courses"
+    ws.append(["Fonds", "Part", "ISIN", "Type de document", "Mois demandé", "Année", "Nom final", "Écraser"])
+    ws.append(["Fonds Fictif", "C EUR", ISIN, "Reporting mensuel", "juillet", 2026, "", "Oui"])
+    path = tmp_path / "old.xlsx"
+    wb.save(path)
+    items, errors = from_excel(path)
+    assert not errors and items[0].month == "2026-07" and items[0].overwrite
+
+
+def test_memory_seeds_from_historical_results(tmp_path):
+    from merlin.fundshop.memory import Memory
+
+    csv = tmp_path / "resultats.csv"
+    csv.write_text("ligne;fonds;isin;type_document;statut;url_source\n"
+                   f"2;Fonds Fictif;{ISIN};dic;OK;https://docs.example/DIPR_{SHARE_GUID}_FR_FR.pdf\n"
+                   f"3;Fonds Fictif;{ISIN};prospectus;OK;https://docs.example/PROS_{PRODUCT_GUID}_FR_FR.pdf\n"
+                   f"4;Fonds Fictif;{ISIN};prospectus;ÉCHEC;\n", encoding="utf-8-sig")
+    mem = Memory(tmp_path / "m.json")
+    assert mem.seed_from_csv(csv) == 2
+    assert mem.guid(ISIN, "share") == SHARE_GUID and mem.guid(ISIN, "product") == PRODUCT_GUID
+
+
+def test_fundshop_api(client):
+    r = client.put("/api/fundshop", json=[{"isin": ISIN, "kind": "Reporting mensuel", "fund": "Fonds Fictif", "month": "M-1"}]).json()
+    assert r["items"][0]["kind"] == "reporting mensuel" and r["items"][0]["period_label"]
+    assert client.put("/api/fundshop", json=[{"isin": ISIN, "kind": "Inconnu"}]).status_code == 400
+    blank = client.get("/api/fundshop/template.xlsx")
+    assert blank.status_code == 200 and load_workbook(io.BytesIO(blank.content))["Parts"].max_row > 1
+    mine = load_workbook(io.BytesIO(client.get("/api/fundshop/template.xlsx?with_list=true").content))["Liste de courses"]
+    assert mine["C2"].value == "Reporting mensuel" and mine["D2"].value == "Mois précédent"
+    bad = client.post("/api/fundshop/link", json={"isin": ISIN, "url": "https://ailleurs.example/x"})
+    assert bad.status_code == 400 and "ni un PDF" in bad.json()["detail"]["message"]
+
+
+def test_share_page_is_read_like_a_human_would(tmp_path):
+    """Comme à la main : page de la part → « Téléchargements » → liens /docs/… ; tout est mémorisé, sans Fabric."""
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+
+    page = "https://site.test/fr/nos-fonds/fonds-fictif/c-eur/"
+    html = f"""<html><body><h2>Téléchargements</h2>
+      <div>DIC PRIIPS <a href="/docs/DIPR_{SHARE_GUID}_FR_FR.pdf">Télécharger</a></div>
+      <div>Reporting mensuel <a href="https://site.test/docs/REPM_{SHARE_GUID}_FR_EN.pdf">PDF</a></div>
+      <div>Prospectus <a href="/docs/PROS_{PRODUCT_GUID}_FR_FR.pdf">PDF</a></div>
+      <div>Rapport semestriel <a href="/docs/RASA_{PRODUCT_GUID}_FR_FR.pdf">PDF</a></div></body></html>""".encode()
+    report_sept = make_pdf([[f"Reporting fictif {ISIN} - données au 30/09/2026"] + [f"Ligne {n}" for n in range(30)]])
+    semi = make_pdf([["Rapport semestriel fictif"] + [f"Ligne {n}" for n in range(40)]])
+    served = {page: html, f"{BASE}/DIPR_{SHARE_GUID}_FR_FR.pdf": kid(), f"{BASE}/REPM_{SHARE_GUID}_FR_EN.pdf": report_sept,
+              f"{BASE}/PROS_{PRODUCT_GUID}_FR_FR.pdf": make_pdf([["Prospectus fictif"] + [f"Article {n}" for n in range(40)]]),
+              f"{BASE}/RASA_{PRODUCT_GUID}_FR_FR.pdf": semi}
+    res = resolver(tmp_path, served, data=None)
+    ident = res.identity(ISIN, "Fonds Fictif", "C EUR")
+    assert res.find(ident, doc_type("dic"), Period()).strategy == "page de la part"
+    assert res.memory.guid(ISIN, "share") == SHARE_GUID and res.memory.guid(ISIN, "product") == PRODUCT_GUID  # tout est appris
+    # le dernier reporting publié (adresse sans date) est accepté s'il porte bien sur le mois demandé…
+    assert res.find(ident, doc_type("reporting mensuel en"), Period(9, 2026)).url.endswith("_FR_EN.pdf")
+    # …et refusé pour un autre mois : « pas encore sur le site »
+    from merlin.fundshop.problems import DocumentProblem
+    try:
+        res.find(ident, doc_type("reporting mensuel en"), Period(10, 2026))
+        raise AssertionError("le reporting de septembre ne doit pas passer pour octobre")
+    except DocumentProblem as error:
+        assert error.problem.code == "absent"
+    assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith(f"RASA_{PRODUCT_GUID}_FR_FR.pdf")
+
+
+def test_site_search_api_then_share_menu(tmp_path):
+    """Comme la recherche du site : API data-fund (ISIN → fonds + DIC), puis menu « Part … » → page de la part."""
+    import json
+
+    from merlin.fundshop.catalog import doc_type
+    from merlin.fundshop.period import Period
+
+    other_guid = "99999999-8888-7777-6666-555555555555"
+    api = {"status": "ok", "tree": {"t": {"e": {"1": [{"fund_title": "Fonds Fictif", "share_title": "I EUR", "isin": OTHER,
+                                                         "fund_rewrite": "fonds-fictif", "DIPR": f"DIPR_{other_guid}_FR_FR.pdf"}]}}}}
+    fund_page = """<html><head><base href="https://site.test/"></head><body><select>
+      <option selected="true" value="/fr/nos-fonds/fonds-fictif/">Part C EUR</option>
+      <option value="/fr/nos-fonds/fonds-fictif/i-eur/">Part I EUR</option></select></body></html>"""
+    share_page = f"""<html><head><base href="https://site.test/"></head><body>
+      <a href="https://docs.test/DIPR_{other_guid}_FR_FR.pdf">DIC</a>
+      <a href="https://docs.test/REPM_{other_guid}_FR_FR_20260831.pdf">Août</a>
+      <a href="https://docs.test/RASA_{PRODUCT_GUID}_FR_FR.pdf">Rapport semestriel</a></body></html>"""
+    report = make_pdf([[f"Reporting fictif {OTHER} au 31/08/2026"] + [f"Ligne {n}" for n in range(30)]])
+    served = {"https://site.test/fr/nos-fonds/fonds-fictif/": fund_page.encode(), "https://site.test/fr/nos-fonds/fonds-fictif/i-eur/": share_page.encode(),
+              f"{BASE}/REPM_{other_guid}_FR_FR_20260831.pdf": report,
+              f"{BASE}/RASA_{PRODUCT_GUID}_FR_FR.pdf": make_pdf([["Rapport semestriel fictif"] + [f"Ligne {n}" for n in range(40)]])}
+    res = resolver(tmp_path, served, data=None)
+    net = res.net
+    original = net.get
+
+    def get(url):
+        if "/api/data-fund/" in url:
+            from merlin.fundshop.net import Reply
+            return Reply(200, json.dumps(api).encode(), "application/json", url)
+        return original(url)
+    net.get = get
+    ident = res.identity(OTHER)  # seul l'ISIN est connu : le site donne le reste
+    assert res.discover(ident, __import__("merlin.fundshop.resolver", fromlist=["Attempts"]).Attempts())[0].endswith("/fonds-fictif/i-eur/")
+    assert res.find(ident, doc_type("reporting mensuel"), Period(8, 2026)).url.endswith("_20260831.pdf")
+    assert res.find(ident, doc_type("rapport semestriel"), Period()).url.endswith(f"RASA_{PRODUCT_GUID}_FR_FR.pdf")
+    assert res.memory.guid(OTHER, "share") == other_guid
+
+
+def test_available_lists_what_the_site_really_publishes(tmp_path):
+    from merlin.fundshop.resolver import available
+
+    page = "https://site.test/fr/nos-fonds/fonds-fictif/c-eur/"
+    html = f"""<a href="https://docs.test/DIPR_{SHARE_GUID}_FR_FR.pdf">DIC</a>
+      <a href="https://docs.test/REPM_{SHARE_GUID}_FR_FR_20260831.pdf">août</a><a href="https://docs.test/REPM_{SHARE_GUID}_FR_FR_20260930.pdf">sept</a>
+      <a href="https://docs.test/PROS_{PRODUCT_GUID}_FR_FR.pdf">Prospectus</a>""".encode()
+    res = resolver(tmp_path, {page: html}, data=None)
+    out = available(res, ISIN, "Fonds Fictif", "C EUR")
+    kinds = {d["kind"]: d for d in out["documents"]}
+    assert set(kinds) == {"dic", "prospectus", "reporting mensuel"} and out["problem"] is None
+    assert [m["value"] for m in kinds["reporting mensuel"]["months"]] == ["2026-09", "2026-08"]
+    assert res.memory.guid(ISIN, "share") == SHARE_GUID  # lu une fois, mémorisé
+    blocked = available(resolver(tmp_path, {}, data=None, down="proxy"), ISIN, "Fonds Fictif", "C EUR")
+    assert blocked["documents"] == [] and blocked["problem"]["code"] == "proxy"
+
+
+def test_site_search_by_fund_name_when_results_carry_no_isin(tmp_path):
+    """Les lignes de la recherche du site n'ont pas forcément l'ISIN : on tape le nom du fonds, on prend la part par son nom."""
+    import json
+
+    from merlin.fundshop.net import Reply
+    from merlin.fundshop.resolver import check_line
+
+    records = [{"fund_title": "Fonds Fictif", "share_title": "C EUR", "fund_rewrite": "fonds-fictif", "DIPR": f"DIPR_{SHARE_GUID}_FR_FR.pdf"},
+               {"fund_title": "Fonds Fictif", "share_title": "I EUR", "fund_rewrite": "fonds-fictif", "DIPR": "DIPR_x.pdf"}]
+    fund_page = f"""<select><option selected value="/fr/nos-fonds/fonds-fictif/">Part C EUR</option>
+      <option value="/fr/nos-fonds/fonds-fictif/i-eur/">Part I EUR</option></select>
+      <a href="https://docs.test/DIPR_{SHARE_GUID}_FR_FR.pdf">DIC</a><a href="https://docs.test/REPM_{SHARE_GUID}_FR_FR_20260831.pdf">r</a>"""
+    res = resolver(tmp_path, {"https://site.test/fr/nos-fonds/fonds-fictif/": fund_page.encode()}, data=None)
+    original = res.net.get
+
+    def get(url):
+        if "/api/data-fund/" in url:
+            hit = "fonds%20fictif" in url.lower()
+            return Reply(200, json.dumps({"status": "ok", "tree": {"t": {"e": {"1": records}}} if hit else {}}).encode(), "application/json", url)
+        return original(url)
+    res.net.get = get
+    out = check_line(res, "Fonds Fictif C EUR")
+    assert out["ok"] and out["page"].endswith("/fonds-fictif/") and out["documents"]["REPM"] == 1
+    assert any("recherche « Fonds Fictif »" in s for s in out["steps"])
+    ident = res.identity(ISIN, "Fonds Fictif", "C EUR")
+    assert res.discover(ident, __import__("merlin.fundshop.resolver", fromlist=["Attempts"]).Attempts())[0].endswith("/fonds-fictif/")
+    assert res.memory.guid(ISIN, "share") == SHARE_GUID
+
+
+def test_site_welcome_screen_is_passed_like_a_visitor(tmp_path):
+    """Sans profil choisi, le site renvoie son écran d'accueil : l'app choisit « Professionnels » (POST /fr/) puis relit la page."""
+    from merlin.fundshop.net import Reply
+    from merlin.fundshop.resolver import Attempts
+
+    page_url = "https://site.test/fr/nos-fonds/fonds-fictif/c-eur/"
+    welcome = b"<html><script>let user_type = '';</script>Particuliers / Professionnels</html>"
+    real = f"<script>let user_type = 'professional';</script><a href='https://docs.test/DIPR_{SHARE_GUID}_FR_FR.pdf'>DIC</a>".encode()
+    posted = []
+
+    class SiteWithGate(FakeNet):
+        def get(self, url):
+            if url == page_url:
+                return Reply(200, real if posted else welcome, "text/html", url)
+            return super().get(url)
+
+        def post(self, url, form):
+            posted.append((url, form))
+            return Reply(200, b"ok", "text/html", url)
+
+    res = resolver(tmp_path, {}, data=None)
+    res._net = SiteWithGate({})
+    links = res.links(page_url, Attempts())
+    assert posted and posted[0][0] == "https://site.test/fr/" and posted[0][1]["a"] == "change_user_type"
+    assert posted[0][1]["user_type"] == "professional" and [ln.prefix for ln in links] == ["DIPR"]
+
+
+def test_bundle_zip_of_last_run(client, tmp_path):
+    """Les documents du dernier lancement, en un zip pour le dossier Téléchargements du navigateur."""
+    import io
+    import zipfile
+
+    from merlin.config import get_settings
+    from merlin.fundshop.runner import Result, save_last_run
+    from merlin.fundshop.service import destination, root
+
+    settings = get_settings()
+    dest = destination(settings)
+    dest.mkdir(parents=True, exist_ok=True)
+    (dest / "Fonds Fictif - DIC.pdf").write_bytes(b"%PDF-1.4 fictif")
+    save_last_run(root(settings), [Result("1", ISIN, "Fonds Fictif", "C EUR", "DIC", "", "OK", file="Fonds Fictif - DIC.pdf")], dest, "test", None)
+    r = client.get("/api/fundshop/bundle.zip")
+    assert r.status_code == 200 and "attachment" in r.headers["content-disposition"]
+    assert zipfile.ZipFile(io.BytesIO(r.content)).namelist() == ["Fonds Fictif - DIC.pdf"]
+    one = client.get("/api/fundshop/file/Fonds Fictif - DIC.pdf")
+    assert one.status_code == 200 and "attachment" in one.headers["content-disposition"]

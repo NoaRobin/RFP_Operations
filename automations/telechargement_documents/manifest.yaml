@@ -1,0 +1,43 @@
+id: telechargement_documents
+name: Documents des fonds (site)
+description: >
+  Télécharge la « liste de courses » de documents (DIC PRIIPs, prospectus, reportings mensuels, documents SFDR)
+  depuis le site des fonds, sans navigateur. Chaque PDF est vérifié (ISIN de la part) ; chaque échec est expliqué
+  simplement. À lancer une fois, ou à programmer chaque mois avec « Mois précédent ».
+icon: download
+category: Documents
+type: python
+version: "1.0"
+tags: [DIC, prospectus, reporting, SFDR]
+estimated_minutes_saved: 5
+requires: []
+steps:
+  - Préparation de la liste
+  - Vérification du réseau et du dossier
+  - Téléchargements
+  - Rapport
+params:
+  - name: mode
+    label: Que télécharger ?
+    type: select
+    default: missing
+    options:
+      - {value: missing, label: "Seulement les documents absents du dossier"}
+      - {value: all, label: "Tout re-télécharger (les fichiers « Écraser » seulement)"}
+  - name: types
+    label: Types de documents
+    type: multiselect
+    required: false
+    placeholder: Tous les types
+    options:
+      - {value: dic, label: DIC}
+      - {value: prospectus, label: Prospectus}
+      - {value: reporting mensuel, label: Reporting mensuel}
+      - {value: reporting mensuel en, label: Reporting mensuel EN}
+      - {value: annexe sfdr, label: Annexe SFDR}
+      - {value: annexe sfdr en, label: Annexe SFDR EN}
+      - {value: article 10 sfdr, label: Article 10 SFDR}
+      - {value: rapport periodique sfdr, label: Rapport périodique SFDR}
+outputs:
+  - type: excel
+    label: Rapport de téléchargement

@@ -1,0 +1,123 @@
+# Vocabulaires contrôlés : valeurs canoniques d'un concept, libellés FR / EN et synonymes.
+# Servent à : (1) normaliser la valeur Product Info (souvent saisie en anglais ou en français),
+#             (2) traduire la réponse dans la langue du questionnaire,
+#             (3) choisir la bonne option d'une liste déroulante Excel / Word.
+# Synonymes en texte normalisé (minuscules, sans accents).
+vocabularies:
+  yes_no:
+    - {id: "yes", fr: Oui, en: "Yes", synonyms: [oui, "yes", y, o, true, vrai, "1", x, si, ja, "✓", "✔", "v"]}
+    - {id: "no", fr: Non, en: "No", synonyms: [non, "no", n, false, faux, "0", nein]}
+
+  sfdr:
+    - {id: art6, fr: Article 6, en: Article 6, synonyms: [article 6, art 6, art. 6, art6, "6", sfdr 6, article 6 sfdr, non applicable sfdr]}
+    - {id: art8, fr: Article 8, en: Article 8, synonyms: [article 8, art 8, art. 8, art8, "8", sfdr 8, article 8 sfdr, light green, vert clair]}
+    - {id: art9, fr: Article 9, en: Article 9, synonyms: [article 9, art 9, art. 9, art9, "9", sfdr 9, article 9 sfdr, dark green, vert fonce]}
+
+  amf_esg_category:
+    - {id: cat1, fr: Catégorie 1, en: Category 1, synonyms: [categorie 1, category 1, cat 1, cat. 1, "1", approche significativement engageante, significantly engaging]}
+    - {id: cat2, fr: Catégorie 2, en: Category 2, synonyms: [categorie 2, category 2, cat 2, cat. 2, "2", approche non significativement engageante]}
+    - {id: cat3, fr: Catégorie 3, en: Category 3, synonyms: [categorie 3, category 3, cat 3, cat. 3, "3", approche limitee, non engageante]}
+
+  frequency:
+    - {id: daily, fr: Quotidienne, en: Daily, synonyms: [quotidienne, quotidien, journaliere, journalier, daily, chaque jour, chaque jour ouvre, every business day, every day, each business day, tous les jours, j, d]}
+    - {id: weekly, fr: Hebdomadaire, en: Weekly, synonyms: [hebdomadaire, weekly, chaque semaine, every week, w]}
+    - {id: fortnightly, fr: Bimensuelle, en: Fortnightly, synonyms: [bimensuelle, bimensuel, fortnightly, bi-monthly, bimonthly, toutes les deux semaines, every two weeks]}
+    - {id: monthly, fr: Mensuelle, en: Monthly, synonyms: [mensuelle, mensuel, monthly, chaque mois, every month, m]}
+    - {id: quarterly, fr: Trimestrielle, en: Quarterly, synonyms: [trimestrielle, trimestriel, quarterly, chaque trimestre, every quarter, q]}
+    - {id: semiannual, fr: Semestrielle, en: Semi-annual, synonyms: [semestrielle, semestriel, semi-annual, semi annual, semiannual, half-yearly, half yearly, biannual]}
+    - {id: annual, fr: Annuelle, en: Annual, synonyms: [annuelle, annuel, annual, annually, yearly, chaque annee, every year, a]}
+
+  distribution_policy:
+    - {id: acc, fr: Capitalisation, en: Accumulation, synonyms: [capitalisation, capitalisante, capitalise, c, acc, accumulation, accumulating, capitalization, capitalisation des revenus, reinvested, reinvestment, cap]}
+    - {id: dist, fr: Distribution, en: Distribution, synonyms: [distribution, distribuante, distribue, d, dis, dist, distributing, income, paying, distribution des revenus, dividend]}
+    - {id: both, fr: Capitalisation et/ou distribution, en: Accumulation and/or distribution, synonyms: [capitalisation et/ou distribution, capitalisation et ou distribution, c/d, c et/ou d, mixte, mixed, accumulation and/or distribution, capitalisation ou distribution]}
+
+  legal_form:
+    - {id: fcp, fr: FCP, en: FCP (French mutual fund), synonyms: [fcp, fonds commun de placement, mutual fund, common fund, unit trust, contractual fund]}
+    - {id: sicav, fr: SICAV, en: SICAV, synonyms: [sicav, societe d'investissement a capital variable, investment company with variable capital, oeic, icvc]}
+    - {id: subfund, fr: Compartiment de SICAV, en: Sub-fund of a SICAV, synonyms: [compartiment de sicav, compartiment, sub-fund, subfund, sub fund, sub-fund of a sicav, compartment]}
+    - {id: fcpr, fr: FCPR, en: FCPR (private equity fund), synonyms: [fcpr, fonds commun de placement a risques]}
+    - {id: fps, fr: FPS, en: FPS (professional specialised fund), synonyms: [fps, fonds professionnel specialise]}
+    - {id: slp, fr: SLP, en: SLP (limited partnership), synonyms: [slp, societe de libre partenariat]}
+    - {id: sca, fr: SCA, en: SCA, synonyms: [sca, societe en commandite par actions]}
+
+  regulation:
+    - {id: ucits, fr: OPCVM (UCITS), en: UCITS, synonyms: [opcvm, ucits, ucits v, directive 2009/65/ce, directive 2009/65/ec, oui ucits, ucits compliant]}
+    - {id: aif, fr: FIA, en: AIF, synonyms: [fia, aif, aifm, aifmd, fonds d'investissement alternatif, alternative investment fund, directive 2011/61/ue, non-ucits, non ucits]}
+
+  asset_class:
+    - {id: equity, fr: Actions, en: Equity, synonyms: [actions, action, equity, equities, stocks, shares]}
+    - {id: bond, fr: Obligations, en: Fixed income, synonyms: [obligations, obligation, obligataire, taux, fixed income, bonds, bond, credit, debt]}
+    - {id: money_market, fr: Monétaire, en: Money market, synonyms: [monetaire, money market, mmf, tresorerie, liquidites, cash]}
+    - {id: multi_asset, fr: Diversifié, en: Multi-asset, synonyms: [diversifie, diversifiee, allocation, multi-asset, multi asset, multiasset, balanced, mixed, flexible, patrimonial]}
+    - {id: convertible, fr: Convertibles, en: Convertible bonds, synonyms: [convertibles, convertible, obligations convertibles, convertible bonds]}
+    - {id: alternative, fr: Alternatif, en: Alternative, synonyms: [alternatif, alternative, alternatives, hedge fund, absolute return, rendement absolu, performance absolue]}
+    - {id: fund_of_funds, fr: Multigestion, en: Fund of funds, synonyms: [multigestion, multi-gestion, fonds de fonds, fund of funds, fof, architecture ouverte, open architecture]}
+    - {id: private, fr: Non coté, en: Private assets, synonyms: [non cote, private equity, private debt, private assets, capital investissement, dette privee, infrastructure]}
+
+  investor_type:
+    - {id: all, fr: Tous souscripteurs, en: All investors, synonyms: [tous souscripteurs, tout souscripteur, ouverte a tout souscripteur, tous investisseurs, all investors, all subscribers, retail and professional, grand public]}
+    - {id: retail, fr: Clients non professionnels, en: Retail investors, synonyms: [non professionnels, clients non professionnels, retail, retail investors, particuliers, investisseurs particuliers]}
+    - {id: professional, fr: Clients professionnels, en: Professional investors, synonyms: [professionnels, clients professionnels, professional, professional investors, institutional, institutionnels, investisseurs institutionnels, institutional investors]}
+    - {id: eligible, fr: Contreparties éligibles, en: Eligible counterparties, synonyms: [contreparties eligibles, eligible counterparties, eligible counterparty]}
+
+  global_exposure:
+    - {id: commitment, fr: Méthode de l'engagement, en: Commitment approach, synonyms: [engagement, methode de l'engagement, methode de l engagement, commitment, commitment approach, commitment method]}
+    - {id: relative_var, fr: VaR relative, en: Relative VaR, synonyms: [var relative, relative var, relative value at risk]}
+    - {id: absolute_var, fr: VaR absolue, en: Absolute VaR, synonyms: [var absolue, absolute var, absolute value at risk]}
+
+  sri:
+    - {id: "1", fr: "1", en: "1", synonyms: ["1", sri 1, risque 1, 1/7, "1 - lowest risk", "1 - risque le plus faible"]}
+    - {id: "2", fr: "2", en: "2", synonyms: ["2", sri 2, risque 2, 2/7]}
+    - {id: "3", fr: "3", en: "3", synonyms: ["3", sri 3, risque 3, 3/7]}
+    - {id: "4", fr: "4", en: "4", synonyms: ["4", sri 4, risque 4, 4/7]}
+    - {id: "5", fr: "5", en: "5", synonyms: ["5", sri 5, risque 5, 5/7]}
+    - {id: "6", fr: "6", en: "6", synonyms: ["6", sri 6, risque 6, 6/7]}
+    - {id: "7", fr: "7", en: "7", synonyms: ["7", sri 7, risque 7, 7/7, "7 - highest risk", "7 - risque le plus eleve"]}
+
+  currency:
+    - {id: EUR, fr: EUR, en: EUR, synonyms: [eur, euro, euros, "€"]}
+    - {id: USD, fr: USD, en: USD, synonyms: [usd, us dollar, dollar, dollars, dollar americain, "$", us$]}
+    - {id: GBP, fr: GBP, en: GBP, synonyms: [gbp, livre sterling, pound sterling, sterling, "£"]}
+    - {id: CHF, fr: CHF, en: CHF, synonyms: [chf, franc suisse, swiss franc]}
+    - {id: JPY, fr: JPY, en: JPY, synonyms: [jpy, yen, yen japonais, japanese yen]}
+    - {id: SEK, fr: SEK, en: SEK, synonyms: [sek, couronne suedoise, swedish krona]}
+    - {id: NOK, fr: NOK, en: NOK, synonyms: [nok, couronne norvegienne, norwegian krone]}
+    - {id: DKK, fr: DKK, en: DKK, synonyms: [dkk, couronne danoise, danish krone]}
+    - {id: CAD, fr: CAD, en: CAD, synonyms: [cad, dollar canadien, canadian dollar]}
+    - {id: AUD, fr: AUD, en: AUD, synonyms: [aud, dollar australien, australian dollar]}
+    - {id: SGD, fr: SGD, en: SGD, synonyms: [sgd, dollar de singapour, singapore dollar]}
+    - {id: HKD, fr: HKD, en: HKD, synonyms: [hkd, dollar de hong kong, hong kong dollar]}
+    - {id: CNY, fr: CNY, en: CNY, synonyms: [cny, rmb, yuan, renminbi]}
+
+  country:
+    - {id: FR, fr: France, en: France, synonyms: [france, fr, francais, french]}
+    - {id: LU, fr: Luxembourg, en: Luxembourg, synonyms: [luxembourg, lu, lux, luxembourgeois]}
+    - {id: IE, fr: Irlande, en: Ireland, synonyms: [irlande, ireland, ie, irish]}
+    - {id: BE, fr: Belgique, en: Belgium, synonyms: [belgique, belgium, be, belge]}
+    - {id: DE, fr: Allemagne, en: Germany, synonyms: [allemagne, germany, de, german, deutschland]}
+    - {id: AT, fr: Autriche, en: Austria, synonyms: [autriche, austria, at]}
+    - {id: IT, fr: Italie, en: Italy, synonyms: [italie, italy, it]}
+    - {id: ES, fr: Espagne, en: Spain, synonyms: [espagne, spain, es]}
+    - {id: PT, fr: Portugal, en: Portugal, synonyms: [portugal, pt]}
+    - {id: NL, fr: Pays-Bas, en: Netherlands, synonyms: [pays-bas, pays bas, netherlands, the netherlands, nl, holland]}
+    - {id: CH, fr: Suisse, en: Switzerland, synonyms: [suisse, switzerland, ch]}
+    - {id: GB, fr: Royaume-Uni, en: United Kingdom, synonyms: [royaume-uni, royaume uni, united kingdom, uk, gb, great britain]}
+    - {id: SE, fr: Suède, en: Sweden, synonyms: [suede, sweden, se]}
+    - {id: FI, fr: Finlande, en: Finland, synonyms: [finlande, finland, fi]}
+    - {id: DK, fr: Danemark, en: Denmark, synonyms: [danemark, denmark, dk]}
+    - {id: NO, fr: Norvège, en: Norway, synonyms: [norvege, norway, no]}
+    - {id: SG, fr: Singapour, en: Singapore, synonyms: [singapour, singapore, sg]}
+    - {id: CL, fr: Chili, en: Chile, synonyms: [chili, chile, cl]}
+    - {id: LI, fr: Liechtenstein, en: Liechtenstein, synonyms: [liechtenstein, li]}
+    - {id: MC, fr: Monaco, en: Monaco, synonyms: [monaco, mc]}
+    - {id: PL, fr: Pologne, en: Poland, synonyms: [pologne, poland, pl]}
+    - {id: GR, fr: Grèce, en: Greece, synonyms: [grece, greece, gr]}
+    - {id: HK, fr: Hong Kong, en: Hong Kong, synonyms: [hong kong, hk]}
+    - {id: MT, fr: Malte, en: Malta, synonyms: [malte, malta, mt]}
+    - {id: CY, fr: Chypre, en: Cyprus, synonyms: [chypre, cyprus, cy]}
+    - {id: IS, fr: Islande, en: Iceland, synonyms: [islande, iceland, is]}
+    - {id: PE, fr: Pérou, en: Peru, synonyms: [perou, peru, pe]}
+    - {id: UY, fr: Uruguay, en: Uruguay, synonyms: [uruguay, uy]}
+    - {id: AE, fr: Émirats arabes unis, en: United Arab Emirates, synonyms: [emirats arabes unis, united arab emirates, uae, ae]}
+    - {id: CZ, fr: Tchéquie, en: Czech Republic, synonyms: [tchequie, republique tcheque, czech republic, czechia, cz]}

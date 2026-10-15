@@ -1,0 +1,64 @@
+# Règles de la carte des erreurs Qvidian — modifiables sans toucher au code.
+# Chaque « motif » est une expression régulière (Python), cherchée dans le texte visible du contenu (et son titre).
+# Les constats sont des signalements à relire, jamais des corrections automatiques.
+
+seuils:
+  non_relu_annees: 3            # texte non modifié depuis N ans → « à relire »
+  date_ancienne_annees: 2       # « au 31/12/2019 » alors qu'on est en 2026 → chiffre daté
+  jamais_utilise_jours: 365     # créé il y a plus d'un an et jamais utilisé
+  pas_utilise_annees: 3         # dernière utilisation il y a plus de N ans
+  expire_bientot_jours: 30
+  doublon_similarite: 0.85      # textes quasi identiques dans deux contenus différents
+
+code_informatique:
+  - motif: '&(lt|gt|amp|nbsp|quot|#\d+);'
+    raison: entités HTML visibles (&lt;, &nbsp;…)
+  - motif: '</?(p|div|span|br|b|i|u|strong|em|table|tr|td|li|ul|ol|font|a)\b[^>]*>'
+    raison: balises HTML visibles dans le texte
+  - motif: '\{\{[^}]*\}\}|\$\{[^}]*\}|<%.*?%>|\[\[[^\]]*\]\]'
+    raison: variable de gabarit non remplacée
+  - motif: '#(REF!|N/A|VALUE!|VALEUR!|DIV/0!|NAME\?|NOM\?|NUM!)'
+    raison: erreur Excel collée dans le texte
+  - motif: '\[object Object\]|\bundefined\b|\bNaN\b|\bNULL\b|\bnull\b'
+    raison: valeur technique (null, undefined…) au lieu d'un texte
+  - motif: 'mso-[a-z-]+\s*:|font-family\s*:|font-size\s*:|\bstyle\s*=\s*"|\bclass\s*=\s*"'
+    raison: mise en forme Word / HTML collée en texte
+  - motif: '\\[ntr]'
+    raison: retour à la ligne codé (\n) au lieu d'un vrai saut de ligne
+  - motif: '\bSELECT\b[\s\S]{1,80}\bFROM\b|\bfunction\s*\(|\bvar\s+\w+\s*=|Traceback \(most recent|\bException:|\bStack ?trace'
+    raison: morceau de code ou message d'erreur informatique
+  - motif: '[A-Za-z0-9+/]{120,}={0,2}'
+    raison: bloc encodé (base64) dans le texte
+  - motif: 'Ã©|Ã¨|Ãª|Ã |â€™|â€œ|â€|�'
+    raison: accents ou caractères mal encodés
+
+a_completer:
+  - motif: '^\s*(TBD|TBC|TODO|XXX+|N/?A|à compléter|a completer|to be completed|lorem ipsum)\s*\.?\s*$'
+    raison: texte provisoire à la place de la réponse
+  - motif: '\bXXX+\b|\[(à|a) compléter\]|\bTODO\b|\bTBD\b|\bTBC\b|lorem ipsum'
+    raison: marque « à compléter » restée dans le texte
+
+termes_depasses:
+  - motif: '\bDICI\b|\bKIIDs?\b'
+    raison: DICI / KIID remplacés par le DIC PRIIPs (KID) depuis le 01/01/2023
+  - motif: '\bEONIA\b'
+    raison: EONIA supprimé le 03/01/2022 (remplacé par l'€STR)
+  - motif: '\b(USD |GBP |EUR )?LIBOR\b'
+    raison: LIBOR arrêté (2021-2023)
+  - motif: '\b(UCITS|OPCVM) IV\b'
+    raison: directive UCITS V en vigueur depuis 2016
+  - motif: '\bMiFID\b(?!\s?(II|2))|\bMIF\b(?!\s?(II|2))'
+    raison: MiFID I remplacée par MiFID II depuis 2018
+  - motif: '\bArticle 173\b'
+    raison: article 173 de la loi TECV remplacé par l'article 29 de la loi Énergie-Climat (2021)
+  - motif: '\bSFDR\b.{0,40}\bniveau 1\b|\bRTS\b.{0,30}\bprovisoire'
+    raison: mention SFDR à vérifier (RTS niveau 2 applicables depuis 2023)
+
+# Langue déclarée (LCID) → langue du texte attendue
+langues:
+  1036: fr
+  1033: en
+  2057: en
+  3084: fr
+  4108: fr
+  2060: fr

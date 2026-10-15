@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+# Node
+node_modules/
+# Données générées à la racine uniquement (historique, fichiers déposés, versions, mock).
+# Ancré avec « / » pour ne pas exclure le module source backend/merlin/data.
+/data/
+# Secrets
+.env
+backend/.env
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+*.tsbuildinfo

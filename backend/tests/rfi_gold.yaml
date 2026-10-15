@@ -1,0 +1,254 @@
+# Banc d'essai du compléteur RFI : formulations réelles de questionnaires (FR / EN) et pièges.
+# concept: null  → la question ne doit JAMAIS être remplie automatiquement (hors périmètre, ambiguë ou qualitative).
+# Le test exige 100 % de précision sur les réponses automatiques.
+cases:
+  # ------------------------------------------------------------- identité
+  - {q: "Nom du fonds", concept: fonds.nom}
+  - {q: "Dénomination complète du fonds", concept: fonds.nom}
+  - {q: "Fund name", concept: fonds.nom}
+  - {q: "Full legal name of the fund", concept: fonds.nom}
+  - {q: "Name of the umbrella fund (if applicable)", concept: fonds.ombrelle}
+  - {q: "Forme juridique", concept: fonds.forme_juridique}
+  - {q: "Legal structure of the vehicle", concept: fonds.forme_juridique}
+  - {q: "Is the fund UCITS compliant?", concept: fonds.est_opcvm}
+  - {q: "Le fonds est-il un OPCVM ?", concept: fonds.est_opcvm, options: [Oui, Non]}
+  - {q: "Regulatory status (UCITS / AIF)", concept: fonds.reglementation}
+  - {q: "Pays de domiciliation du fonds", concept: fonds.domicile}
+  - {q: "Fund domicile", concept: fonds.domicile}
+  - {q: "Country of domicile", concept: fonds.domicile}
+  - {q: "Date de création du fonds", concept: fonds.date_creation}
+  - {q: "Fund inception date", concept: fonds.date_creation}
+  - {q: "Launch date of the share class", concept: part.date_creation}
+  - {q: "Date de lancement de la part", concept: part.date_creation}
+  - {q: "Devise de référence du fonds", concept: fonds.devise}
+  - {q: "Base currency", concept: fonds.devise}
+  - {q: "Share class currency", concept: part.devise}
+  - {q: "Devise", concept: part.devise, entity: share}
+  - {q: "LEI du fonds", concept: fonds.lei}
+  - {q: "Fund LEI code", concept: fonds.lei}
+  - {q: "Code ISIN", concept: part.isin}
+  - {q: "ISIN code of the share class", concept: part.isin}
+  - {q: "Ticker Bloomberg", concept: part.ticker_bloomberg}
+  - {q: "Bloomberg ticker of the share class", concept: part.ticker_bloomberg}
+  - {q: "Benchmark", concept: fonds.indice_reference}
+  - {q: "Indicateur de référence du fonds", concept: fonds.indice_reference}
+  - {q: "Recommended holding period", concept: fonds.duree_placement}
+  - {q: "Durée de placement recommandée", concept: fonds.duree_placement}
+  - {q: "Investment objective", concept: fonds.objectif_gestion}
+  - {q: "Classe d'actifs", concept: fonds.classe_actifs}
+  # ------------------------------------------------------------- gestion
+  - {q: "Nom du gérant principal", concept: fonds.gerant}
+  - {q: "Lead portfolio manager", concept: fonds.gerant}
+  - {q: "Name of the portfolio manager", concept: fonds.gerant}
+  - {q: "Co-gérant / gérant suppléant", concept: fonds.gerant_suppleant}
+  - {q: "Deputy portfolio manager", concept: fonds.gerant_suppleant}
+  - {q: "Portfolio manager since", concept: fonds.gerant_depuis}
+  - {q: "Société de gestion", concept: fonds.societe_gestion}
+  - {q: "Dépositaire", concept: fonds.depositaire}
+  - {q: "Depositary", concept: fonds.depositaire}
+  - {q: "Custodian", concept: fonds.conservateur}
+  - {q: "Valorisateur", concept: fonds.valorisateur}
+  - {q: "Fund administrator", concept: fonds.valorisateur}
+  - {q: "Transfer agent", concept: fonds.agent_transfert}
+  - {q: "Commissaire aux comptes", concept: fonds.commissaire_comptes}
+  - {q: "External auditor", concept: fonds.commissaire_comptes}
+  - {q: "Centralisateur", concept: fonds.centralisateur}
+  # ------------------------------------------------------------- risques / ESG
+  - {q: "SRI", concept: fonds.sri}
+  - {q: "Indicateur synthétique de risque (SRI)", concept: fonds.sri}
+  - {q: "Summary risk indicator (1-7)", concept: fonds.sri}
+  - {q: "SRRI", concept: fonds.srri}
+  - {q: "Classification SFDR", concept: fonds.sfdr}
+  - {q: "SFDR classification (Article 6, 8 or 9)", concept: fonds.sfdr}
+  - {q: "Le fonds est-il classé Article 8 ?", concept: fonds.sfdr, options: [Oui, Non]}
+  - {q: "Catégorie AMF (doctrine 2020-03)", concept: fonds.categorie_amf_esg}
+  - {q: "Le fonds dispose-t-il du label ISR ?", concept: fonds.label_isr}
+  - {q: "Does the fund hold the French SRI label?", concept: fonds.label_isr}
+  - {q: "Le fonds prend-il en compte les principales incidences négatives (PAI) ?", concept: fonds.pai}
+  - {q: "Minimum proportion of sustainable investments (%)", concept: fonds.part_min_investissements_durables}
+  - {q: "Le fonds exclut-il le tabac ?", concept: fonds.exclusion_tabac}
+  - {q: "Tobacco exclusion", concept: fonds.exclusion_tabac}
+  - {q: "Does the fund exclude controversial weapons?", concept: fonds.exclusion_armes_controversees}
+  - {q: "Méthode de calcul du risque global", concept: fonds.risque_global}
+  - {q: "Global exposure calculation method", concept: fonds.risque_global}
+  - {q: "Le fonds utilise-t-il des instruments dérivés ?", concept: fonds.derives_strategie}
+  - {q: "Capital guarantee", concept: fonds.garantie_capital}
+  # ------------------------------------------------------------- frais
+  - {q: "Frais courants", concept: part.frais_courants_ex_post}
+  - {q: "Ongoing charges (OCF)", concept: part.frais_courants_ex_post}
+  - {q: "Frais courants ex ante", concept: part.frais_courants_ex_ante}
+  - {q: "Ongoing charges ex-ante (PRIIPs)", concept: part.frais_courants_ex_ante}
+  - {q: "Frais courants réels du dernier exercice", concept: part.frais_courants_ex_post}
+  - {q: "Frais de gestion financière maximum", concept: part.frais_gestion_max, context: "Frais de la part"}
+  - {q: "Frais de gestion réels", concept: part.frais_gestion_reels, context: "Frais de la part"}
+  - {q: "Actual management fee (%)", concept: part.frais_gestion_reels, context: "Share class fees"}
+  - {q: "Droits d'entrée maximum", concept: part.droits_entree_max}
+  - {q: "Entry charge", concept: part.droits_entree_max}
+  - {q: "Subscription fee (max)", concept: part.droits_entree_max}
+  - {q: "Commission de souscription acquise au fonds", concept: part.droits_entree_acquis}
+  - {q: "Exit charge", concept: part.droits_sortie_max}
+  - {q: "Commission de rachat non acquise", concept: part.droits_sortie_max}
+  - {q: "Commission de surperformance", concept: part.commission_surperformance}
+  - {q: "Is there a performance fee?", concept: part.commission_surperformance}
+  - {q: "Performance fee calculation methodology", concept: part.commission_surperformance_formule}
+  - {q: "High water mark", concept: fonds.high_water_mark}
+  - {q: "Frais administratifs externes maximum", concept: part.frais_administratifs_max}
+  - {q: "Taux de rétrocession", concept: part.retrocession_standard}
+  - {q: "Coûts de transaction implicites", concept: fonds.couts_transaction_implicites_ex_ante}
+  # ------------------------------------------------------------- souscriptions / rachats
+  - {q: "Fréquence de valorisation", concept: part.frequence_vl}
+  - {q: "Dealing frequency", concept: part.frequence_vl}
+  - {q: "NAV frequency", concept: part.frequence_vl}
+  - {q: "Heure limite de souscription", concept: part.cut_off_souscription}
+  - {q: "Redemption cut-off time", concept: part.cut_off_rachat}
+  - {q: "Délai de règlement des rachats", concept: part.reglement_rachat}
+  - {q: "Subscription settlement period", concept: part.reglement_souscription}
+  - {q: "Minimum de souscription initiale", concept: part.minimum_souscription}
+  - {q: "Minimum initial investment", concept: part.minimum_souscription}
+  - {q: "Souscription initiale minimum (EUR)", concept: part.minimum_souscription}
+  - {q: "Affectation des résultats", concept: part.affectation_resultats}
+  - {q: "Distribution policy (accumulating / distributing)", concept: part.affectation_resultats}
+  - {q: "Swing pricing", concept: part.swing_pricing}
+  - {q: "Does the fund apply swing pricing?", concept: part.swing_pricing}
+  - {q: "Redemption gates", concept: part.gates}
+  - {q: "Préavis de rachat", concept: part.preavis_rachat}
+  - {q: "VL d'origine", concept: part.vl_origine}
+  - {q: "Note Morningstar", concept: part.note_morningstar}
+  - {q: "Is the share class hedged?", concept: part.couverte}
+  - {q: "Countries of registration", concept: part.pays_enregistrement}
+  - {q: "Pays d'enregistrement de la part", concept: part.pays_enregistrement}
+  - {q: "Is the fund registered for sale in Germany?", concept: part.enregistree_pays}
+  - {q: "UK reporting fund status", concept: part.uk_reporting}
+  # ------------------------------------------------------------- encours, portefeuille, performances
+  - {q: "Encours du fonds", concept: jump.encours_fonds}
+  - {q: "Fund AUM (EUR m)", concept: jump.encours_fonds}
+  - {q: "Total net assets of the fund", concept: jump.encours_fonds}
+  - {q: "Encours de la part", concept: jump.encours_part}
+  - {q: "Share class AUM", concept: jump.encours_part}
+  - {q: "Dernière VL", concept: jump.vl}
+  - {q: "NAV per share", concept: jump.vl}
+  - {q: "Nombre de lignes en portefeuille", concept: jump.nombre_lignes}
+  - {q: "Number of holdings", concept: jump.nombre_lignes}
+  - {q: "Poids des 10 premières lignes", concept: jump.poids_top10}
+  - {q: "Top 10 holdings", concept: jump.top10}
+  - {q: "Asset allocation", concept: jump.repartition_classes_actifs}
+  - {q: "Currency breakdown", concept: jump.repartition_devises}
+  - {q: "Performance 1 an", concept: perf.part}
+  - {q: "Performance YTD de la part", concept: perf.part}
+  - {q: "Performance 2024", concept: perf.part}
+  - {q: "3-year annualised return", concept: perf.part}
+  - {q: "Performance de l'indice de référence sur 1 an", concept: perf.indice}
+  - {q: "Benchmark return YTD", concept: perf.indice}
+  - {q: "Volatilité 1 an", concept: perf.volatilite}
+  - {q: "Annualised volatility (3 years)", concept: perf.volatilite}
+  - {q: "Maximum drawdown", concept: perf.perte_max}
+  - {q: "Tracking error ex post 1 an", concept: perf.tracking_error}
+
+  # ============================================================= PIÈGES : jamais automatiques
+  - {q: "Encours total de la société de gestion", concept: null}
+  - {q: "Firm AUM", concept: null}
+  - {q: "Total assets under management of the firm", concept: null}
+  - {q: "Assets under management in the strategy (all vehicles)", concept: null}
+  - {q: "Nombre de gérants dans l'équipe", concept: null}
+  - {q: "Years of experience of the portfolio manager", concept: null}
+  - {q: "Please describe the investment process", concept: null}
+  - {q: "Décrivez votre approche ESG", concept: null}
+  - {q: "Comment gérez-vous le risque de liquidité ?", concept: null}
+  - {q: "Performance fee hurdle rate", concept: null}
+  - {q: "Benchmark ticker", concept: null}
+  - {q: "LEI de la société de gestion", concept: null}
+  - {q: "Adresse du dépositaire", concept: null}
+  - {q: "Frais de gestion", concept: null}
+  - {q: "Management fee", concept: null}
+  - {q: "TER", concept: null}
+  - {q: "Cut-off", concept: null}
+  - {q: "Settlement", concept: null}
+  - {q: "Target volatility", concept: null}
+  - {q: "Maximum leverage (%)", concept: null}
+  - {q: "Nombre de porteurs de parts", concept: null}
+  - {q: "Plus gros porteur (% de l'encours)", concept: null}
+  - {q: "Turnover du portefeuille", concept: null}
+  - {q: "Ratio de Sharpe 3 ans", concept: null}
+  - {q: "Expected tracking error", concept: null}
+  - {q: "Carbon footprint of the portfolio (tCO2e/M€ invested)", concept: null}
+  - {q: "Taxonomy alignment of the portfolio at year end (actual)", concept: null}
+  - {q: "Exposition maximale aux dérivés (%)", concept: null}
+  - {q: "SRI label obtained since", concept: null}
+  - {q: "Combien de fois le swing pricing a-t-il été activé ?", concept: null}
+  - {q: "Gates activated in the last 3 years?", concept: null}
+  - {q: "Performance", concept: null}
+  - {q: "Objectif de performance", concept: null}
+  - {q: "Capacité maximale de la stratégie", concept: null}
+  # ------------------------------------------------------------- lot 02 : vocabulaire réel des RFI 2026 (formulations, pas de valeurs)
+  - {q: "Date des données renseignées", concept: meta.date_arrete}
+  - {q: "Intitulé de la troisième position dans le portefeuille", concept: jump.position_nom}
+  - {q: "Poids de la première position dans le portefeuille", concept: jump.position_poids}
+  - {q: "Nombre de positions dans l'indice de référence", concept: null}
+  - {q: "Changement à déclarer dans la politique d'investissement ?", concept: null}
+  - {q: "Changement à déclarer dans les frais de gestion ?", concept: null}
+  - {q: "% of AUM as of the withdrawal date:", concept: null}
+  - {q: "Date de création de la Stratégie", concept: null}
+  - {q: "Classe d'actif Quantalys", concept: null}
+  - {q: "Min. SFDR Art. 8 funds", concept: fonds.part_min_fonds_article8}
+  - {q: "Si oui, indiquer le code ISIN du fonds Maître", concept: null}
+  - {q: "Pouvez-vous nous indiquer le code CIC ?", concept: fonds.code_cic}
+  - {q: "Pouvez-vous nous indiquer la catégorie BCE ?", concept: fonds.categorie_bce}
+  - {q: "La part est-elle ouverte à tout souscripteur ?", concept: part.ouverte_tous}
+  - {q: "Le fonds applique-t-il un mécanisme d'anti dilution levy ?", concept: part.adl}
+  - {q: "Fournissez-vous les données du fonds à Six Financial ?", concept: part.export_six}
+  - {q: "Périodicité du revenu", concept: part.frequence_distribution}
+  - {q: "VL en devise €", concept: part.devise}
+  - {q: "Quel est le taux de rétrocession ?", concept: part.retrocession_standard}
+  # ------------------------------------------------------------- tests proposés par l'ontologie Copilot (T01–T20)
+  - {q: "Quel est le SRI actuel ?", concept: fonds.sri}
+  - {q: "Quel était le SRI le mois précédent ?", concept: fonds.sri_precedent}
+  - {q: "Quel est le SRRI ?", concept: fonds.srri}
+  - {q: "Quelle est la devise de la part USD ?", concept: part.devise}
+  - {q: "Quel est le ticker Bloomberg de la part ?", concept: part.ticker_bloomberg}
+  - {q: "Quel est le ticker Bloomberg de l'indice ?", concept: null}
+  - {q: "Quelle est la date de création de la part ?", concept: part.date_creation}
+  - {q: "Le fonds applique-t-il des gates ?", concept: part.gates}
+  - {q: "Le fonds est-il un ETF ?", concept: fonds.etf}
+  - {q: "Combien de positions contient l'indice ?", concept: null}
+  - {q: "Le fonds a-t-il un incident de conformité ?", concept: null}
+  - {q: "Quand le gérant a-t-il commencé cette stratégie ?", concept: null}
+  - {q: "Quelles sont les émissions scope 1 en 2025 ?", concept: null}
+  # ------------------------------------------------------------- campagne complétion (banc de rejeu lot 02)
+  - {q: "Jour d'établissement de la valeur liquidative", concept: fonds.jour_calcul_vl}
+  - {q: "Délai de règlement-livraison (J+?)", concept: part.reglement_souscription}
+  - {q: "Nature du fonds", concept: fonds.forme_juridique}
+  - {q: "Commissions de sur-Performance?", concept: part.commission_surperformance}
+  - {q: "Towards Sustainable Label", concept: fonds.label_towards}
+  - {q: "Le support est-il labélisé ?", concept: fonds.est_labellise}
+  - {q: "Si oui, quel label ?", concept: fonds.labels}
+  - {q: "Coûts de transaction", concept: fonds.couts_transaction_dic}
+  - {q: "Frais Courants DIC (hors frais de transactions)", concept: part.frais_courants_ex_ante}
+  - {q: "Coûts de transaction explicites ex post", concept: fonds.couts_transaction_explicites_ex_post}
+  - {q: "Autre Label (plusieurs réponses possibles)", concept: null}
+  - {q: "Date d'obtention du label ISR", concept: null}
+  - {q: "Signataire PRI", concept: societe.signataire_pri}
+  - {q: "PRI transparency score", concept: null}
+  - {q: "% of AUM as of the withdrawal date:", concept: null}
+  - {q: "Y a-t-il des frais acquis à l'OPCVM (à l'entrée ou en cas de rachat) ?", concept: null}
+  - {q: "Does the Fund have a benchmark?", concept: fonds.indice_reference}
+  - {q: "Délai valorisation rachat + Préavis éventuel en cas de rachat + délai de valorisation du support ?", concept: null}
+  - {q: "Code Valor", concept: part.valor}
+  - {q: "If the Fund is subject to SFDR regulation, under which article is it classified?", concept: fonds.sfdr}
+  - {q: "Current size:", concept: jump.encours_fonds}
+  - {q: "Zone géographique/Secteur", concept: fonds.zone}
+  - {q: "Dans quels pays le fonds est-il éligible à la vente ?", concept: part.pays_enregistrement}
+  - {q: "Prise en compte des PAI relatifs à la biodiversité ?", concept: fonds.pai_biodiversite}
+  - {q: "Does the fund consider PAI on GHG emissions?", concept: fonds.pai_ges}
+  - {q: "Le fonds a-t-il développé une approche biodiversité ?", concept: null}
+  - {q: "Le fonds est-il aligné sur les objectifs de développement durable (ODD) ?", concept: fonds.alignement_odd}
+  - {q: "ODD 1 : Pas de pauvreté SDG 1: No poverty", concept: null}
+  - {q: "Valeur de l'indicateur PAI émissions de GES (tCO2e)", concept: null}
+  - {q: "A-t-il un track record de plus d'1 an ?", concept: fonds.track_record}
+  - {q: "Ancienneté du gérant principal sur le fonds ou la stratégie > 3 ans", concept: fonds.anciennete_gerant}
+  - {q: "Ancienneté du gérant back up sur le fonds ou la stratégie > 3 ans", concept: null}
+  - {q: "Gérant(s) back up", concept: fonds.gerant_suppleant}
+  - {q: "Le fonds applique-t-il un mécanisme visant à limiter la dilution ?", concept: part.mecanisme_anti_dilution}
+  - {q: "Le fonds applique-t-il un mécanisme de swing pricing ?", concept: part.swing_pricing}
+  - {q: "Est-ce un fonds à maturité ?", concept: fonds.a_maturite}
+  - {q: "Si le fonds est ouvert, un soft ou hard close du fonds est-il à l'ordre du jour ?", concept: null}
+  - {q: "Part d'investissement durable (% d'engagement)", concept: fonds.part_min_investissements_durables}

@@ -1,0 +1,48 @@
+id: omni_mensuel
+name: OMNI mensuel
+description: >
+  Prépare les trois fichiers OMNI du mois : Holdings (depuis Fabric, à la vraie date d'inventaire JUMP, au format
+  du mois précédent), performances NET et GROSS (dossier de dépôt, sinon Outlook), rangés dans
+  « <année>/Q<n> <année> ». Contrôles comparés au mois précédent et aux VL JUMP. À programmer chaque mois.
+icon: calendar-check
+category: Consultants
+type: python
+version: "1.0"
+tags: [OMNI, holdings, performances, consultants]
+estimated_minutes_saved: 20
+steps:
+  - Période et dossiers
+  - Holdings
+  - Performances
+  - Contrôles et rangement
+params:
+  - name: mois
+    label: Mois (vide = mois précédent)
+    type: integer
+    required: false
+    min: 1
+    max: 12
+    help: Laissez vide pour un lancement programmé chaque mois.
+  - name: annee
+    label: Année
+    type: integer
+    required: false
+  - name: holdings
+    label: Source des Holdings
+    type: select
+    default: fabric
+    options:
+      - {value: fabric, label: "Fabric (recommandé : rapide, sans Excel)"}
+      - {value: jump_excel, label: "JUMP Excel (script historique, Windows)"}
+      - {value: skip, label: "Ne pas refaire les Holdings (relance pour les performances)"}
+  - name: outlook
+    label: Chercher les performances dans Outlook
+    type: boolean
+    default: true
+  - name: ecraser
+    label: Remplacer les fichiers déjà présents
+    type: boolean
+    default: false
+outputs:
+  - type: excel
+    label: Holdings et rapport de contrôle

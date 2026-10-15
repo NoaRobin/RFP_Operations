@@ -1,0 +1,883 @@
+/* =========================================================================
+   app.css — le système visuel de « RFP & Due Diligence ».
+
+   Une seule teinte : le bleu de la maison et ses tons, émis par core.py en
+   variables CSS (--b-3 … --b-100). Rien ici ne fabrique une couleur.
+
+   Trois règles qui expliquent tout le reste :
+     1. La hiérarchie est typographique. Pas de carte, pas d’ombre, pas de
+        surface flottante : des filets d’un pixel et du vide.
+     2. Un ton clair ne porte jamais un texte. Sous 18 px, l’encre est à 72 %
+        au minimum (6,3:1 sur blanc) ; les tons plus clairs sont réservés aux
+        traits, aux aplats de figure et aux fonds.
+     3. Un état ne se lit jamais à sa seule couleur : le libellé et la valeur
+        sont toujours écrits à côté de la marque.
+   ========================================================================= */
+
+/* --------------------------------------------------------------- socle --- */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --duree: 200ms;
+  --duree-lente: 380ms;
+  --sortie: cubic-bezier(.22, 1, .36, 1);
+  --lecture: 660px;         /* colonne de lecture */
+  --marge: 300px;           /* colonne des repères */
+  --gouttiere: 56px;
+  --barre: 58px;            /* hauteur de la barre de marque */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duree: 0ms; --duree-lente: 0ms; }
+  * { animation: none !important; }
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--blanc);
+  color: var(--ink);
+  font-family: var(--police);
+  font-size: 15px;
+  line-height: 1.55;
+  font-feature-settings: "cv05", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+::selection { background: var(--b-12); color: var(--ink); }
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+/* Barres de défilement : un trait, pas un objet. */
+* { scrollbar-width: thin; scrollbar-color: var(--b-22) transparent; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--b-22); border-radius: 99px;
+  border: 3px solid var(--blanc); background-clip: content-box; }
+
+a { color: inherit; }
+
+/* Le saut vers le contenu, pour le clavier. */
+.saut {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  background: var(--ink); color: var(--blanc); padding: 10px 16px;
+  font-size: 13px; text-decoration: none;
+}
+.saut:focus { left: 8px; top: 8px; }
+
+/* --------------------------------------------------------- typographie --- */
+/* La voix : les phrases calculées, les grands chiffres. */
+.voix {
+  font-family: var(--police-serif);
+  font-weight: 400;
+  letter-spacing: -0.003em;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.lede {
+  font-family: var(--police-serif);
+  font-size: clamp(25px, 2.5vw, 34px);
+  line-height: 1.32;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  margin: 0;
+  font-variant-numeric: lining-nums tabular-nums;
+  text-wrap: pretty;
+}
+.lede .attenue { color: var(--b-72); }
+
+.prose {
+  font-family: var(--police-serif);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: pretty;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Micro-libellé : capitales espacées. Jamais en dessous de 72 % d’encre. */
+.cle {
+  font-size: 10.5px;
+  font-weight: 620;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--b-72);
+  font-family: var(--police);
+}
+.cle--ink { color: var(--ink); }
+
+.note {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--b-72);
+}
+.note b, .note strong { color: var(--ink); font-weight: 620; }
+
+.num { font-variant-numeric: tabular-nums lining-nums; }
+
+/* Un nombre qui mène quelque part : filet sous le chiffre, jamais une couleur. */
+.nombre {
+  color: inherit;
+  text-decoration: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--b-36);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  font-variant-numeric: lining-nums tabular-nums;
+  transition: text-decoration-color var(--duree) var(--sortie);
+}
+.nombre:hover { text-decoration-color: var(--ink); }
+.nombre:focus-visible { text-decoration-color: var(--ink); }
+
+/* ---------------------------------------------------------------- mise --- */
+.enveloppe { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
+
+/* La grille de lecture : une colonne de texte, une marge qui parle. */
+.lecture {
+  display: grid;
+  grid-template-columns: minmax(0, var(--lecture)) var(--marge);
+  gap: var(--gouttiere);
+  align-items: start;
+}
+.lecture--pleine { grid-template-columns: minmax(0, 1fr); }
+.lecture > .marge-col { padding-top: 4px; }
+
+/* Un bloc de la note : un filet, un numéro, un titre, du texte. */
+.bloc {
+  display: grid;
+  grid-template-columns: minmax(0, var(--lecture)) var(--marge);
+  gap: var(--gouttiere);
+  align-items: start;
+  padding: 40px 0 0;
+  margin-top: 40px;
+  border-top: 1px solid var(--b-12);
+}
+.bloc:first-of-type { margin-top: 36px; }
+.bloc__tete { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+.bloc__num { font-size: 10.5px; font-weight: 620; letter-spacing: .12em; color: var(--b-72);
+  font-variant-numeric: tabular-nums; }
+.bloc__corps { min-width: 0; }
+.bloc__marge { min-width: 0; }
+
+.marge-titre {
+  font-size: 10.5px; font-weight: 620; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--b-72); margin-bottom: 10px;
+}
+.marge-texte { font-size: 13px; line-height: 1.62; color: var(--b-72); margin: 0 0 14px; }
+.marge-texte:last-child { margin-bottom: 0; }
+.marge-texte b { color: var(--ink); font-weight: 620; }
+
+/* L’ouverture : la phrase calculée, puis les trois chiffres du matin. */
+.ouverture { margin-bottom: 4px; }
+.matin { display: flex; gap: 8px 30px; flex-wrap: wrap; margin-top: 22px; font-size: 13.5px;
+  color: var(--b-72); align-items: baseline; }
+.matin > span { white-space: nowrap; }
+.matin b { color: var(--ink); font-weight: 560; }
+
+/* Les barres mensuelles de la marge : une forme, pas une promesse de précision. */
+.barres { display: flex; align-items: flex-end; gap: 2px; height: 46px; margin: 4px 0 6px; }
+.barres i { flex: 1; background: var(--b-52); min-height: 1px; display: block; }
+.barres i.encours { background: repeating-linear-gradient(135deg, var(--b-36) 0 2px, transparent 2px 4px);
+  border-top: 1px solid var(--b-36); }
+.barres-pied { display: flex; justify-content: space-between; font-size: 11px; color: var(--b-72); }
+
+/* ------------------------------------------------------ barre de marque --- */
+.barre {
+  position: sticky; top: 0; z-index: 30;
+  background: var(--blanc);
+  border-bottom: 1px solid var(--b-12);
+}
+.barre__int {
+  max-width: 1120px; margin: 0 auto; padding: 0 40px;
+  height: var(--barre);
+  display: flex; align-items: center; gap: 24px;
+}
+.marque { display: flex; align-items: center; gap: 14px; text-decoration: none; flex: none; }
+.marque__texte { display: flex; flex-direction: column; line-height: 1.05; }
+.marque__nom { font-family: var(--police-serif); font-size: 19px; color: var(--ink);
+  letter-spacing: -0.005em; white-space: nowrap; }
+.marque__activite { font-size: 9px; font-weight: 620; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--b-72); margin-top: 3px; white-space: nowrap; }
+.marque__logo { height: 26px; color: var(--ink); display: block; }
+.marque__logo svg { height: 100%; width: auto; display: block; }
+.marque__produit {
+  font-size: 10.5px; font-weight: 620; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--b-72); padding-left: 14px; border-left: 1px solid var(--b-22);
+  white-space: nowrap;
+}
+
+.nav { display: flex; gap: 2px; margin-left: 8px; }
+.nav a {
+  font-size: 13.5px; color: var(--b-72); text-decoration: none; padding: 7px 11px;
+  border-radius: 2px; white-space: nowrap;
+  transition: color var(--duree) var(--sortie), background var(--duree) var(--sortie);
+}
+.nav a:hover { color: var(--ink); background: var(--b-6); }
+.nav a[aria-current="page"] { color: var(--ink); font-weight: 560; box-shadow: inset 0 -2px 0 var(--ink); }
+
+.barre__droite { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+/* Navigation de repli : elle n’existe que sous 860 px. */
+.nav--mobile { display: none; }
+
+/* Le champ de commande, fermé : un bouton discret qui dit son raccourci. */
+.chercher {
+  display: flex; align-items: center; gap: 10px;
+  height: 32px; padding: 0 10px 0 12px; min-width: 230px;
+  border: 1px solid var(--b-22); border-radius: 2px; background: var(--blanc);
+  color: var(--b-72); font: inherit; font-size: 13px; cursor: pointer; text-align: left;
+  transition: border-color var(--duree) var(--sortie);
+}
+.chercher:hover { border-color: var(--b-52); color: var(--ink); }
+.chercher__texte { flex: 1; }
+.chercher__court { display: none; }
+.chercher__touche {
+  font-size: 10.5px; font-weight: 620; letter-spacing: .06em; color: var(--b-72);
+  border: 1px solid var(--b-22); border-radius: 2px; padding: 1px 5px; white-space: nowrap;
+}
+
+.bouton {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 14px;
+  border: 1px solid var(--ink); border-radius: 2px;
+  background: var(--ink); color: var(--blanc);
+  font: inherit; font-size: 13px; font-weight: 560; cursor: pointer; text-decoration: none;
+  white-space: nowrap;
+  transition: opacity var(--duree) var(--sortie);
+}
+.bouton:hover { opacity: .86; }
+.bouton[disabled] { opacity: .45; cursor: default; }
+.bouton--sobre { background: var(--blanc); color: var(--ink); border-color: var(--b-22); }
+.bouton--sobre:hover { border-color: var(--ink); opacity: 1; }
+.bouton__fleche { width: 11px; height: 11px; }
+
+/* ---------------------------------------------------- barre de périmètre --- */
+.perimetre {
+  position: sticky; top: var(--barre); z-index: 25;
+  background: var(--b-3);
+  border-bottom: 1px solid var(--b-12);
+}
+.perimetre__int {
+  max-width: 1120px; margin: 0 auto; padding: 9px 40px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.perimetre__cle { font-size: 10.5px; font-weight: 620; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--b-72); flex: none; }
+.periodes { display: flex; gap: 1px; flex-wrap: wrap; }
+.periodes button {
+  font: inherit; font-size: 13px; color: var(--b-72); background: none; border: 0;
+  padding: 4px 9px; cursor: pointer; border-radius: 2px; white-space: nowrap;
+  transition: color var(--duree) var(--sortie), background var(--duree) var(--sortie);
+}
+.periodes button:hover { color: var(--ink); background: var(--b-6); }
+.periodes button[aria-pressed="true"] { color: var(--ink); font-weight: 600; background: var(--b-12); }
+/* Les exercices anciens : un menu, pour que le bandeau tienne sur une ligne. */
+.periodes select.millesimes {
+  font: inherit; font-size: 13px; color: var(--b-72); background: none; border: 0;
+  padding: 4px 9px; cursor: pointer; border-radius: 2px;
+  transition: color var(--duree) var(--sortie), background var(--duree) var(--sortie);
+}
+.periodes select.millesimes:hover { color: var(--ink); background: var(--b-6); }
+.periodes select.millesimes.millesimes--actif {
+  color: var(--ink); font-weight: 600; background: var(--b-12);
+}
+.perimetre__dates { font-size: 13px; color: var(--b-72); white-space: nowrap; }
+.perimetre__compte { margin-left: auto; font-size: 13px; color: var(--b-72); white-space: nowrap; }
+
+/* Une puce de filtre : elle se lit et se retire. */
+.puces { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.puce {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--ink);
+  border: 1px solid var(--b-22); border-radius: 2px; padding: 2px 4px 2px 9px;
+  background: var(--blanc); white-space: nowrap;
+}
+.puce b { font-weight: 620; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--b-72); }
+.puce--lecture { padding-right: 9px; border-style: dashed; }
+.puce__x {
+  border: 0; background: none; color: var(--b-72); font: inherit; font-size: 15px;
+  line-height: 1; cursor: pointer; padding: 2px 4px; border-radius: 2px;
+}
+.puce__x:hover { color: var(--ink); background: var(--b-12); }
+.lien-sobre {
+  font-size: 13px; color: var(--b-72); background: none; border: 0; padding: 4px 2px;
+  cursor: pointer; font: inherit; font-size: 13px; text-decoration: none;
+  border-bottom: 1px solid var(--b-22);
+}
+.lien-sobre:hover { color: var(--ink); border-bottom-color: var(--ink); }
+
+/* ------------------------------------------------- champ de commande ----- */
+.palette-fond {
+  position: fixed; inset: 0; z-index: 60;
+  background: color-mix(in srgb, var(--bleu) 24%, transparent);
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: 12vh 20px 20px;
+  animation: paraitre var(--duree) var(--sortie) both;
+}
+@keyframes paraitre { from { opacity: 0 } to { opacity: 1 } }
+@keyframes monter { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+
+.palette {
+  width: min(680px, 100%);
+  background: var(--blanc);
+  border: 1px solid var(--b-22);
+  animation: monter var(--duree) var(--sortie) both;
+  max-height: 72vh; display: flex; flex-direction: column;
+}
+.palette__champ {
+  display: flex; align-items: center; gap: 12px; padding: 16px 18px;
+  border-bottom: 1px solid var(--b-12);
+}
+.palette__champ input {
+  flex: 1; border: 0; outline: 0; background: none; font: inherit;
+  font-size: 19px; color: var(--ink); font-family: var(--police);
+}
+.palette__champ input::placeholder { color: var(--b-52); }
+.palette__lu {
+  padding: 11px 18px; border-bottom: 1px solid var(--b-12); background: var(--b-3);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.palette__lu-cle { font-size: 10.5px; font-weight: 620; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--b-72); }
+.palette__liste { overflow-y: auto; padding: 6px 0; }
+.palette__item {
+  display: flex; align-items: baseline; gap: 12px; width: 100%;
+  padding: 9px 18px; border: 0; background: none; font: inherit; text-align: left;
+  cursor: pointer; color: var(--ink);
+}
+.palette__item:hover, .palette__item[aria-selected="true"] { background: var(--b-6); }
+.palette__item[aria-selected="true"] { box-shadow: inset 2px 0 0 var(--ink); }
+.palette__item span.libelle { font-size: 14px; }
+.palette__item span.detail { margin-left: auto; font-size: 12.5px; color: var(--b-72); }
+.palette__vide { padding: 18px; font-size: 13.5px; color: var(--b-72); }
+.palette__pied {
+  border-top: 1px solid var(--b-12); padding: 9px 18px; font-size: 12px; color: var(--b-72);
+  display: flex; gap: 18px; flex-wrap: wrap;
+}
+
+/* -------------------------------------------------------- indicateurs ---- */
+/* Une liste de faits, pas une grille de tuiles : libellé, valeur, variation,
+   définition. Les filets font les colonnes. */
+.faits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; }
+.fait {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 10px;
+  padding: 12px 0; border-bottom: 1px solid var(--b-12);
+}
+.fait__label { font-size: 13.5px; color: var(--b-72); }
+.fait__valeur {
+  font-family: var(--police-serif); font-size: 23px; color: var(--ink); line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums; white-space: nowrap;
+}
+.fait__bas { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap; margin-top: -2px; }
+.fait__detail { font-size: 12.5px; color: var(--b-72); }
+.fait__delta { font-size: 12.5px; color: var(--ink); font-weight: 560; white-space: nowrap; }
+.fait__delta span { color: var(--b-72); font-weight: 400; }
+.fait .spark { color: var(--b-52); flex: none; margin-left: auto; }
+a.fait { text-decoration: none; color: inherit; }
+a.fait:hover { background: var(--b-3); }
+
+/* ------------------------------------------------------------- carnet ---- */
+.carnet { margin-top: 6px; }
+.carnet__rubans { display: grid; gap: 3px; }
+.carnet__ligne { display: flex; align-items: center; gap: 10px; }
+.carnet__ligne .cle { width: 62px; flex: none; text-align: right; font-size: 9.5px; }
+.carnet__ruban { flex: 1; display: flex; gap: 2px; height: 10px; }
+.carnet__seg { transition: opacity var(--duree) var(--sortie); }
+/* Deux états se distinguent aussi par leur texture : ce qui est encore chez
+   nous est hachuré, ce qui n’a pas abouti est un contour vide. Le ton seul ne
+   porte jamais l’information. */
+.texture-redaction {
+  background-image: repeating-linear-gradient(135deg,
+    var(--blanc) 0 1.5px, transparent 1.5px 4px) !important;
+}
+.texture-sanssuite {
+  background-color: var(--blanc) !important;
+  box-shadow: inset 0 0 0 1px var(--b-36);
+}
+.carnet__colonnes {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px;
+  margin-top: 14px; border-top: 1px solid var(--b-12); padding-top: 12px;
+}
+.carnet__col {
+  display: grid; grid-template-rows: auto auto auto 1fr; gap: 3px; padding-right: 12px;
+  align-content: start;
+}
+.carnet__col-tete { display: flex; align-items: flex-start; gap: 6px; min-height: 30px; }
+.carnet__pastille { margin-top: 4px; }
+.carnet__pastille { width: 9px; height: 9px; flex: none; }
+.carnet__nom { font-size: 12px; color: var(--b-72); line-height: 1.3; }
+.carnet__n {
+  font-family: var(--police-serif); font-size: 26px; color: var(--ink); line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.carnet__encours { font-size: 12.5px; color: var(--b-72); }
+.carnet__sens { font-size: 11.5px; color: var(--b-72); line-height: 1.35; }
+a.carnet__col { text-decoration: none; }
+a.carnet__col:hover .carnet__n { border-bottom: 1px solid var(--ink); }
+
+/* Les identités : ce que vaut exactement un chiffre. */
+.identites { display: grid; gap: 14px; margin-top: 22px; }
+.identite { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 16px;
+  align-items: baseline; font-size: 13px; }
+.identite__g { color: var(--b-72); }
+.identite__v { color: var(--ink); }
+.identite__v b { font-family: var(--police-serif); font-size: 17px; font-weight: 400; }
+.identite__n { display: block; margin-top: 3px; color: var(--b-72); }
+
+/* -------------------------------------------------------------- listes --- */
+.onglets { display: flex; gap: 2px; border-bottom: 1px solid var(--b-12); margin-bottom: 4px;
+  flex-wrap: wrap; }
+.onglets button {
+  font: inherit; font-size: 13.5px; color: var(--b-72); background: none; border: 0;
+  padding: 8px 12px 9px; cursor: pointer; display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: -1px;
+}
+.onglets button:hover { color: var(--ink); }
+.onglets button[aria-selected="true"] { color: var(--ink); font-weight: 560;
+  box-shadow: inset 0 -2px 0 var(--ink); }
+.onglets .compte { font-size: 12px; color: var(--b-72); font-variant-numeric: tabular-nums; }
+
+table.donnees { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.donnees th {
+  text-align: left; font-size: 10px; font-weight: 620; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--b-72); padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--b-22); white-space: nowrap; background: var(--blanc);
+}
+/* Gouttière à gauche, comme dans le rapport : deux colonnes de chiffres
+   alignées à droite se toucheraient sinon dès que le tableau est dense. */
+table.donnees th.num, table.donnees td.num {
+  text-align: right; padding-right: 0; padding-left: 16px;
+}
+table.donnees td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--b-12);
+  color: var(--ink); vertical-align: baseline; }
+table.donnees td.attenue { color: var(--b-72); }
+table.donnees tbody tr { transition: background var(--duree) var(--sortie); }
+table.donnees tbody tr[data-clic]:hover { background: var(--b-3); cursor: pointer; }
+table.donnees tbody tr:last-child td { border-bottom: 0; }
+table.donnees caption { caption-side: bottom; text-align: left; font-size: 12px;
+  color: var(--b-72); padding-top: 8px; }
+.tableau { overflow-x: auto; }
+/* Un en-tête triable est un bouton : il le dit au survol et au clavier, et
+   porte le sens du tri en toutes lettres pour le lecteur d’écran. */
+table.triable th[role="button"] { cursor: pointer; user-select: none; }
+table.triable th[role="button"]:hover { color: var(--ink); }
+table.triable th[aria-sort] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink); }
+table.triable th[aria-sort="ascending"]::after { content: " ↑"; }
+table.triable th[aria-sort="descending"]::after { content: " ↓"; }
+.cellule-nom { font-weight: 500; }
+.cellule-sous { display: block; font-size: 12px; color: var(--b-72); margin-top: 1px; }
+
+/* Une jauge d’attente : un trait plein, le reste en filet. */
+.jauge { display: block; width: 84px; height: 4px; background: var(--b-12); position: relative; }
+.jauge i { display: block; height: 100%; background: var(--b-72); }
+.jauge--alerte i { background: var(--ink); }
+
+.etiquette {
+  font-size: 10.5px; font-weight: 620; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink); border: 1px solid var(--b-36); padding: 1px 5px; white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ analyses --- */
+.analyse { padding: 40px 0 0; margin-top: 40px; border-top: 1px solid var(--b-12); }
+.analyse:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+.analyse__tete { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px;
+  align-items: baseline; margin-bottom: 4px; }
+.analyse__titre { font-size: 16px; font-weight: 600; color: var(--ink); margin: 0;
+  letter-spacing: -.008em; }
+.analyse__accroche { font-family: var(--police-serif); font-size: 18px; line-height: 1.5;
+  color: var(--ink); margin: 8px 0 14px; max-width: 74ch; text-wrap: pretty; }
+.analyse__outils { display: flex; gap: 2px; flex: none; }
+.analyse__corps { min-height: 40px; }
+.analyse__note { font-size: 12.5px; color: var(--b-72); line-height: 1.6; margin-top: 14px;
+  padding-top: 12px; border-top: 1px solid var(--b-12); max-width: 96ch; }
+.figure { width: 100%; min-height: 60px; }
+.figure--cliquable { cursor: pointer; }
+.figure__aide { font-size: 12px; color: var(--b-72); margin-top: 6px; }
+.squelette {
+  height: 300px; background: var(--b-6); position: relative; overflow: hidden;
+}
+.squelette::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--b-12), transparent);
+  animation: glisser 1.4s linear infinite;
+}
+@keyframes glisser { from { transform: translateX(-100%) } to { transform: translateX(100%) } }
+
+/* Questions : la navigation de second niveau. */
+.questions { display: flex; gap: 2px; flex-wrap: wrap; margin-bottom: 4px; }
+.questions a {
+  font-size: 13.5px; color: var(--b-72); text-decoration: none; padding: 7px 11px;
+  border-radius: 2px; white-space: nowrap;
+}
+.questions a:hover { color: var(--ink); background: var(--b-6); }
+.questions a[aria-current="page"] { color: var(--ink); font-weight: 560;
+  box-shadow: inset 0 -2px 0 var(--ink); }
+
+/* -------------------------------------------------------------- fiche ---- */
+.fiche-fond {
+  position: fixed; inset: 0; z-index: 70; background: color-mix(in srgb, var(--bleu) 24%, transparent);
+  display: flex; justify-content: flex-end;
+  animation: paraitre var(--duree) var(--sortie) both;
+}
+.fiche {
+  width: min(620px, 100%); background: var(--blanc); height: 100%; overflow-y: auto;
+  border-left: 1px solid var(--b-22);
+  animation: glisser-fiche var(--duree-lente) var(--sortie) both;
+}
+@keyframes glisser-fiche { from { transform: translateX(24px); opacity: .4 } to { transform: none; opacity: 1 } }
+.fiche__tete { position: sticky; top: 0; background: var(--blanc); padding: 22px 32px 14px;
+  border-bottom: 1px solid var(--b-12); display: flex; align-items: flex-start; gap: 16px; }
+.fiche__corps { padding: 24px 32px 48px; }
+.fiche__nom { font-family: var(--police-serif); font-size: 26px; line-height: 1.2; margin: 4px 0 0;
+  color: var(--ink); }
+.fiche__x { margin-left: auto; border: 0; background: none; font-size: 22px; line-height: 1;
+  color: var(--b-72); cursor: pointer; padding: 4px 8px; }
+.fiche__x:hover { color: var(--ink); background: var(--b-6); }
+.champs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
+.champ { padding: 10px 0; border-bottom: 1px solid var(--b-12); }
+.champ__c { font-size: 10.5px; font-weight: 620; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--b-72); }
+.champ__v { font-size: 14.5px; color: var(--ink); margin-top: 3px; }
+
+/* -------------------------------------------------------------- données -- */
+.depot {
+  border: 1px dashed var(--b-36); padding: 32px; text-align: center;
+  transition: border-color var(--duree) var(--sortie), background var(--duree) var(--sortie);
+}
+.depot--survol { border-color: var(--ink); background: var(--b-3); }
+.depot__t { font-family: var(--police-serif); font-size: 19px; color: var(--ink); }
+.correspondance { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.correspondance th { text-align: left; font-size: 10px; font-weight: 620; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--b-72); padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--b-22); }
+.correspondance td { padding: 7px 12px 7px 0; border-bottom: 1px solid var(--b-12);
+  vertical-align: middle; }
+.correspondance select, .champ-texte {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--blanc);
+  border: 1px solid var(--b-22); border-radius: 2px; padding: 4px 6px; max-width: 100%;
+}
+.correspondance select:hover, .champ-texte:hover { border-color: var(--b-52); }
+.obligatoire { color: var(--ink); font-weight: 600; }
+
+/* --------------------------------------------------------------- états --- */
+.message {
+  border-left: 2px solid var(--ink); padding: 12px 0 12px 16px; margin: 20px 0;
+  font-size: 14px; color: var(--ink); background: var(--b-3);
+}
+.message--sobre { border-left-color: var(--b-36); color: var(--b-72); background: none; }
+.chargement { font-size: 13px; color: var(--b-72); padding: 40px 0; }
+
+.pied {
+  margin-top: 64px; padding: 20px 0 48px; border-top: 1px solid var(--b-12);
+  font-size: 12.5px; color: var(--b-72);
+  display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline;
+}
+.pied__droite { margin-left: auto; }
+
+/* ------------------------------------------------------------- écrans ---- */
+main { padding: 36px 0 0; }
+.ecran { animation: monter var(--duree-lente) var(--sortie) both; }
+.titre-ecran {
+  font-family: var(--police-serif); font-size: 28px; line-height: 1.2; margin: 0 0 6px;
+  color: var(--ink);
+}
+.sous-ecran { font-size: 14px; color: var(--b-72); margin: 0 0 28px; max-width: 78ch; }
+
+/* --------------------------------------------------------- adaptation ---- */
+@media (max-width: 1080px) {
+  .lecture, .bloc { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .bloc__marge, .marge-col {
+    border-top: 1px dotted var(--b-22); padding-top: 16px;
+  }
+  .faits { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+
+@media (max-width: 860px) {
+  .enveloppe, .barre__int, .perimetre__int { padding-left: 24px; padding-right: 24px; }
+  .marque__produit { display: none; }
+  .nav { display: none; }
+  .nav--mobile {
+    display: flex; overflow-x: auto; gap: 2px; padding: 6px 24px;
+    border-bottom: 1px solid var(--b-12); background: var(--blanc);
+    position: sticky; top: var(--barre); z-index: 26;
+  }
+  .nav--mobile a { flex: none; }
+  .perimetre { top: calc(var(--barre) + 41px); }
+  .chercher { min-width: 0; padding: 0 12px; }
+  .chercher__texte, .chercher__touche { display: none; }
+  .chercher__court { display: block; }
+  .carnet__colonnes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+  .champs { grid-template-columns: minmax(0, 1fr); }
+  .identite { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .lede { font-size: 23px; }
+  .prose { font-size: 18px; }
+  .analyse__tete { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .perimetre__compte { margin-left: 0; width: 100%; }
+  main { padding-top: 24px; }
+  .fiche { width: 100%; border-left: 0; }
+  .fiche__tete, .fiche__corps { padding-left: 20px; padding-right: 20px; }
+}
+
+@media (max-width: 560px) {
+  .carnet__colonnes { grid-template-columns: minmax(0, 1fr); }
+  .carnet__ligne .cle { width: 48px; }
+  .palette-fond { padding: 6vh 8px 8px; }
+  table.donnees { font-size: 13px; }
+}
+
+/* ------------------------------------------------------------ impression - */
+@media print {
+  .barre, .perimetre, .palette-fond, .fiche-fond, .nav--mobile, .analyse__outils { display: none !important; }
+  body { font-size: 11pt; }
+  .bloc, .analyse { break-inside: avoid; }
+}
+
+/* =========================================================================
+   Tarification — le simulateur de prix des appels d'offres
+   Une teinte, ses tons. L'issue d'une offre se lit par la forme : carré plein
+   (gagnée), creux (perdue), à moitié (en cours).
+   ========================================================================= */
+.tarif .ouverture { margin-bottom: 0; }
+
+/* La barre de réglages : un seul rang de filtres, au-dessus de tout ce qu'il règle. */
+.reglages {
+  background: var(--blanc);
+  margin: 30px 0 0; padding: 14px 0 12px; border-top: 1px solid var(--b-12); border-bottom: 1px solid var(--b-12);
+}
+.tuiles { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.tuile {
+  font: inherit; font-size: 12.5px; color: var(--ink); background: var(--b-3); border: 1px solid var(--b-12);
+  border-radius: 2px; padding: 5px 10px; cursor: pointer; display: inline-flex; gap: 8px; align-items: baseline;
+  transition: background var(--duree) var(--sortie), border-color var(--duree) var(--sortie);
+}
+.tuile:hover { border-color: var(--b-36); }
+.tuile[aria-pressed="true"] { background: var(--ink); color: var(--blanc); border-color: var(--ink); }
+.tuile[disabled] { opacity: .45; cursor: default; }
+.tuile__n { font-size: 11px; font-variant-numeric: tabular-nums; }
+.reglages__ligne { display: flex; flex-wrap: wrap; gap: 10px 32px; align-items: center; }
+.reglage { display: inline-flex; align-items: center; gap: 10px; }
+.reglage__c { font-size: 10.5px; font-weight: 620; letter-spacing: .12em; text-transform: uppercase; color: var(--b-72); }
+.reglage__v { display: inline-flex; align-items: center; gap: 6px; }
+.unite { font-size: 12.5px; color: var(--b-72); }
+
+.saisie {
+  font: inherit; font-size: 13.5px; color: var(--ink); background: var(--blanc);
+  border: 1px solid var(--b-22); border-radius: 2px; padding: 4px 7px; height: 30px;
+  font-variant-numeric: tabular-nums;
+}
+.saisie:hover { border-color: var(--b-52); }
+.saisie:focus { outline: 2px solid var(--ink); outline-offset: 1px; border-color: var(--ink); }
+.saisie[aria-invalid="true"] { border-color: var(--ink); border-style: dashed; background: var(--b-6); }
+.saisie--encours { width: 84px; text-align: right; }
+.saisie--offre { max-width: 300px; }
+.saisie--libelle { width: 100%; min-width: 150px; }
+input.saisie[inputmode="decimal"] { text-align: right; }
+.curseur { width: 150px; accent-color: var(--ink); margin-left: 6px; }
+
+.puce-filtre {
+  font: inherit; font-size: 12.5px; color: var(--b-72); background: var(--blanc);
+  border: 1px solid var(--b-22); border-radius: 2px; padding: 3px 9px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.puce-filtre:hover { color: var(--ink); border-color: var(--b-52); }
+.puce-filtre[aria-pressed="true"] { color: var(--ink); background: var(--b-6); border-color: var(--b-52); font-weight: 560; }
+
+/* Les formes d'issue, en ligne dans le texte. */
+.forme { display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: 0; flex: none; }
+.forme--gagne { background: var(--b-100); }
+.forme--perdu { background: var(--blanc); box-shadow: inset 0 0 0 1.5px var(--b-72); }
+.forme--cours { background: linear-gradient(90deg, var(--b-72) 50%, var(--blanc) 50%); box-shadow: inset 0 0 0 1.5px var(--b-72); }
+
+.bouton--petit { height: 28px; padding: 0 11px; font-size: 12.5px; }
+.lien-sobre--mini { font-size: 11.5px; padding: 0 1px; margin-left: 8px; }
+.prose--bloc { font-size: 19px; margin-bottom: 14px; }
+.prose--bloc b { font-weight: 560; }
+
+/* La grille éditable. */
+.outils-grille { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.outils-grille__depart { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.outils-grille__depart .cle { margin-right: 4px; }
+.outils-grille__export { display: flex; gap: 14px; }
+table.grille-tarif { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.grille-tarif th {
+  text-align: left; font-size: 10px; font-weight: 620; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--b-72); padding: 8px 8px 8px 0; border-bottom: 1px solid var(--b-22); white-space: nowrap;
+}
+table.grille-tarif th.num, table.grille-tarif td.num { text-align: right; padding-left: 12px; }
+table.grille-tarif td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--b-12); vertical-align: middle; white-space: nowrap; }
+table.grille-tarif td .unite { margin-left: 4px; }
+table.grille-tarif tfoot td { border-bottom: 0; padding-top: 12px; }
+.grille-tarif__nom { font-weight: 620; color: var(--b-72); font-size: 12px; letter-spacing: .06em; }
+.grille-tarif__marche { padding-left: 18px !important; }
+/* Deux lignes stables : la bande, puis la fourchette et le raccourci vers la médiane. */
+.grille-tarif__marche svg { display: block; margin: 0 0 3px; }
+.grille-tarif__fourchette { font-size: 12px; font-variant-numeric: tabular-nums; }
+.grille-tarif__marche .cellule-sous { display: inline; margin: 0; white-space: nowrap; }
+.grille-tarif__marche .lien-sobre--mini { display: inline; margin-left: 8px; white-space: nowrap; }
+.grille-tarif__marche { white-space: normal !important; min-width: 236px; }
+.grille-tarif__total { font-size: 13px; }
+.grille-tarif__total b { font-size: 15px; font-weight: 620; }
+.grille-tarif__actions { width: 28px; text-align: right; }
+.croix { border: 0; background: none; color: var(--b-52); font-size: 17px; line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 2px; }
+.croix:hover { color: var(--ink); background: var(--b-6); }
+.grille-origine { margin-top: 10px; }
+
+/* Les figures SVG. */
+.figure-tarif { position: relative; }
+.figure-tarif__svg { width: 100%; height: auto; display: block; overflow: visible; }
+.figure-tarif .graduation { font-size: 10.5px; fill: var(--b-72); font-variant-numeric: tabular-nums; }
+.figure-tarif .titre-axe { font-size: 10px; fill: var(--b-72); letter-spacing: .08em; text-transform: uppercase; }
+.figure-tarif .etiquette-fin { font-size: 11.5px; fill: var(--b-72); }
+.figure-tarif .etiquette-fin--forte { fill: var(--ink); font-weight: 620; }
+.figure-tarif .etiquette-repere { font-size: 11px; fill: var(--b-72); font-variant-numeric: tabular-nums; }
+.figure-tarif .marque-offre:focus { outline: none; }
+.figure-tarif .marque-offre:focus-visible rect:nth-child(2) { stroke: var(--ink); stroke-width: 2; }
+.infobulle {
+  position: absolute; z-index: 5; pointer-events: none; background: var(--blanc); border: 1px solid var(--b-22);
+  padding: 8px 10px; min-width: 170px; font-size: 12px;
+}
+.infobulle__titre { font-weight: 620; color: var(--ink); margin-bottom: 4px; }
+.infobulle__ligne { display: flex; justify-content: space-between; gap: 16px; color: var(--b-72); line-height: 1.6; }
+.infobulle__v { color: var(--ink); font-variant-numeric: tabular-nums; }
+.legende-tarif { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0 10px; font-size: 12px; color: var(--b-72); }
+.legende-tarif__item { display: inline-flex; align-items: center; gap: 7px; }
+.trait { display: inline-block; width: 22px; height: 0; border-top: 1.5px solid var(--b-52); }
+.trait--fort { border-top: 2.5px solid var(--b-100); }
+.trait--pointille { border-top: 1.5px dotted var(--b-52); }
+.aplat { display: inline-block; width: 18px; height: 10px; }
+.aplat--clair { background: var(--b-6); }
+.aplat--fonce { background: var(--b-12); }
+.repere-marche { margin-top: 2px; }
+
+/* Les blocs pleine largeur : repères de lecture sous la figure, en deux colonnes. */
+.bloc--large { grid-template-columns: minmax(0, 1fr); }
+.bloc--large .bloc__marge { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--gouttiere); }
+.bloc--large .bloc__marge .marge-titre { grid-column: 1 / -1; }
+.bloc--large .bloc__marge > .marge-gain { display: contents; }
+.groupe-puces { display: inline-flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.figure-commandes { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin: 4px 0 8px; }
+.figure-commandes .legende-tarif, .figure-commandes .groupe-puces { margin: 0; }
+.figure-commandes__gauche { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.figure-commandes__droite { display: inline-flex; gap: 12px; align-items: center; }
+.sous-titre { font-size: 10.5px; font-weight: 620; letter-spacing: .15em; text-transform: uppercase; color: var(--b-72); margin: 30px 0 4px; }
+
+/* Les offres comparées : un résumé qui s'ouvre sur ses filtres. */
+.comparer { margin-top: 10px; }
+.comparer__resume { font-size: 13px; }
+.comparer__filtres { margin-top: 10px; }
+.comparer__filtres[hidden] { display: none; }
+
+/* La grille : ce que le client met dans chaque tranche. */
+.grille-tarif__part { white-space: nowrap; }
+.grille-tarif__part .num { display: inline-block; min-width: 2.2em; text-align: right; }
+.fleche-part { color: var(--b-52); }
+.grille-tarif__client { min-width: 150px; }
+.part-client { display: inline-block; vertical-align: middle; width: 64px; height: 8px; background: var(--b-6);
+  box-shadow: inset 0 0 0 1px var(--b-12); margin-right: 8px; }
+.part-client i { display: block; height: 100%; background: var(--b-52); }
+.part-client__v { font-size: 12.5px; }
+.grille-tarif__frais .cellule-sous { white-space: nowrap; }
+.lecture-grille { font-size: 14px; color: var(--b-72); margin: 14px 0 0; }
+.lecture-grille b { color: var(--ink); font-weight: 620; }
+
+/* L'escalier des frais. */
+.escalier { position: relative; margin: 2px 0 6px; user-select: none; -webkit-user-select: none; }
+.escalier__svg { width: 100%; height: auto; display: block; overflow: visible; touch-action: none; }
+.escalier .graduation { font-size: 10.5px; fill: var(--b-72); font-variant-numeric: tabular-nums; }
+.escalier .titre-axe { font-size: 10px; fill: var(--b-72); letter-spacing: .08em; text-transform: uppercase; }
+.escalier .etiquette-fin { font-size: 11.5px; fill: var(--b-72); }
+.escalier .etiquette-fin--forte { fill: var(--ink); font-weight: 620; }
+.escalier__frais { font-size: 12px; font-weight: 620; fill: var(--ink); font-variant-numeric: tabular-nums; pointer-events: none; }
+.escalier__marche { font-size: 12px; fill: var(--ink); font-variant-numeric: tabular-nums; pointer-events: none; }
+.escalier__marche-nom { fill: var(--b-72); font-weight: 620; letter-spacing: .06em; }
+.escalier__lecture { font-size: 14px; font-weight: 620; fill: var(--ink); font-variant-numeric: tabular-nums; pointer-events: none; }
+.escalier__sous { font-size: 12px; fill: var(--b-72); pointer-events: none; }
+.escalier__poignee { fill: transparent; outline: none; }
+.escalier__poignee--taux { cursor: ns-resize; }
+.escalier__poignee--seuil, .escalier__poignee--encours { cursor: ew-resize; }
+.escalier__poignee:focus-visible { fill: var(--b-12); stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 2; }
+.escalier--geste-taux, .escalier--geste-taux * { cursor: ns-resize !important; }
+.escalier--geste-seuil, .escalier--geste-seuil *, .escalier--geste-encours, .escalier--geste-encours * { cursor: ew-resize !important; }
+.aplat--paye { background: var(--b-36); }
+.aplat--barre { background: var(--b-52); width: 12px; }
+.trait--tirets { border-top: 1.5px dashed var(--b-52); }
+.aplat--hachure { background: repeating-linear-gradient(135deg, var(--b-36) 0 1.5px, transparent 1.5px 4px); box-shadow: inset 0 0 0 1px var(--b-72); }
+.figure-tarif .etiquette-repere--fort { fill: var(--ink); font-weight: 560; }
+
+/* La chance de gagner, la valeur, la négociation. */
+.note-gain { max-width: 92ch; margin: -4px 0 16px; }
+.note-gain b { color: var(--ink); }
+table.table-valeur { max-width: 520px; margin-top: 14px; }
+table.table-valeur td, table.table-valeur th { padding-top: 6px; padding-bottom: 6px; }
+table.table-leviers td { vertical-align: middle; }
+table.table-leviers .ligne-meilleure td { background: var(--b-3); }
+table.table-leviers .ligne-meilleure td:first-child { box-shadow: inset 3px 0 0 var(--ink); padding-left: 10px; }
+.cout-levier { min-width: 260px; white-space: nowrap; padding-left: 28px !important; }
+table.table-leviers th.th-cout { padding-left: 28px; }
+.barre-cout { display: inline-block; vertical-align: middle; width: 160px; height: 10px; background: var(--b-6); margin-right: 10px; }
+.barre-cout i { display: block; height: 100%; background: var(--b-72); border-radius: 0 2px 2px 0; }
+.raccourcis { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+
+/* Le référentiel des expertises et la liste des offres. */
+table.table-expertises td, table.table-offres td { white-space: nowrap; }
+table.table-expertises .ligne-moi td { background: var(--b-3); border-bottom-color: var(--b-22); }
+table.table-expertises .ligne-moi td:first-child { font-weight: 620; }
+table.table-expertises .ligne-choisie td { box-shadow: inset 0 -1px 0 var(--ink); font-weight: 560; }
+table.table-offres th[role="button"], table.table-expertises th[role="button"] { cursor: pointer; }
+table.table-offres th[aria-sort] { color: var(--ink); }
+table.table-offres .col-issue { padding-left: 18px; }
+table.table-offres .col-dossier { padding-left: 28px; }
+.cellule-client { min-width: 140px; }
+.nom-client { font-weight: 560; }
+.crayon {
+  border: 0; background: none; color: var(--b-52); cursor: pointer; font-size: 13px; padding: 0 5px; margin-left: 4px;
+  opacity: 0; transition: opacity var(--duree) var(--sortie);
+}
+tr:hover .crayon, .crayon:focus-visible, .fiche__nom-offre .crayon { opacity: 1; }
+.crayon:hover { color: var(--ink); }
+.lien-dossier { font-size: 12.5px; color: var(--ink); border-bottom: 1px solid var(--b-22); }
+.ligne-signalee td:first-child { box-shadow: inset 2px 0 0 var(--b-36); padding-left: 8px; }
+
+.liste-anomalies { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; }
+.liste-anomalies li { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--b-12); flex-wrap: wrap; }
+.gravite { font-size: 10px; font-weight: 620; letter-spacing: .1em; text-transform: uppercase; padding: 1px 6px; border: 1px solid var(--b-36); color: var(--b-72); }
+.gravite--bloquante { background: var(--ink); color: var(--blanc); border-color: var(--ink); }
+.gravite--attention { border-color: var(--ink); color: var(--ink); }
+
+/* La fiche d'une offre. */
+.fiche--offre { width: min(640px, 100%); }
+.fiche__nom-offre { margin-top: 4px; }
+.fiche__nom-offre .nom-client { font-family: var(--police-serif); font-size: 26px; line-height: 1.2; font-weight: 400; color: var(--ink); }
+.fiche__nom-offre .cellule-sous { margin-top: 2px; }
+.fiche__section { font-size: 10.5px; font-weight: 620; letter-spacing: .15em; text-transform: uppercase; color: var(--ink); margin: 28px 0 10px; }
+.champs--fiche { margin-top: 12px; }
+.table-fiche td, .table-fiche th { white-space: nowrap; }
+.comparables { display: grid; gap: 2px; }
+.comparable {
+  font: inherit; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline;
+  text-align: left; background: none; border: 0; border-bottom: 1px solid var(--b-12); padding: 8px 2px; cursor: pointer; color: var(--ink); font-size: 13.5px;
+}
+.comparable:hover { background: var(--b-3); }
+.comparable .attenue { grid-column: 2 / -1; font-size: 12px; }
+.comparable__v { font-variant-numeric: tabular-nums; color: var(--b-72); }
+.candidat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--b-12); }
+.candidat .note { grid-column: 1; }
+.candidat .bouton { grid-column: 2; grid-row: 1 / span 2; }
+.candidat__tete { font-size: 14px; }
+#grilles-tarifaires { scroll-margin-top: 84px; }
+table.apercu-tarif td:not(:last-child), table.apercu-tarif th { white-space: nowrap; }

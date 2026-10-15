@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@layer base {
+  html {
+    color-scheme: light;
+    background: var(--color-canvas);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    /* Papier crème + trame de points : le carnet de l'apprenti sorcier */
+    background-color: var(--color-canvas);
+    background-image: radial-gradient(rgb(27 21 48 / 0.09) 1.2px, transparent 1.3px);
+    background-size: 22px 22px;
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.55;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--color-sun-400); color: var(--color-fg); }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+
+  /* Focus toujours visible : contour violet épais + décalage, impossible à rater. */
+  :focus-visible {
+    outline: 3px solid var(--color-magic-500);
+    outline-offset: 3px;
+    border-radius: 10px;
+  }
+  button, [role="button"], a, label[for], summary { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button:disabled { cursor: not-allowed; }
+
+  /* Lenis */
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  .lenis.lenis-stopped { overflow: hidden; }
+
+  * { scrollbar-width: thin; scrollbar-color: rgb(27 21 48 / 0.35) transparent; }
+
+  dialog::backdrop { background: rgb(27 21 48 / 0.45); backdrop-filter: blur(3px); }
+}
+
+@layer components {
+  /* Carte cartoon : fond blanc, contour d'encre, ombre pleine décalée. (Nom historique conservé.) */
+  .glass {
+    background: var(--color-card);
+    border: 2.5px solid var(--color-fg);
+    box-shadow: var(--shadow-pop);
+  }
+  .card-pop {
+    background: var(--color-card);
+    border: 2.5px solid var(--color-fg);
+    box-shadow: var(--shadow-pop);
+    transition: transform var(--duration-fast) var(--ease-spring), box-shadow var(--duration-fast) var(--ease-spring);
+  }
+  .card-pop:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-pop-lg); }
+  .card-pop:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 var(--color-fg); }
+
+  /* SplitText enveloppe les lettres dans des <div>/<span> : chacune doit porter le dégradé */
+  .text-gradient :is(div, span) {
+    background-image: inherit;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-fg);
+    background: var(--color-sun-400);
+    border: 2px solid var(--color-fg);
+    border-radius: 999px;
+    padding: 0.15rem 0.7rem;
+    box-shadow: 2px 2px 0 0 var(--color-fg);
+  }
+  .text-gradient {
+    background: linear-gradient(100deg, var(--color-magic-500), var(--color-bubble-400) 55%, #ff8a3d);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* Titre cartoon : lettres pleines, contour d'encre et ombre décalée */
+  .text-cartoon {
+    color: var(--color-sun-400);
+    -webkit-text-stroke: 0.06em var(--color-fg);
+    paint-order: stroke fill;
+    text-shadow: 0.06em 0.07em 0 var(--color-fg);
+  }
+  .text-cartoon :is(div, span) { -webkit-text-stroke: inherit; paint-order: stroke fill; }
+  .hairline { border-color: var(--color-line); }
+  /* Halo au survol (variables --mx/--my posées en JS) : une tache de couleur sous le curseur */
+  .halo { position: relative; isolation: isolate; }
+  .halo::before {
+    content: "";
+    position: absolute; inset: 0; border-radius: inherit; z-index: -1; pointer-events: none;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgb(255 210 63 / 0.35), transparent 55%);
+    opacity: var(--halo-o, 0);
+    transition: opacity var(--duration-base) var(--ease-out-premium);
+  }
+  .sr-only-focusable:not(:focus) {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+}
+
+/* Mode aurore (easter egg Konami) */
+html.aurora { --color-sun-400: #ff6b9a; --color-mint-400: #9b82ff; --color-magic-500: #2ec4b6; }
+html.aurora body { animation: hue 6s linear infinite; }
+@keyframes hue { to { filter: hue-rotate(360deg); } }
+
+/* Mouvement réduit : on garde le contenu, on retire le spectacle. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html.aurora body { animation: none; }
+}

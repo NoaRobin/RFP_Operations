@@ -1,0 +1,23 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+python-dotenv>=1.0
+python-multipart>=0.0.9
+sse-starlette>=2.1
+PyYAML>=6.0
+openpyxl>=3.1
+pandas>=2.2
+sqlglot>=25.0
+APScheduler>=3.10,<4
+tzdata>=2024.1
+# Accès Fabric réel (facultatif : sans lui, Merlin tourne en mode démo)
+# pyodbc>=5.1   + "ODBC Driver 18 for SQL Server" installé sur la machine
+httpx>=0.27            # téléchargements (documents des fonds, SharePoint)
+truststore>=0.9        # certificats de Windows (réseau d'entreprise avec inspection TLS)
+pywin32>=306 ; sys_platform == "win32"   # connexion de Windows (comme Edge) et Outlook (OMNI)
+python-docx>=1.1
+plotly>=5.19        # module Suivi d'activité (tryv2)
+numpy>=1.23
+mssql-python>=0.13 ; sys_platform == "win32"   # connecteur Fabric officiel Microsoft (aucun pilote ODBC requis)
+msal>=1.28             # SharePoint via Microsoft Graph (facultatif : sinon dossier synchronisé OneDrive)
+pypdf>=4.0              # lecture des DIC PRIIPs et prospectus (PDF)
