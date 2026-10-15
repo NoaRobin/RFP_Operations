@@ -1,7 +1,8 @@
 # ✦ RFP pas envie de travailler — #RFPasenviedetravailler
-6c3162eb-658b-4bcf-992c-1690d877f783
 
-Lien HTML : https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/index.html
+> **Prompt pour GitHub Copilot (Qvidian)** — à copier tel quel :
+>
+> Lis `CLAUDE.md` et `docs/QVIDIAN.md`. Consulte le guide officiel https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/index.html (pages Guidelines for using Qvidian Web Services, Authentication Tokens, Error Handling, librarySearch, TimesUsedCount, DateLastUsed, AuditEventType, et toute page sur les codes d'erreur ou le SSO). Compare avec `backend/merlin/qvidian/` (client SOAP, SSO `service.py`, `api/qvidian.py`) : corrige uniquement ce qui contredit le guide, complète `docs/QVIDIAN.md` (✅ confirmé / ❌ manquant), et vérifie que `https://qpalogin.qvidian.com/QvidianAuthentication.asmx?WSDL` correspond à `WSDL/QvidianAuthentication.wsdl` du zip `qpa_Oct26_consolidated.zip`. N'écris aucun identifiant, GUID d'abonné, e-mail ou mot de passe dans le dépôt (ils vont dans `.env`, jamais committé). Garde la lecture seule par défaut. Lance `cd backend && pytest`, puis `cd frontend && npm run build` si le front change, et ouvre une pull request avec un résumé en français.
 
 > *My RFP will go on… mais sans nous.*
 
