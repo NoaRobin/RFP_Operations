@@ -62,14 +62,23 @@ def sso_start(request: Request, s: AppState = Depends(state)) -> dict[str, str]:
 
 
 @router.get("/sso/callback", name="qvidian_sso_callback")
-def sso_callback(SSOToken: str = "", SSOLogin: str = "", s: AppState = Depends(state)):  # noqa: N803 - noms imposés par QPA
-    """Retour du portail QPA après l'authentification SSO (paramètres en Base64, voir « SSO For Web Service Applications »)."""
-    if not SSOToken or not SSOLogin:
-        return RedirectResponse("/qvidian?sso=absent")
+def sso_callback(request: Request, s: AppState = Depends(state)):
+    """Retour du portail QPA après l'authentification SSO (SSOToken, SSOLogin, SSOUserID en Base64 — guide
+    « SSO For Web Service Applications »). Noms de paramètres lus sans tenir compte des majuscules."""
+    from urllib.parse import quote
+
+    q = {k.lower(): v for k, v in request.query_params.items()}
+    token, login = q.get("ssotoken", ""), q.get("ssologin", "")
+    if not token or not login:
+        names = ", ".join(sorted(request.query_params.keys())) or "aucun"
+        message = f"Qvidian n'a pas renvoyé SSOToken / SSOLogin (paramètres reçus : {names})"
+        service(s).last_sso_error = message
+        service(s)._log_sso(message)
+        return RedirectResponse(f"/qvidian?sso=absent&raison={quote(message)}")
     try:
-        service(s).sso_callback(SSOToken, SSOLogin)
-    except (QvidianError, ValueError):
-        return RedirectResponse("/qvidian?sso=refuse")
+        service(s).sso_callback(token, login)
+    except QvidianError as error:
+        return RedirectResponse(f"/qvidian?sso=refuse&raison={quote(error.message)}")
     return RedirectResponse("/qvidian?sso=ok")
 
 

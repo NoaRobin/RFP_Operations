@@ -320,6 +320,7 @@ export const texts = {
     disconnect: 'Se déconnecter',
     ssoOk: 'Connexion SSO réussie.',
     ssoFail: 'La connexion SSO a été refusée.',
+    ssoLast: 'Dernier essai SSO :',
     mapTitle: 'Carte des erreurs',
     mapLead: 'Chaque case : nombre de contenus touchés dans ce dossier. Cliquez pour voir la liste.',
     depth: 'Niveau de dossier',

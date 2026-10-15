@@ -38,6 +38,7 @@ class QvidianService:
         self._lock = threading.Lock()
         self._snapshots: dict[str, Snapshot] = {}
         self._keepalive: threading.Thread | None = None
+        self.last_sso_error = ""
 
     def _start_keepalive(self) -> None:
         """La session Qvidian expire après 20 minutes sans appel (réglage par défaut du serveur) : tant que l'app tourne,
@@ -106,16 +107,27 @@ class QvidianService:
         return f"{portal}?SSOWebService={target}"
 
     def sso_callback(self, token_b64: str, login_b64: str) -> dict[str, Any]:
-        token = base64.b64decode(token_b64).decode("utf-8")
-        login = base64.b64decode(login_b64).decode("utf-8")
-        if not re.fullmatch(r"[0-9a-fA-F]{8}-?([0-9a-fA-F]{4}-?){3}[0-9a-fA-F]{12}", token.strip("{} ")):
-            # Guide : ConnectByAuthToken refuse un jeton qui n'est pas un GUID (AuthenticationTokenMismatch)
-            raise QvidianError("auth", "Jeton SSO reçu dans un format inattendu.", "Refaites la connexion SSO depuis la fenêtre Qvidian.")
+        """Paramètres renvoyés par le portail QPA (Base64). Tolérant : « + » devenu espace dans l'adresse, Base64 « URL »,
+        remplissage manquant, ou valeur déjà en clair. Chaque échec est noté (sans le jeton) dans data/qvidian/sso.log."""
+        token, login = _from_b64(token_b64), _from_b64(login_b64)
         client = QvidianClient(self.settings.auth_url)
-        binding = client.connect_token(login, token)
+        try:
+            binding = client.connect_token(login, token.strip("{} "))
+        except QvidianError as error:
+            self.last_sso_error = f"{error.message} (identifiant reçu : {login or 'vide'} ; jeton de {len(token)} caractères)"
+            self._log_sso(self.last_sso_error)
+            raise
         self.real = client
+        self.last_sso_error = ""
         self._start_keepalive()
         return {"user": binding.user}
+
+    def _log_sso(self, message: str) -> None:
+        try:
+            with (self.root / "sso.log").open("a", encoding="utf-8") as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {message}\n")
+        except OSError:
+            pass
 
     def disconnect(self) -> None:
         if self.real is not None:
@@ -176,7 +188,7 @@ class QvidianService:
         meta = self.snapshot(mode).meta() if mode != "off" else {}
         return {"mode": mode, "connected": mode == "demo" or (self.real is not None and self.real.connected),
                 "user": (self.real.binding.user if self.real and self.real.binding else ("démo" if mode == "demo" else "")),
-                "auth_url": self.settings.auth_url, "sso": True, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
+                "auth_url": self.settings.auth_url, "sso": True, "last_sso_error": self.last_sso_error, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
                 "write_enabled": self.guard.configured, "locked": self.guard.locked, "snapshot": meta, "sync": self.sync_state,
                 "half_life_days": self.settings.half_life_days, "extended_fields": getattr(self.real, "extended_fields", True)}
 
@@ -253,6 +265,18 @@ class QvidianService:
                 except Exception as error:  # noqa: BLE001 - un document illisible n'arrête pas les autres
                     results.append({"project": p["name"], "file": d.get("name"), "error": getattr(error, "message", type(error).__name__)})
         return {"projects": len(projects), "total": total, "documents": results, "imported": sum(r.get("imported", 0) for r in results)}
+
+
+def _from_b64(value: str) -> str:
+    raw = (value or "").strip().replace(" ", "+")
+    for decode in (base64.b64decode, base64.urlsafe_b64decode):
+        try:
+            text = decode(raw + "=" * (-len(raw) % 4)).decode("utf-8")
+            if text and text.isprintable():
+                return text
+        except (ValueError, UnicodeDecodeError):
+            continue
+    return value or ""  # pas du Base64 : valeur en clair
 
 
 _SERVICE: dict[str, QvidianService] = {}

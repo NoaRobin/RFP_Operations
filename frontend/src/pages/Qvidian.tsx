@@ -71,6 +71,7 @@ function StatusBar({ status, onChange }: { status: QvidianStatus; onChange: (s: 
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border-[2.5px] border-fg bg-sun-400/30 p-3">
           <Button variant="primary" onClick={sso} disabled={!status.sso} icon={<LogIn size={17} />}>{Q.sso}</Button>
           <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso_suffix ? Q.ssoHint : Q.ssoNoSuffix}</p>
+          {status.last_sso_error && <p role="alert" className="w-full text-sm font-bold text-danger">{Q.ssoLast} {status.last_sso_error}</p>}
         </div>
       )}
       {status.mode !== 'off' && !(status.mode === 'qvidian' && status.connected) && (
@@ -182,7 +183,8 @@ export default function Qvidian() {
   useEffect(() => {
     const sso = params.get('sso')
     if (!sso) return
-    toast(sso === 'ok' ? 'success' : 'error', sso === 'ok' ? Q.ssoOk : Q.ssoFail)
+    toast(sso === 'ok' ? 'success' : 'error', sso === 'ok' ? Q.ssoOk : Q.ssoFail, sso === 'ok' ? undefined : params.get('raison') ?? undefined)
+    params.delete('raison')
     params.delete('sso'); setParams(params, { replace: true })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   // Pendant une synchronisation : on suit l'avancement, puis on recharge la carte

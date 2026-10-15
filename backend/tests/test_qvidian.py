@@ -301,3 +301,36 @@ def test_expired_session_asks_to_reconnect_and_object_errors_are_raised():
     with pytest.raises(QvidianError) as err:
         c.top_folder()
     assert err.value.code == "session" and c.binding is None and not c.connected
+
+
+def test_sso_callback_tolerates_plus_turned_into_space(tmp_path):
+    import base64
+
+    from merlin.config import QvidianSettings
+    from merlin.qvidian.service import QvidianService, _from_b64
+
+    token = "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+    b64 = base64.b64encode(("é" + token).encode()).decode()
+    assert "+" in base64.b64encode(b"\xfb\xef").decode()
+    assert _from_b64(b64.replace("+", " ")) == "é" + token
+    assert _from_b64(base64.b64encode(b"demo.user@example.invalid").decode().rstrip("=")) == "demo.user@example.invalid"
+    assert _from_b64("deja-en-clair") == "deja-en-clair"
+    svc = QvidianService(QvidianSettings(auth_url="https://login.example.invalid/QvidianAuthentication.asmx"), tmp_path)
+
+    class Refuse:
+        def __init__(self, *_):
+            pass
+
+        def connect_token(self, user, tok):
+            raise QvidianError("auth", "Connexion Qvidian refusée")
+
+    import merlin.qvidian.service as service_module
+    original = service_module.QvidianClient
+    service_module.QvidianClient = Refuse
+    try:
+        with pytest.raises(QvidianError):
+            svc.sso_callback(base64.b64encode(token.encode()).decode(), base64.b64encode(b"demo.user").decode())
+    finally:
+        service_module.QvidianClient = original
+    assert "demo.user" in svc.last_sso_error and token not in svc.last_sso_error
+    assert token not in (tmp_path / "qvidian" / "sso.log").read_text()
