@@ -68,8 +68,14 @@ function StatusBar({ status, onChange }: { status: QvidianStatus; onChange: (s: 
         <p className="text-sm font-semibold text-fg-2">{Q.syncDone(status.sync.result.contents)}{status.sync.result.problems.length ? ` · ${status.sync.result.problems.join(' · ')}` : ''}</p>
       )}
       {status.mode !== 'off' && !(status.mode === 'qvidian' && status.connected) && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border-[2.5px] border-fg bg-sun-400/30 p-3">
+          <Button variant="primary" onClick={sso} disabled={!status.sso} icon={<LogIn size={17} />}>{Q.sso}</Button>
+          <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso ? Q.ssoHint : Q.ssoMissing}</p>
+        </div>
+      )}
+      {status.mode !== 'off' && !(status.mode === 'qvidian' && status.connected) && (
         <details className="rounded-2xl border-2 border-fg/20 bg-card p-3">
-          <summary className="cursor-pointer font-display font-semibold">{Q.connectTitle}</summary>
+          <summary className="cursor-pointer font-display font-semibold">{Q.connectOther}</summary>
           <p className="mt-1 text-xs font-semibold text-fg-3">{Q.connectHint}</p>
           <form className="mt-3 grid gap-3 sm:grid-cols-4" onSubmit={(e) => { e.preventDefault(); void connect() }}>
             <Field label={Q.user}>{({ id }) => <TextInput id={id} autoComplete="username" value={user} onChange={(e) => setUser(e.target.value)} />}</Field>
@@ -79,7 +85,6 @@ function StatusBar({ status, onChange }: { status: QvidianStatus; onChange: (s: 
               <Button type="submit" variant="primary" disabled={!user || (!password && !apiKey) || busy} loading={busy} icon={<LogIn size={16} />}>{Q.connect}</Button>
             </div>
           </form>
-          {status.sso && <Button className="mt-3" size="sm" onClick={sso} icon={<LogIn size={15} />}>{Q.sso}</Button>}
         </details>
       )}
     </section>
