@@ -152,16 +152,19 @@ def sync(client, snapshot: Snapshot, source: str, progress: Callable[[str, int, 
         say(f"Dossier « {here or folder['title']} »", len(contents), 0)
         if folder.get("contents", 1):
             try:
-                items = client.folder_contents(folder["id"])
-                # Au-delà de 500 éléments la liste du dossier est tronquée (guide) : on repasse par la recherche paginée
-                if (len(items) >= FOLDER_LIST_MAX or folder.get("contents", 0) > len(items)) and hasattr(client, "folder_contents_paged"):
+                # Guide (libraryFolderContentGetList) : 500 éléments au plus et champs réduits (ni texte, ni compteurs
+                # d'utilisation) ; la voie recommandée est librarySearch filtré sur la colonne LibraryFolderID.
+                items = []
+                if hasattr(client, "folder_contents_paged"):
                     try:
-                        paged = client.folder_contents_paged(folder["id"])
-                        if len(paged) > len(items):
-                            items = paged
-                    except Exception as error:  # noqa: BLE001 - on garde la liste partielle, avec l'alerte
-                        problems.append(f"{here or folder['title']} : liste limitée à {len(items)} contenus "
+                        items = client.folder_contents_paged(folder["id"])
+                    except Exception as error:  # noqa: BLE001 - repli sur la liste du dossier, avec l'alerte
+                        problems.append(f"{here or folder['title']} : recherche par dossier refusée, liste simple utilisée "
                                         f"({getattr(error, 'message', type(error).__name__)})")
+                if not items:
+                    items = client.folder_contents(folder["id"])
+                    if len(items) >= FOLDER_LIST_MAX:
+                        problems.append(f"{here or folder['title']} : liste limitée à {FOLDER_LIST_MAX} contenus")
             except Exception as error:  # noqa: BLE001 - un dossier refusé n'arrête pas la synchronisation
                 problems.append(f"{here or folder['title']} : {getattr(error, 'message', type(error).__name__)}")
                 items = []

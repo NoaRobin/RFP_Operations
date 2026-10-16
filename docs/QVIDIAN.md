@@ -61,8 +61,8 @@ Légende :
 |---|---|---|
 | `libraryFolderGetTop()` | ✅ | → `LibraryFolder` racine : id, titre, `ChildFolderCount`, `ContentCount`, droits. |
 | `libraryFoldersGetList(parentFolderID)` | ✅ | → sous-dossiers. |
-| `libraryFolderContentGetList(folderID)` | ✅ limité | Le guide indique un maximum de 500 éléments et un ensemble de champs réduit. L'app l'utilise d'abord ; si le dossier atteint 500 éléments ou en annonce plus (`ContentCount`), elle repasse par `librarySearch` paginé filtré sur le dossier. |
-| `librarySearchRequestInit()` puis `librarySearch(LibrarySearchRequest)` | ✅ | Recommandé par le guide pour les dossiers : filtre `LibraryFolderID`, champs choisis et pagination. L'app s'en sert pour les gros dossiers (filtre `Property` / `LibraryFolderID` / `EqualTo` : forme exacte sans exemple dans le paquet, 🟡 à confirmer au premier essai réel). |
+| `libraryFolderContentGetList(folderID)` | ✅ limité | Le guide indique un maximum de 500 éléments et un ensemble de champs réduit. Champs renvoyés : ContentID, Revision, GUID, ContentType(Name), Title, IsBundle, ContentFileExt, LCID(Language), Enabled, CheckedOut(ByUserName), Expired, DateToExpire, AlertEnabled — **ni texte ni compteurs d'utilisation**. L'app ne s'en sert qu'en repli. |
+| `librarySearchRequestInit()` puis `librarySearch(LibrarySearchRequest)` | ✅ | Recommandé par le guide pour les dossiers : filtre `LibraryFolderID`, champs choisis et pagination. Voie recommandée par le guide (« specifying the folder ID as a filter on the LibraryFolderID column ») : c'est ainsi que l'app synchronise chaque dossier, page par page, avec texte, utilisations et dates. `searchFields` doit contenir au moins un champ. |
 | `libraryContentDetailsGet(contentID)` | ✅ | → un `Content` complet. |
 | `libraryContentGet(contentID)` / `libraryContentGetWithMergeCodes` | ✅ | → fichier (`fileName`, `fileContent` en Base64). |
 | `libraryContentPreviewHTMLGet(contentID, revision)` | ✅ | → `htmlContent`. Dépend sans doute du droit `AllowPreviewHTML` (🟡). |
@@ -267,3 +267,18 @@ QVIDIAN_KEEPALIVE_MINUTES=10      # maintien de la session (20 min d'inactivité
 - un choix ne recalcule que la case concernée, sans relire Fabric : test `test_choose_recomputes_only_the_chosen_cell` ;
 - le choix s'affiche immédiatement, et l'atelier n'est plus grisé ;
 - le bouton « Analyser » repart de zéro.
+
+## 11. Relecture complète du guide en ligne (1 167 pages, 16/10/2026)
+- **Utilisations** : `TimesUsedCount` = « nombre de fois où le contenu a été utilisé » ; `DateLastUsed` = « dernière utilisation (par des projets, d'autres contenus, etc.) ». Cela confirme le principe de l'agrégation (fréquence × récence). L'utilisation ne se limite pas aux projets RFP.
+- **`ContentText`** : « extrait texte du fichier associé au contenu », généré par le système à la création.
+- **`libraryContentPreviewHTMLGet`** : `revision = -1` donne la dernière révision. Pas d'exception : au-delà de 60 s de conversion, il ne renvoie rien. L'erreur `LibraryContentPreviewUnsupportedFileType` est possible.
+- **`libraryContentDetailsUpdate`** : la modification s'applique à tous les identifiants, même si certains échouent. Liste vide = tout a réussi ; aucun retour = pas de droit produit. Il faut au moins le droit d'édition sur chaque contenu.
+- **`libraryContentDetailsGet`** : renvoie la dernière révision seulement. Erreurs possibles : `AuthenticationNoProducts`, `LibraryContentDoesNotExist`.
+- **`projectList` / `projectSearch`** : le mode `AllProjects` exige `ManageAllProjects` (ou ses variantes par rôle ou partenaire). Sinon la liste est vide : l'app repasse alors sur `MyProjects`. Avec `pageSize = -1`, tout est renvoyé.
+- **Documents de projet** (`projectDocumentsGetList` / `projectDocumentGet`) : il faut être propriétaire ou participant du projet, ou avoir les droits « Manage All ».
+- **`eventAuditSearch`** : il faut `ViewEventAuditing` ou `ManageEventAuditing`.
+  - `pageSize` de 1 à 1000, 50 par défaut ; tri par défaut : `AuditID` décroissant.
+  - Colonnes filtrables : `ObjectTypeName`, `EventTitle`, `UserLoginName`, `UserFullName`, `EventSummary`, `EventDetail`, `EventDateUTC`, `AuditID`, `EventID`, `UserID`, `EventObjectID`, `ObjectType`, `AuditVersionID`.
+  - La signification des `EventID` reste ❌ non publiée.
+- **Ce qui n'existe pas dans le guide** : la table des codes `ErrorCodes` (seuls des noms sont cités), et aucune page SSO au-delà de la propriété `ssoLink`.
+- Les services décrits sont « limités » et « ciblés sur des besoins d'intégration de quelques clients clés » (Introduction).

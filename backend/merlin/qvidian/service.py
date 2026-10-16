@@ -242,6 +242,8 @@ class QvidianService:
 
         client = self.client()
         total, projects = client.projects("AllProjects", 1, limit)
+        if not projects:  # guide : AllProjects exige ManageAllProjects ; sinon, les projets de l'utilisateur
+            total, projects = client.projects("MyProjects", 1, limit)
         results = []
         for p in projects:
             try:

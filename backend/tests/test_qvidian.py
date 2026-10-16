@@ -340,16 +340,16 @@ def test_big_folder_falls_back_to_paged_search(tmp_path):
     class Big(DemoQvidian):
         def folder_contents(self, folder_id):
             items = super().folder_contents(folder_id)
-            return items[:1] if folder_id == 11 else items  # liste du dossier tronquée
+            return items[:1] if folder_id == 11 else items  # liste du dossier tronquée (et sans texte, en réel)
 
         def folder_contents_paged(self, folder_id, size=200, limit=20000):
-            self.paged = folder_id
+            self.paged = getattr(self, "paged", set()) | {folder_id}
             return super().folder_contents(folder_id)
 
     client = Big()
     snap = Snapshot(tmp_path / "s.sqlite")
     sync(client, snap, "demo")
-    assert client.paged == 11 and {1001, 1002, 1003} <= {c["id"] for c in snap.all()}
+    assert 11 in client.paged and {1001, 1002, 1003} <= {c["id"] for c in snap.all()}  # recherche par dossier, toujours
 
 
 def test_folder_filter_is_sent_in_wsdl_order():
