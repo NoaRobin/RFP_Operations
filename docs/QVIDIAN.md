@@ -28,6 +28,12 @@ Légende :
 
 ## 1. Authentification
 
+**Abonnement européen (testé le 16/10/2026).** L'instance de l'équipe est en Europe (`qpa-1.qvidian.eu`, version 20.2). Le service de connexion à utiliser est `https://qpalogin.qvidian.eu/QvidianAuthentication.asmx`, désormais la valeur par défaut de l'app.
+- Son WSDL répond (HTTP 200) avec les 4 mêmes opérations que le zip.
+- Le portail `https://qpalogin.qvidian.eu/` renvoie vers `Login.aspx` en conservant `SSOWebService`. La page affiche « User Name » et « Password (not required for SSO) » : c'est un abonnement mixte, où l'adresse e-mail suffit pour partir vers le SSO, **sans SubscriberSuffix**.
+- `qpalogin.qvidian.com` (adresse des exemples) répond aussi, mais c'est le portail générique, hors Europe. Les adresses `qpa-1.qvidian.eu/…/Login/QvidianAuthentication.asmx` ne répondent pas.
+
+
 | Point | Statut | Détail |
 |---|---|---|
 | Service d'authentification | ✅ | `QvidianAuthentication.asmx`. Le guide et l'appel HTTPS testé utilisent `https://qpalogin.qvidian.com/QvidianAuthentication.asmx`; le WSDL en ligne annonce une URL SOAP en HTTP et le zip conserve `localhost` comme adresse de développement. |

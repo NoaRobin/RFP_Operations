@@ -23,7 +23,7 @@ from . import soap
 from .soap import Items, RawXml, SoapFault, as_list
 from .transport import NetError, SoapTransport
 
-DEFAULT_AUTH_URL = "https://qpalogin.qvidian.com/QvidianAuthentication.asmx"  # adresse de l'exemple WSManual (à confirmer)
+DEFAULT_AUTH_URL = "https://qpalogin.qvidian.eu/QvidianAuthentication.asmx"  # adresse de l'exemple WSManual (à confirmer)
 # Champs de recherche utilisés dans les exemples (confirmés) ; les autres colonnes sont tentées puis abandonnées si refusées
 SEARCH_FIELDS = ["ContentID", "Revision", "ContentTypeName", "Title", "ContentFileExt", "LCIDLanguage", "Enabled", "ContentText"]
 SEARCH_FIELDS_EXTRA = ["DateLastModified", "DateLastUsed", "TimesUsedCount", "Expired", "DateToExpire", "LibraryFolderPath", "LibraryFolderID"]

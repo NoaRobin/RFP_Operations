@@ -98,7 +98,7 @@ class FundDocumentSettings:
 class QvidianSettings:
     """Qvidian (QPA) : services web SOAP. Identifiants et mot de passe d'écriture : uniquement dans .env, jamais dans le code."""
     mode: str = "auto"  # auto : Qvidian si connecté, sinon bibliothèque de démonstration | demo | off
-    auth_url: str = "https://qpalogin.qvidian.com/QvidianAuthentication.asmx"
+    auth_url: str = "https://qpalogin.qvidian.eu/QvidianAuthentication.asmx"
     user: str = ""
     password: str = ""
     api_key: str = ""
