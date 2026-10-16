@@ -282,3 +282,22 @@ QVIDIAN_KEEPALIVE_MINUTES=10      # maintien de la session (20 min d'inactivité
   - La signification des `EventID` reste ❌ non publiée.
 - **Ce qui n'existe pas dans le guide** : la table des codes `ErrorCodes` (seuls des noms sont cités), et aucune page SSO au-delà de la propriété `ssoLink`.
 - Les services décrits sont « limités » et « ciblés sur des besoins d'intégration de quelques clients clés » (Introduction).
+
+## 12. Essais réels sur le serveur européen (16/10/2026, sans identifiant réel)
+Le vrai client de l'app (`QvidianClient`) a été appelé sur `https://qpalogin.qvidian.eu/QvidianAuthentication.asmx` avec des identifiants factices.
+- `Connect` : la requête SOAP est acceptée et lue. Réponse : erreur 2003 « Authentication failed », source `Connect`. L'app la traduit bien en « connexion refusée ».
+- `ConnectByAPIKey` : même comportement, « Authentication failed ».
+- `ConnectByAuthToken` (la voie du SSO) :
+  - un jeton qui n'est pas un GUID → « Invalid authentication token » ;
+  - un nom ou un jeton vide → « UserName and/or Authentication Token are empty » ;
+  - un GUID inconnu → « User Name cannot be empty ».
+  
+  Les paramètres sont donc bien lus par le serveur.
+- Le WSDL en ligne a exactement les mêmes types et paramètres que celui du zip.
+- Le portail `https://qpalogin.qvidian.eu/?SSOWebService=…` renvoie vers `Login.aspx` et garde l'adresse de retour. Sa page de connexion accepte un nom d'utilisateur sans mot de passe pour le SSO.
+
+**Non testé (impossible sans compte)** :
+- la connexion Microsoft ;
+- le retour vers l'app avec le jeton SSO ;
+- tous les appels de lecture qui suivent la connexion : dossiers, recherche filtrée par dossier, contenus ;
+- les droits réels du compte.

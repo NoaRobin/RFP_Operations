@@ -185,7 +185,7 @@ class QvidianClient:
             return QvidianError("permission", fault.message, HINTS["permission"])
         # Codes du guide : AuthenticationCredentialsMismatch, AuthenticationValueMismatch, AuthenticationTokenMismatch,
         # AuthenticationTokensEmpty, AuthenticationPasswordEmpty, AuthenticationFailure…
-        if any(w in text for w in ("password", "invalid user", "login", "token", "authentic", "locked", "credential", "mismatch")):
+        if any(w in text for w in ("password", "invalid user", "login", "token", "authentic", "locked", "credential", "mismatch", "user name", "username")):
             return QvidianError("auth", fault.message, HINTS["auth"])
         return QvidianError("qvidian", fault.message + (f" (n° {fault.number})" if fault.number else ""), HINTS["qvidian"])
 
