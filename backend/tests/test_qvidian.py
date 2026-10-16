@@ -334,3 +334,30 @@ def test_sso_callback_tolerates_plus_turned_into_space(tmp_path):
         service_module.QvidianClient = original
     assert "demo.user" in svc.last_sso_error and token not in svc.last_sso_error
     assert token not in (tmp_path / "qvidian" / "sso.log").read_text()
+
+
+def test_big_folder_falls_back_to_paged_search(tmp_path):
+    class Big(DemoQvidian):
+        def folder_contents(self, folder_id):
+            items = super().folder_contents(folder_id)
+            return items[:1] if folder_id == 11 else items  # liste du dossier tronquée
+
+        def folder_contents_paged(self, folder_id, size=200, limit=20000):
+            self.paged = folder_id
+            return super().folder_contents(folder_id)
+
+    client = Big()
+    snap = Snapshot(tmp_path / "s.sqlite")
+    sync(client, snap, "demo")
+    assert client.paged == 11 and {1001, 1002, 1003} <= {c["id"] for c in snap.all()}
+
+
+def test_folder_filter_is_sent_in_wsdl_order():
+    t = FakeTransport()
+    c = QvidianClient("https://login.example.invalid/QvidianAuthentication.asmx", transport=t)
+    c.connect("demo.user", "secret")
+    c.search(size=10, filters=[soap.folder_filter(51)])
+    sent = next(x for _, op, x in t.sent if op == "librarySearch")
+    assert "<filtersAND><FilterCriteria><classType>Standard</classType><propType>Property</propType>" in sent
+    assert "<fieldName>LibraryFolderID</fieldName>" in sent and "<values><string>51</string></values>" in sent
+    assert sent.index("<pageIndex>") < sent.index("<filtersAND>") < sent.index("<searchFields>")

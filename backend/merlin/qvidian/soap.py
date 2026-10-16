@@ -194,6 +194,31 @@ def set_value(parent: ET.Element, name: str, value: Any, order: list[str]) -> No
         node.text = _raw(value)
 
 
+def set_records(parent: ET.Element, name: str, tag: str, records: list[dict[str, Any]], order: list[str]) -> None:
+    """Tableau d'objets (ex. filtersAND → <FilterCriteria>…</FilterCriteria>), champs dans l'ordre du dictionnaire."""
+    node = set_child(parent, name, order)
+    for k in list(node):
+        node.remove(k)
+    node.attrib.pop(f"{{{XSI}}}nil", None)
+    node.text = None
+    for rec in records:
+        item = ET.SubElement(node, tag)
+        for key, value in rec.items():
+            field = ET.SubElement(item, key)
+            if isinstance(value, Items):
+                for v in value.values:
+                    ET.SubElement(field, value.tag).text = _raw(v)
+            else:
+                field.text = _raw(value)
+
+
+def folder_filter(folder_id: int) -> dict[str, Any]:
+    """Filtre « contenus du dossier N » (FilterCriteria, champs dans l'ordre du WSDL). Le guide recommande librarySearch
+    filtré par LibraryFolderID pour les gros dossiers ; la forme exacte du filtre n'a pas d'exemple dans le paquet (à confirmer)."""
+    return {"classType": "Standard", "propType": "Property", "propID": "Property", "fieldName": "LibraryFolderID",
+            "dataType": "IntegerType", "op": "EqualTo", "values": Items("string", [str(folder_id)]), "enabled": True}
+
+
 def _raw(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"

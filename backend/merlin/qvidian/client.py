@@ -275,18 +275,32 @@ class QvidianClient:
         return res.get("htmlContent") or ""
 
     def search(self, terms: str = "", page: int = 0, size: int = 50, behavior: str = "AnyOfTheseWords",
-               found_in: tuple[str, ...] = ("Title", "Content")) -> tuple[int, list[dict[str, Any]]]:
+               found_in: tuple[str, ...] = ("Title", "Content"), filters: list[dict[str, Any]] | None = None) -> tuple[int, list[dict[str, Any]]]:
         """librarySearchRequestInit puis librarySearch (comme les exemples) ; renvoie (total, contenus)."""
         for extended in ([True, False] if self.extended_fields else [False]):
             try:
-                return self._search(terms, page, size, behavior, found_in, extended)
+                return self._search(terms, page, size, behavior, found_in, extended, filters)
             except QvidianError as error:
                 if not extended or error.code != "qvidian":
                     raise
                 self.extended_fields = False  # colonnes supplémentaires refusées : on s'en tient à celles des exemples
         return 0, []
 
-    def _search(self, terms: str, page: int, size: int, behavior: str, found_in: tuple[str, ...], extended: bool) -> tuple[int, list]:
+    def folder_contents_paged(self, folder_id: int, size: int = 200, limit: int = 20000) -> list[dict[str, Any]]:
+        """Tous les contenus d'un dossier, page par page (librarySearch filtré par dossier) : au-delà de 500 éléments,
+        libraryFolderContentGetList est tronquée (guide « Guidelines for using Qvidian Web Services »)."""
+        out: list[dict[str, Any]] = []
+        page = 0
+        while len(out) < limit:
+            total, items = self.search(page=page, size=size, filters=[soap.folder_filter(folder_id)])
+            out.extend(items)
+            if not items or len(out) >= total:
+                break
+            page += 1
+        return out
+
+    def _search(self, terms: str, page: int, size: int, behavior: str, found_in: tuple[str, ...], extended: bool,
+                filters: list[dict[str, Any]] | None = None) -> tuple[int, list]:
         if self.binding is None:
             raise QvidianError("config", "Pas de connexion Qvidian", HINTS["config"])
         body = soap.envelope("librarySearchRequestInit", {}, {"AuthenticationToken": self.binding.token})
@@ -308,6 +322,8 @@ class QvidianClient:
         soap.set_value(crit, "searchFields", Items("string", SEARCH_FIELDS + (SEARCH_FIELDS_EXTRA if extended else [])), o["SearchCriteria"])
         soap.set_value(crit, "sortField", "ContentID", o["SearchCriteria"])
         soap.set_value(crit, "sortDesc", False, o["SearchCriteria"])
+        if filters:
+            soap.set_records(crit, "filtersAND", "FilterCriteria", filters, o["SearchCriteria"])
         if terms.strip():
             tc = soap.set_child(req, "searchTermsCriteria", o["LibrarySearchRequest"])
             soap.set_value(tc, "terms", terms.strip(), o["searchTermsCriteria"])

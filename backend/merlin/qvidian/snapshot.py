@@ -17,6 +17,7 @@ from typing import Any, Callable
 
 from .client import html_to_text
 
+FOLDER_LIST_MAX = 500  # libraryFolderContentGetList : 500 éléments au plus (guide)
 COLUMNS = ["id", "revision", "guid", "folder_id", "folder", "folder_path", "title", "text", "raw_text", "type", "language", "lcid",
            "enabled", "expired", "created", "modified", "last_used", "expires", "times_used", "owners", "modified_by", "alert_text",
            "alert_active", "inline_edit", "checked_out", "checked_out_by", "question", "learned_terms", "assigned_terms", "file_ext",
@@ -152,6 +153,15 @@ def sync(client, snapshot: Snapshot, source: str, progress: Callable[[str, int, 
         if folder.get("contents", 1):
             try:
                 items = client.folder_contents(folder["id"])
+                # Au-delà de 500 éléments la liste du dossier est tronquée (guide) : on repasse par la recherche paginée
+                if (len(items) >= FOLDER_LIST_MAX or folder.get("contents", 0) > len(items)) and hasattr(client, "folder_contents_paged"):
+                    try:
+                        paged = client.folder_contents_paged(folder["id"])
+                        if len(paged) > len(items):
+                            items = paged
+                    except Exception as error:  # noqa: BLE001 - on garde la liste partielle, avec l'alerte
+                        problems.append(f"{here or folder['title']} : liste limitée à {len(items)} contenus "
+                                        f"({getattr(error, 'message', type(error).__name__)})")
             except Exception as error:  # noqa: BLE001 - un dossier refusé n'arrête pas la synchronisation
                 problems.append(f"{here or folder['title']} : {getattr(error, 'message', type(error).__name__)}")
                 items = []

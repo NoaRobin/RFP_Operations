@@ -2,6 +2,10 @@
 
 Source de l'analyse : le paquet `qpa_Oct26_consolidated.zip` (racine du dépôt).
 
+Guide officiel consulté : [Guidelines for using Qvidian Web Services](https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/html/GuidlinesForUsing.htm), [Authentication Tokens](https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/html/AuthenticationTokens.htm), [Error Handling](https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/html/ErrorHandling.htm), [Authentication Web Service](https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/html/e79e26c4-32ed-4439-8412-249c0dec8c1b.htm) et [Qvidian Web Service](https://help.uplandsoftware.com/qvidian/prod/ws/devqvidian/html/15ee468b-a8d1-4835-b440-28f04ad82fc5.htm).
+
+Contrôle du WSDL d'authentification : `https://qpalogin.qvidian.com/QvidianAuthentication.asmx?WSDL` répond HTTP 200. Le service en ligne et `WSDL/QvidianAuthentication.wsdl` exposent les mêmes quatre opérations (`Connect`, `ConnectByAPIKey`, `ConnectByAuthToken`, `ConnectionTerminate`). Le WSDL du zip annonce une adresse `localhost`, celui en ligne `qpalogin.qvidian.com`; les documents ne sont donc pas identiques octet pour octet et la correspondance constatée porte sur les opérations, pas sur une identité complète de schéma.
+
 **Ce qui a été lu :**
 - les deux WSDL :
   - `WSDL/Qvidian.wsdl` : 101 opérations ;
@@ -26,23 +30,23 @@ Légende :
 
 | Point | Statut | Détail |
 |---|---|---|
-| Service d'authentification | ✅ | `QvidianAuthentication.asmx`. L'exemple WSManual utilise `https://qpalogin.qvidian.com/QvidianAuthentication.asmx`, valeur par défaut de `QVIDIAN_AUTH_URL`. Les WSDL indiquent `http://localhost/...` (adresse de développement). |
+| Service d'authentification | ✅ | `QvidianAuthentication.asmx`. Le guide et l'appel HTTPS testé utilisent `https://qpalogin.qvidian.com/QvidianAuthentication.asmx`; le WSDL en ligne annonce une URL SOAP en HTTP et le zip conserve `localhost` comme adresse de développement. |
 | `Connect(userName, password)` | ✅ | Renvoie `ConnectionBinding` : `AuthToken`, `AuthUserName`, `QvidianURL` (adresse du service principal), `LibraryURL`, `ProjectsURL`, etc. |
 | `ConnectByAPIKey(userName, apiKey)` | ✅ | Même retour. Utilisée par le banc de test si une clé d'API est fournie. |
 | `ConnectByAuthToken(userName, authToken)` | ✅ | Jeton SSO, ou « Reconnect » avec le jeton courant (exemple du banc de test). |
 | `ConnectionTerminate(authenticationToken)` | ✅ | Fermeture de session. |
 | En-tête SOAP | ✅ | `QvidianCredentialHeader/AuthenticationToken` sur chaque appel à `Qvidian.asmx`. Le service d'authentification accepte aussi `IgnoreLockedOut`. |
-| SSO | ✅ | 1. Redirection vers le portail QPA avec `?SubscriberSuffix=<abonnement>&SSOWebService=<adresse de retour en Base64>`. 2. QPA authentifie l'utilisateur (Ping Federate / fournisseur d'identité). 3. Retour sur l'adresse de l'app avec `SSOToken`, `SSOLogin`, `SSOUserID` en Base64. 4. Appel de `ConnectByAuthToken`. |
+| SSO | ✅ exemple du paquet | Redirection vers le portail QPA avec `SSOWebService` (URL de retour en Base64) et, si connu, `SubscriberSuffix`. L'exemple de retour contient `SSOToken` et `SSOLogin`; `SSOUserID` est facultatif et l'app ne l'utilise pas. L'app passe le jeton et le login à `ConnectByAuthToken`. |
 | Limite du SSO | ✅ | En cas d'échec chez le fournisseur d'identité, QPA affiche une page d'erreur et ne rappelle jamais l'app (guide SSO, § *Limitations*). |
 | Durée de vie du jeton | ✅ guide | « Authentication Tokens » : le jeton vaut le temps de la connexion, jusqu'à `ConnectionTerminate` ou l'expiration de la session — réglage serveur `ConnectionTimeout`, **1200 s (20 min) par défaut**. L'app garde la session ouverte par un petit appel de lecture toutes les 10 min (`QVIDIAN_KEEPALIVE_MINUTES`) ; si la session a quand même expiré, elle tente une reconnexion avec le jeton, sinon demande de refaire le SSO. |
 | Mode de connexion de l'abonnement | ❌ | Explicite, SSO seul ou mixte (guide SSO) : à demander à l'administrateur Qvidian. |
-| Valeur de `SubscriberSuffix` | ✅ facultatif | L'exemple `SSOQvidianWebServices/Default.aspx.cs` redirige sans lui quand il est vide (`?SSOWebService=…` seul) : l'app fait de même. S'il est connu, il évite la page de choix. Ancienne note : | Identifiant de l'abonnement dans la base du portail QPA : à demander à l'administrateur Qvidian. |
+| Valeur de `SubscriberSuffix` | ✅ facultatif dans l'exemple | L'exemple `SSOQvidianWebServices/Default.aspx.cs` redirige sans lui quand il est vide (`?SSOWebService=…` seul) : l'app fait de même. Sa valeur réelle reste à demander à l'administrateur Qvidian. |
 
 ### Précisions du guide en ligne (pages des méthodes de connexion) ✅
 - `Connect` : le mot de passe ne peut pas être vide. **Un compte qui se connecte uniquement par SSO n'a pas de mot de passe Qvidian** : il passe par le bouton SSO (ou une clé d'API).
-- `ConnectByAPIKey` : la clé est un GUID (exemple du guide : `88B62808-1F6D-4FDA-8441-6250618B4FE8`), propre à l'utilisateur.
-- `ConnectByAuthToken` : le jeton doit être un GUID. Sinon Qvidian renvoie `AuthenticationTokenMismatch`, et l'app le vérifie avant l'appel.
-- Codes d'erreur de connexion : `AuthenticationUserEmpty`, `AuthenticationPasswordEmpty`, `AuthenticationCredentialsMismatch` (identifiants faux ou compte verrouillé), `AuthenticationTokensEmpty`, `AuthenticationTokenMismatch`, `AuthenticationValueMismatch`, `AuthenticationFailure`. Tous sont traduits par l'app en « connexion refusée ».
+- `ConnectByAPIKey` : la clé d'API est générée pour l'utilisateur dans l'administration Qvidian; aucun identifiant ou exemple de clé n'est conservé dans ce dépôt.
+- `ConnectByAuthToken` : le jeton doit être un GUID, sinon Qvidian renvoie `AuthenticationTokenMismatch`. L'app transmet le jeton reçu du portail tel quel (après décodage Base64 tolérant) et affiche la raison d'un refus dans l'onglet Connexion.
+- Le guide indique que `Connect` exige nom d'utilisateur et mot de passe; un compte SSO seul doit passer par le SSO ou une clé d'API. Les codes de rejet sont propres à l'opération; le client n'en implémente pas encore une traduction exhaustive (❌).
 - `ConnectionBinding` renvoie aussi les adresses des anciens services (Administration, Common, Projects, Library, ContentLibrary). Le guide confirme qu'on peut tout faire avec le seul `Qvidian.asmx` (`QvidianURL`) : c'est ce que fait l'app.
 
 ## 2. Rechercher et récupérer les contenus
@@ -51,8 +55,8 @@ Légende :
 |---|---|---|
 | `libraryFolderGetTop()` | ✅ | → `LibraryFolder` racine : id, titre, `ChildFolderCount`, `ContentCount`, droits. |
 | `libraryFoldersGetList(parentFolderID)` | ✅ | → sous-dossiers. |
-| `libraryFolderContentGetList(folderID)` | ✅ | → `Content[]` complets. C'est ce que l'app utilise pour synchroniser. |
-| `librarySearchRequestInit()` puis `librarySearch(LibrarySearchRequest)` | ✅ | Voir le détail ci-dessous. |
+| `libraryFolderContentGetList(folderID)` | ✅ limité | Le guide indique un maximum de 500 éléments et un ensemble de champs réduit. L'app l'utilise d'abord ; si le dossier atteint 500 éléments ou en annonce plus (`ContentCount`), elle repasse par `librarySearch` paginé filtré sur le dossier. |
+| `librarySearchRequestInit()` puis `librarySearch(LibrarySearchRequest)` | ✅ | Recommandé par le guide pour les dossiers : filtre `LibraryFolderID`, champs choisis et pagination. L'app s'en sert pour les gros dossiers (filtre `Property` / `LibraryFolderID` / `EqualTo` : forme exacte sans exemple dans le paquet, 🟡 à confirmer au premier essai réel). |
 | `libraryContentDetailsGet(contentID)` | ✅ | → un `Content` complet. |
 | `libraryContentGet(contentID)` / `libraryContentGetWithMergeCodes` | ✅ | → fichier (`fileName`, `fileContent` en Base64). |
 | `libraryContentPreviewHTMLGet(contentID, revision)` | ✅ | → `htmlContent`. Dépend sans doute du droit `AllowPreviewHTML` (🟡). |
@@ -82,14 +86,14 @@ Légende :
 
 Le résultat (`contentDataList`) est un tableau de `Content`, avec `totalCount`.
 
-**Champs utiles d'un `Content`** (WSDL ✅) :
+**Champs utiles d'un `Content`** (présence confirmée dans le WSDL du paquet ✅) :
 - identification : `ContentID`, `Revision`, `GUID` ;
 - contenu : `Title` (la question type), `ContentText`, `ContentType` (`QA`, `Item`, `Slide`, `File`) ;
 - emplacement : `LibraryFolderPath` ;
 - langue : `LCID`, `LCIDLanguage` ;
 - état : `Enabled`, `Expired`, `DateToExpire` ;
 - historique : `DateCreated`, `DateLastModified`, `DateContentUpdated` ;
-- usage : `TimesUsedCount`, `DateLastUsed`, `LastUsedByUserName` ;
+- usage : `TimesUsedCount`, `DateLastUsed`, `LastUsedByUserName`. Ces champs sont présents dans le type `Content`; l'app les demande parmi les champs de recherche étendus, mais le serveur peut les refuser. Le guide ne précise pas si le compteur correspond spécifiquement à une sélection dans un projet RFP (🟡) ;
 - droits et blocages : `CheckedOut`, `CheckedOutByUserName`, `InlineEdit`, `EditPerm` ;
 - termes : `LearnedTerms`, `AssignedTerms` ;
 - `SubmittedContentMetadata.QuestionText` (la question d'origine d'un contenu soumis depuis un projet) ;
@@ -104,7 +108,12 @@ L'app gère les deux :
 - un contenu en erreur est écarté d'une liste, ou signalé avec son code ;
 - une exception est traduite en phrase claire.
 
-Ce qui manque : la page `ErrorCodes` (le sens de chaque code) n'est pas dans la table des matières du guide. L'app affiche donc le numéro brut.
+Le guide confirme que chaque code est unique, défini par l'énumération `ErrorCodes`, et que les codes possibles sont détaillés dans les pages des méthodes. Le client récupère le numéro, le message et la source d'une `SoapException`, mais ne traduit pas encore les codes Qvidian en libellés métier (❌). Pour un objet `HasErrors`, il écarte les entrées en erreur sans lire les autres champs, conformément au guide.
+
+### Audit et usage
+- ✅ Le WSDL fournit `TimesUsedCount` et `DateLastUsed` sur `Content`; l'app les conserve pour le classement, sans en déduire un lien vers un projet.
+- ✅ `AuditEventType` est une énumération de types d'audit (`Connect`, `Download`, `Preview`, `Search`, `SavedSearch`).
+- ❌ La correspondance entre ces types et les numéros `EventID` du journal n'est pas publiée dans le guide consulté. Les numéros 301, 308, 309 et 310 sont seulement des valeurs présentes dans l'exemple de recherche d'audit; ne pas les interpréter comme une table complète.
 
 ## 3. Écrire dans Qvidian
 
@@ -163,7 +172,7 @@ Le moteur Fabric n'est pas modifié. Seuls ont changé les points demandés :
 | `ai.py` | Analyse IA par Copilot, sans API : prompt à copier (identifiants `C<id>`, tableau imposé), réponse collée relue. Les constats apparaissent dans la carte et sont liés à la révision du contenu. |
 | `bulk.py` | Modifications en masse protégées (§ 7). |
 | `demo.py` | Bibliothèque de démonstration fictive avec des défauts volontaires. **Jamais mélangée aux vraies données** : instantané séparé, et utilisée dans les RFI seulement en mode démonstration. |
-| `api/qvidian.py`, `frontend/src/pages/Qvidian.tsx` | Fenêtre « Qvidian » : connexion, synchronisation, carte, liste, analyse IA, modifications, réponse type, import des projets. |
+| `api/qvidian.py`, `frontend/src/pages/Qvidian.tsx` | Vue « Qvidian » à onglets : aperçu (santé), carte des erreurs, bibliothèque, réponses types, analyse IA, modifier, connexion (SSO, raison du dernier échec, import des projets). |
 | `backend/merlin/rfi/service.py` | Source Qvidian dans l'analyse. Chaque case reçoit `choices` (toutes les sources classées). Cache des cases. |
 | `frontend/src/components/rfi/review/SourceCarousel.tsx` | Carrousel « comparer et choisir » du compléteur. |
 
@@ -238,6 +247,7 @@ QVIDIAN_PASSWORD=                 # ou QVIDIAN_API_KEY=
 QVIDIAN_SUBSCRIBER_SUFFIX=        # SSO
 QVIDIAN_WRITE_PASSWORD=           # mot de passe des modifications en masse (jamais committé)
 QVIDIAN_HALF_LIFE_DAYS=365
+QVIDIAN_KEEPALIVE_MINUTES=10      # maintien de la session (20 min d'inactivité côté serveur)
 ```
 
 ## 10. Compléteur RFI : « Choisir » sans attendre
