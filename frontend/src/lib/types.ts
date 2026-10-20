@@ -139,6 +139,11 @@ export interface KeyCandidate { column: string; index: number; key_type: string;
 
 export interface SheetAnalysis {
   name: string
+  orientation?: 'rows' | 'columns'
+  language?: string
+  key_row?: number
+  label_column?: string | null
+  isin_columns?: string[]
   max_row: number
   max_col: number
   header_row: number
@@ -194,6 +199,10 @@ export interface Recipe {
   overwrite: boolean
   highlight_changes: boolean
   mappings: Mapping[]
+  orientation?: 'rows' | 'columns'
+  key_row?: number | null
+  label_column?: string | null
+  language?: string | null
   created_by?: string
   updated_at?: string
   workbook?: string | null
@@ -211,9 +220,11 @@ export interface Change {
   status: ChangeStatus
   before: string
   after: string
+  note?: string
+  evidence?: string
 }
 
-export interface Preview { sheet: string; as_of: string; rows: number; changes: Change[]; stats: Record<ChangeStatus, number> }
+export interface Preview { sheet: string; as_of: string; rows: number; changes: Change[]; stats: Record<ChangeStatus, number>; language?: string | null; errors?: string[] }
 
 /* ---------------------------------------------------------------- Fabric */
 export interface FabricStatus {
@@ -243,13 +254,20 @@ export interface RfiDocument {
   uploaded_at: string
   versions?: RfiVersion[]
   kind?: 'xlsx' | 'docx'
-  language?: 'fr' | 'en'
+  language?: RfiLanguage
   question_count?: number
   dropdowns?: number
   placeholders?: number
   notes?: string[]
   suggestions?: FundSuggestion[]
+  shares?: DocumentShare[]
+  multi_share?: boolean
 }
+
+export type RfiLanguage = 'fr' | 'en' | 'es' | 'it'
+
+/** Part citée par le document (ISIN) : fonds Product Info et nombre de cases qui la visent. */
+export interface DocumentShare { isin: string; known: boolean; pid: string | null; fund: string | null; share_name: string | null; questions: number }
 
 export type RfiStatus = 'auto' | 'review' | 'existing' | 'no_value' | 'unmatched' | 'skipped'
 
@@ -264,7 +282,7 @@ export interface RfiQuestion {
   options: string[]
   options_source: string
   layout: string
-  entity: { isin?: string }
+  entity: { isin?: string; via?: string }
   concept: string | null
   concept_label: string | null
   confidence: number
@@ -374,7 +392,7 @@ export interface RfiDecision {
 
 export interface RfiAnalysis {
   stats: Record<RfiStatus, number>
-  language: 'fr' | 'en'
+  language: RfiLanguage
   as_of: string
   errors: string[]
   questions: RfiQuestion[]
@@ -425,7 +443,7 @@ export interface RfiRequest {
   pid?: string | null
   isin?: string | null
   as_of?: string | null
-  language?: 'fr' | 'en' | null
+  language?: RfiLanguage | null
   overrides?: Record<string, string | null | { text: string }>
   overwrite?: boolean
   accept?: string[]

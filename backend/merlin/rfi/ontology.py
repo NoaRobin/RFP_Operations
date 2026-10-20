@@ -20,6 +20,7 @@ ONTOLOGY_DIR = Path(__file__).with_name("ontology")
 TYPES = {"text", "long", "enum", "bool", "percent", "number", "int", "amount", "date", "time", "code", "list"}
 COMPUTED = {"jump", "perf", "registration", "meta", "precedent", "fund", "share"}
 PSEUDO_TERMS = {"period_mention", "country_mention"}
+LANGS = ("fr", "en", "es", "it")  # langues des questionnaires ; es / it : réponses en anglais à défaut de libellé propre
 
 
 # --------------------------------------------------------------------------- normalisation
@@ -100,7 +101,9 @@ class Concept:
 
     def source_for(self, lang: str) -> str:
         if isinstance(self.source, dict):
-            return self.source.get(lang) or self.source.get("fr") or next(iter(self.source.values()))
+            # Texte publié en FR / EN seulement : un questionnaire espagnol ou italien reçoit la version anglaise
+            fallback = "en" if lang in {"es", "it"} else "fr"
+            return self.source.get(lang) or self.source.get(fallback) or self.source.get("fr") or next(iter(self.source.values()))
         return self.source
 
     @property
@@ -112,7 +115,7 @@ class Concept:
         return [tuple(s.split(".", 1)) for s in sources]  # type: ignore[misc]
 
     def label(self, lang: str = "fr") -> str:
-        return self.label_en if lang == "en" else self.label_fr
+        return self.label_fr if lang == "fr" else self.label_en
 
     def to_dict(self) -> dict[str, Any]:
         src = self.source if isinstance(self.source, str) else " / ".join(self.source.values())
@@ -127,9 +130,13 @@ class VocabValue:
     fr: str
     en: str
     synonyms: set[str]
+    es: str = ""
+    it: str = ""
 
     def label(self, lang: str) -> str:
-        return self.en if lang == "en" else self.fr
+        if lang == "fr":
+            return self.fr
+        return {"es": self.es, "it": self.it}.get(lang) or self.en
 
 
 @dataclass
@@ -173,8 +180,8 @@ def load_ontology(catalog: Catalog) -> Ontology:
     vocab_raw = yaml.safe_load((ONTOLOGY_DIR / "vocabularies.yaml").read_text(encoding="utf-8"))["vocabularies"]
 
     vocabularies = {
-        name: [VocabValue(id=str(v["id"]), fr=str(v["fr"]), en=str(v["en"]),
-                          synonyms={norm(s) for s in v.get("synonyms", [])} | {norm(v["fr"]), norm(v["en"])})
+        name: [VocabValue(id=str(v["id"]), fr=str(v["fr"]), en=str(v["en"]), es=str(v.get("es") or ""), it=str(v.get("it") or ""),
+                          synonyms={norm(s) for s in v.get("synonyms", [])} | {norm(v[k]) for k in LANGS if v.get(k)})
                for v in values]
         for name, values in vocab_raw.items()
     }
@@ -227,4 +234,4 @@ def load_ontology(catalog: Catalog) -> Ontology:
     return Ontology(concepts=concepts, facets=facets, scope_terms=scope_terms, generic=generic, vocabularies=vocabularies)
 
 
-__all__ = ["Concept", "Ontology", "Term", "VocabValue", "load_ontology", "norm", "stem", "tokens", "parse_term"]
+__all__ = ["LANGS", "Concept", "Ontology", "Term", "VocabValue", "load_ontology", "norm", "stem", "tokens", "parse_term"]

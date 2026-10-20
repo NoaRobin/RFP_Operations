@@ -39,6 +39,10 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
   const wrapper = useRef<HTMLDivElement>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
   const targets = useMemo(() => new Set(sheet.targets), [sheet.targets])
+  // Classeur transposé (une colonne par ISIN) : on dépose les extractions sur les lignes (« #n »)
+  const transposed = sheet.orientation === 'columns'
+  const fieldRows = useMemo(() => new Set(transposed ? sheet.columns.map((c) => c.letter) : []), [transposed, sheet.columns])
+  const isinColumns = useMemo(() => new Set(sheet.isin_columns ?? []), [sheet.isin_columns])
   const mapped = useMemo(() => Object.fromEntries(mappings.map((m) => [m.column, m.extraction])), [mappings])
   const changes = useMemo(() => {
     const map = new Map<string, Change>()
@@ -58,7 +62,7 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
 
   const dropHandlers = (column: string) => ({
     onDragOver: (e: React.DragEvent) => {
-      if (!e.dataTransfer.types.includes(DRAG_TYPE) || column === keyColumn) return
+      if (!e.dataTransfer.types.includes(DRAG_TYPE) || column === keyColumn || (transposed && !column.startsWith('#'))) return
       e.preventDefault()
       e.dataTransfer.dropEffect = 'copy'
       if (dragOver !== column) setDragOver(column)
@@ -67,7 +71,7 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
     onDrop: (e: React.DragEvent) => {
       const id = e.dataTransfer.getData(DRAG_TYPE)
       setDragOver(null)
-      if (id && column !== keyColumn) {
+      if (id && column !== keyColumn && (!transposed || column.startsWith('#'))) {
         e.preventDefault()
         onDrop(column, id)
       }
@@ -81,10 +85,10 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
         <table className="border-separate border-spacing-0 text-[0.8rem]" aria-label={texts.atelier.gridLabel(sheet.name)}>
           <thead className="sticky top-0 z-20">
             <tr>
-              <th scope="col" className="sticky left-0 z-30 w-12 min-w-12 border-b border-r hairline bg-card-2" aria-label="Lignes" />
+              <th scope="col" className={`sticky left-0 z-30 border-b border-r hairline bg-card-2 ${transposed ? 'w-44 min-w-44' : 'w-12 min-w-12'}`} aria-label="Lignes" />
               {cols.map((col) => {
                 const extraction = mapped[col] ? extractions[mapped[col]] : undefined
-                const isKey = col === keyColumn
+                const isKey = col === keyColumn || (transposed && isinColumns.has(col))
                 const selected = selectedColumn === col
                 return (
                   <th key={col} scope="col" {...dropHandlers(col)}
@@ -93,7 +97,7 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
                       type="button"
                       onClick={() => onSelectColumn(selected ? null : col)}
                       aria-pressed={selected}
-                      disabled={isKey}
+                      disabled={isKey || transposed}
                       aria-label={`Colonne ${col}${isKey ? ' (clé)' : ''}${extraction ? ` : ${extraction.label}` : ''}`}
                       className={`w-full rounded-md px-2 py-1 font-mono text-xs font-bold transition-all ${
                         selected ? 'bg-sun-400 text-on-accent shadow-[var(--shadow-glow-sun)]' : isKey ? 'text-mint-300' : 'text-fg-2 hover:bg-fg/10'}`}
@@ -117,26 +121,48 @@ export function SheetGrid({ sheet, headerRow, keyColumn, mappings, extractions, 
             {rows.map((row, r) => {
               const rowNumber = r + 1
               const isHeader = rowNumber === headerRow
+              const field = `#${rowNumber}`
+              const isField = fieldRows.has(field)
+              const rowExtraction = isField && mapped[field] ? extractions[mapped[field]] : undefined
               return (
                 <tr key={rowNumber}>
-                  <th scope="row" className={`sticky left-0 z-10 border-b border-r hairline bg-card-2 px-2 text-right font-mono text-[0.7rem] ${isHeader ? 'text-sun-300' : 'text-fg-3'}`}>
-                    {rowNumber}
-                  </th>
+                  {isField ? (
+                    <th scope="row" {...dropHandlers(field)}
+                      className={`sticky left-0 z-10 border-b border-r hairline bg-card-2 p-1 text-left align-top ${dragOver === field ? '!bg-mint-400/25' : ''}`}>
+                      <button type="button" onClick={() => onSelectColumn(selectedColumn === field ? null : field)} aria-pressed={selectedColumn === field}
+                        aria-label={`Ligne ${rowNumber}${rowExtraction ? ` : ${rowExtraction.label}` : ''}`}
+                        className={`w-full rounded-md px-2 py-0.5 text-left font-mono text-[0.7rem] font-bold ${selectedColumn === field ? 'bg-sun-400 text-on-accent' : 'text-fg-2 hover:bg-fg/10'}`}>
+                        {rowNumber}
+                      </button>
+                      {rowExtraction && (
+                        <span className="mt-0.5 flex items-center gap-1 rounded-md border border-sun-400/40 bg-sun-400/10 px-1.5 py-0.5 text-[0.68rem] font-medium text-sun-200">
+                          <span className="truncate">{rowExtraction.label}</span>
+                          <button type="button" onClick={() => onRemove(field)} aria-label={texts.atelier.removeRowMapping(field)} className="ml-auto shrink-0 text-sun-300 hover:text-fg">
+                            <X size={12} />
+                          </button>
+                        </span>
+                      )}
+                    </th>
+                  ) : (
+                    <th scope="row" className={`sticky left-0 z-10 border-b border-r hairline bg-card-2 px-2 text-right font-mono text-[0.7rem] ${isHeader ? 'text-sun-300' : 'text-fg-3'}`}>
+                      {rowNumber}
+                    </th>
+                  )}
                   {row.map((cell, c) => {
                     const col = cols[c]
                     const ref = `${col}${rowNumber}`
                     const change = changes.get(ref)
                     const isTarget = targets.has(ref)
-                    const isMappedTarget = isTarget && !!mapped[col]
+                    const isMappedTarget = isTarget && !!(transposed ? mapped[field] : mapped[col])
                     const showChange = change && showAfter && change.status !== 'protected'
                     let cls = 'text-fg-2'
                     if (isHeader) cls = 'bg-sun-400/10 font-semibold text-sun-200'
                     else if (col === keyColumn && rowNumber > headerRow) cls = 'bg-mint-400/[0.07] font-mono text-mint-300'
                     else if (cell.f) cls = 'text-fg-3 italic'
                     return (
-                      <td key={col} {...dropHandlers(col)}
+                      <td key={col} {...dropHandlers(transposed ? field : col)}
                         className={`relative h-8 max-w-64 border-b border-r hairline px-2 ${cell.n ? 'text-right tabular-nums' : ''} ${cls} ${
-                          selectedColumn === col ? 'bg-sun-400/[0.06]' : ''} ${dragOver === col ? 'bg-mint-400/10' : ''}`}>
+                          selectedColumn === col || (transposed && selectedColumn === field) ? 'bg-sun-400/[0.06]' : ''} ${dragOver === col || (transposed && dragOver === field) ? 'bg-mint-400/10' : ''}`}>
                         {isTarget && !showChange && (
                           <span aria-hidden="true" className={`pointer-events-none absolute inset-0.5 rounded-sm ${isMappedTarget ? 'animate-pulse-glow' : 'shadow-[inset_0_0_0_2px_rgb(46_196_182/0.7)]'}`} />
                         )}

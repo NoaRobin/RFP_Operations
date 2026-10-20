@@ -217,8 +217,14 @@ export const api = {
   atelier: {
     extractions: () => request<{ key_types: { id: string; label: string }[]; extractions: Extraction[] }>('/atelier/extractions'),
     workbooks: () => request<WorkbookMeta[]>('/atelier/workbooks'),
-    workbook: (id: string, sheet?: string, headerRow?: number) =>
-      request<WorkbookAnalysis>(`/atelier/workbooks/${id}${sheet && headerRow ? `?sheet=${encodeURIComponent(sheet)}&header_row=${headerRow}` : ''}`),
+    workbook: (id: string, sheet?: string, headerRow?: number, orientation?: 'rows' | 'columns') => {
+      const params = new URLSearchParams()
+      if (sheet) params.set('sheet', sheet)
+      if (sheet && headerRow) params.set('header_row', String(headerRow))
+      if (sheet && orientation) params.set('orientation', orientation)
+      const query = params.toString()
+      return request<WorkbookAnalysis>(`/atelier/workbooks/${id}${query && (headerRow || orientation) ? `?${query}` : ''}`)
+    },
     upload: (file: File) => {
       const form = new FormData()
       form.append('file', file)

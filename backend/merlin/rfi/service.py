@@ -138,6 +138,29 @@ def suggest_funds(data: DataAccess, text: str) -> list[dict[str, Any]]:
     return suggestions[:5]
 
 
+def document_shares(data: DataAccess, layout: Layout) -> list[dict[str, Any]]:
+    """Parts citées par le document (ISIN), avec le fonds Product Info et le nombre de cases qui les visent.
+
+    Plusieurs ISIN : grille par part (une ligne / colonne par ISIN) ou sections d'une liste ; chaque case lit sa part.
+    Un ISIN inconnu de Product Info reste listé (« inconnu ») : ses cases n'auront pas de donnée, rien n'est deviné."""
+    counts: dict[str, int] = {}
+    for slot in layout.slots:
+        if slot.entity.get("isin"):
+            counts[slot.entity["isin"]] = counts.get(slot.entity["isin"], 0) + 1
+    try:
+        directory = fund_directory(data)
+    except DataError:
+        directory = []
+    by_isin = {sh["isin"]: (item, sh) for item in directory for sh in item["shares"]}
+    out = []
+    for isin in dict.fromkeys([*counts, *layout.isins]):
+        item, share = by_isin.get(isin, (None, None))
+        out.append({"isin": isin, "known": item is not None, "pid": item["pid"] if item else None,
+                    "fund": item["name"] if item else None, "share_name": share["name"] if share else None,
+                    "questions": counts.get(isin, 0)})
+    return out
+
+
 # --------------------------------------------------------------------------- analyse & génération
 def _library(store: RfiStore) -> Library:
     return Library(store.root / "library.json")
@@ -195,9 +218,12 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
     rows: list[dict[str, Any]] = []
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}
     def compute(slot: Slot, override: Any) -> dict[str, Any]:
+        # Grille par part : la case vise la part de sa ligne / colonne. Section d'une part dans une liste : l'ISIN désigne
+        # quelle part lire, sans imposer la portée (« Nom du fonds » reste une question sur le fonds).
+        grid = bool(slot.entity.get("isin")) and slot.entity.get("via") != "section"
         u = understand(ontology, slot.question, hint=slot.hint, context=slot.context, options=slot.options,
-                       number_format=slot.number_format, as_of=as_of_d, entity_scope="share" if slot.entity.get("isin") else None,
-                       parent=slot.parent)
+                       number_format=slot.number_format, as_of=as_of_d, entity_scope="share" if grid else None,
+                       parent=slot.parent, lang=layout.language)
         typed = override is None or (isinstance(override, dict) and override.get("text") is not None)
         vals = None if typed else values_for(slot)  # réponse saisie ou choisie : ni Fabric ni documents à relire
         binding = None

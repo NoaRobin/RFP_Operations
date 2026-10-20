@@ -9,11 +9,12 @@ from typing import Any
 
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
-from openpyxl.utils import column_index_from_string
+from openpyxl.utils import column_index_from_string, get_column_letter
 
 from ..data.access import DataAccess
 from .analyzer import display, is_empty
 from .extractions import EXCEL_FORMATS, get_extractions, run_extraction
+from .ontology_bridge import OntologyFiller, concept_id, is_ontology, ontology_for, sheet_language
 
 RECIPE_STEPS = ["Lecture du classeur", "Extractions Fabric", "Calcul des valeurs", "Écriture de la nouvelle version"]
 CHANGE_FILL = PatternFill("solid", fgColor="E8DDFB")
@@ -31,16 +32,45 @@ def _same(a: Any, b: Any) -> bool:
     return str(a).strip() == str(b).strip()
 
 
+def _cells(ws, recipe: dict[str, Any]) -> tuple[list[tuple[Any, str]], dict[str, dict[str, Any]]]:
+    """(clés, cibles) : clés = [(position, ISIN)], cibles[mapping] = {"label", "cells": {clé: (ligne, colonne)}}.
+
+    Orientation « rows » (défaut) : une ligne par ISIN (colonne clé), une colonne par donnée (en-tête).
+    Orientation « columns » : une colonne par ISIN (ligne clé), une ligne par donnée (libellé dans la colonne des libellés)."""
+    targets: dict[str, dict[str, Any]] = {}
+    if recipe.get("orientation") == "columns":
+        key_row = int(recipe.get("key_row") or recipe.get("header_row") or 1)
+        label_col = column_index_from_string(recipe["label_column"]) if recipe.get("label_column") else None
+        keys = [(c, str(ws.cell(key_row, c).value).strip().upper()) for c in range(1, ws.max_column + 1)
+                if not is_empty(ws.cell(key_row, c).value) and c != label_col and (label_col is None or c > label_col)]
+        for m in recipe.get("mappings") or []:
+            if not str(m["column"]).startswith("#"):
+                raise RecipeError(f"Classeur transposé : la correspondance doit viser une ligne (#n), pas « {m['column']} ».")
+            r = int(str(m["column"])[1:])
+            label = ws.cell(r, label_col).value if label_col else ""
+            targets[m["column"]] = {"label": str(label or ""), "cells": {pos: (r, pos) for pos, _ in keys}}
+        return keys, targets
+    header_row = int(recipe.get("header_row") or 1)
+    key_index = column_index_from_string(recipe["key_column"])
+    keys = [(r, str(ws.cell(r, key_index).value).strip().upper()) for r in range(header_row + 1, ws.max_row + 1)
+            if not is_empty(ws.cell(r, key_index).value)]
+    for m in recipe.get("mappings") or []:
+        col = column_index_from_string(m["column"])
+        targets[m["column"]] = {"label": str(ws.cell(header_row, col).value or ""), "cells": {pos: (pos, col) for pos, _ in keys}}
+    return keys, targets
+
+
 def compute_changes(data: DataAccess, workbook_path: Path, recipe: dict[str, Any], log=None) -> dict[str, Any]:
     catalog = get_extractions(data.catalog)
     sheet = recipe.get("sheet")
-    key_col = recipe.get("key_column")
-    header_row = int(recipe.get("header_row") or 1)
+    columns_layout = recipe.get("orientation") == "columns"
     mappings = recipe.get("mappings") or []
     as_of = recipe.get("as_of") or date.today().isoformat()
     overwrite = bool(recipe.get("overwrite", False))
-    if not sheet or not key_col:
+    if not sheet or (not recipe.get("key_column") and not columns_layout):
         raise RecipeError("Choisissez une feuille et une colonne clé.")
+    if columns_layout and not (recipe.get("key_row") or recipe.get("header_row")):
+        raise RecipeError("Choisissez la ligne des ISIN.")
     if not mappings:
         raise RecipeError("Aucune correspondance : glissez au moins une extraction sur une colonne.")
 
@@ -49,16 +79,19 @@ def compute_changes(data: DataAccess, workbook_path: Path, recipe: dict[str, Any
     if sheet not in wb_values.sheetnames:
         raise RecipeError(f"Feuille introuvable : {sheet}")
     ws, wsf = wb_values[sheet], wb_formulas[sheet]
-    key_index = column_index_from_string(key_col)
-
-    rows = []
-    for r in range(header_row + 1, ws.max_row + 1):
-        value = ws.cell(r, key_index).value
-        if not is_empty(value):
-            rows.append((r, str(value).strip().upper()))
+    keys, targets = _cells(ws, recipe)
 
     lookups: dict[str, dict[str, Any]] = {}
+    filler: OntologyFiller | None = None
     for mapping in mappings:
+        if is_ontology(mapping["extraction"]):
+            ontology = ontology_for(data)
+            if concept_id(mapping["extraction"]) not in ontology.concepts:
+                raise RecipeError(f"Concept inconnu : {concept_id(mapping['extraction'])}")
+            if filler is None:
+                lang = recipe.get("language") or sheet_language([t["label"] for t in targets.values()])
+                filler = OntologyFiller(data, ontology, as_of, lang)
+            continue
         extraction = catalog.extractions.get(mapping["extraction"])
         if extraction is None:
             raise RecipeError(f"Extraction inconnue : {mapping['extraction']}")
@@ -69,13 +102,24 @@ def compute_changes(data: DataAccess, workbook_path: Path, recipe: dict[str, Any
 
     changes, stats = [], {"fill": 0, "overwrite": 0, "conflict": 0, "unchanged": 0, "not_found": 0, "protected": 0}
     for mapping in mappings:
-        extraction = catalog.extractions[mapping["extraction"]]
-        col_index = column_index_from_string(mapping["column"])
-        lookup = lookups[extraction.id]
-        for r, key in rows:
-            before = ws.cell(r, col_index).value
-            after = lookup.get(key)
-            if str(wsf.cell(r, col_index).value or "").startswith("="):
+        target = targets[mapping["column"]]
+        onto = is_ontology(mapping["extraction"])
+        concept = ontology_for(data).concepts[concept_id(mapping["extraction"])] if onto else None
+        extraction = None if onto else catalog.extractions[mapping["extraction"]]
+        for pos, key in keys:
+            r, c = target["cells"][pos]
+            cell = ws.cell(r, c)
+            before = cell.value
+            note, evidence = "", ""
+            if onto:
+                filled = filler.fill(concept, target["label"], key, wsf.cell(r, c).number_format)  # type: ignore[union-attr]
+                after, note, evidence = filled["value"], "; ".join(filled["issues"]), filled["evidence"]
+                fmt = "date" if isinstance(after, date) else ("number" if isinstance(after, (int, float)) and not isinstance(after, bool) else "text")
+                shown = filled["display"] if after is not None else ""
+            else:
+                after = lookups[extraction.id].get(key)  # type: ignore[union-attr]
+                fmt, shown = extraction.format, display(after)  # type: ignore[union-attr]
+            if str(wsf.cell(r, c).value or "").startswith("="):
                 status = "protected"
             elif after is None:
                 status = "not_found"
@@ -86,13 +130,19 @@ def compute_changes(data: DataAccess, workbook_path: Path, recipe: dict[str, Any
             else:
                 status = "overwrite" if overwrite else "conflict"
             stats[status] += 1
+            letter = get_column_letter(c)
             changes.append({
-                "cell": f"{mapping['column']}{r}", "row": r, "column": mapping["column"], "key": key,
-                "extraction": extraction.id, "format": extraction.format, "status": status,
-                "before": display(before), "after": display(after),
+                "cell": f"{letter}{r}", "row": r, "column": mapping["column"], "key": key,
+                "extraction": mapping["extraction"], "format": fmt, "status": status,
+                "before": display(before), "after": shown,
                 "raw_after": after.isoformat() if isinstance(after, date) else after,
+                "note": note, "evidence": evidence,
             })
-    return {"sheet": sheet, "as_of": as_of, "rows": len(rows), "changes": changes, "stats": stats}
+    if filler is not None and log:
+        for error in filler.errors:
+            log.warning("%s", error)
+    return {"sheet": sheet, "as_of": as_of, "rows": len(keys), "changes": changes, "stats": stats,
+            "language": filler.lang if filler else None, "errors": filler.errors if filler else []}
 
 
 def write_version(workbook_path: Path, target: Path, recipe: dict[str, Any], result: dict[str, Any]) -> int:
@@ -157,7 +207,8 @@ def run_recipe(ctx, recipe: dict[str, Any], workbook_dir: Path) -> None:
             import pandas as pd
 
             journal = pd.DataFrame([{"Cellule": c["cell"], "Clé": c["key"], "Extraction": c["extraction"],
-                                     "Avant": c["before"], "Après": c["after"], "Statut": c["status"]} for c in changed])
+                                     "Avant": c["before"], "Après": c["after"], "Statut": c["status"],
+                                     "Remarque": c.get("note", ""), "Source": c.get("evidence", "")} for c in changed])
             ctx.show_table(journal, "Journal des modifications")
             ctx.save_excel({"Journal": journal}, f"journal_{target.stem}.xlsx", label="Journal des modifications")
     ctx.set_summary(f"Version {number} générée : {written} cellule(s) remplie(s).", written=written, version=number)

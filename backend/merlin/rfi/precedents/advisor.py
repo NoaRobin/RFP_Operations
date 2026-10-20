@@ -401,7 +401,7 @@ class PrecedentAdvisor:
         files = sorted({p.source_file for p in group})
         if concept.type == "bool":
             vocab = self.ontology.vocab_value("yes_no", value)
-            text = (vocab.fr if self.lang == "fr" else vocab.en) if vocab else group[0].answer_text
+            text = vocab.label(self.lang) if vocab else group[0].answer_text
         else:
             text = group[0].answer_text
         # Formulation maison : si les autres fonds ont reçu une réponse rédigée à cette même question, on la reprend

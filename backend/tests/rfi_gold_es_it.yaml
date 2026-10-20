@@ -1,0 +1,80 @@
+# Banc d'essai espagnol / italien : questions lues via le lexique pivot (ontology/lexicon.yaml).
+# Même exigence que rfi_gold.yaml : 100 % de précision sur les réponses automatiques.
+# lang : langue du document (comme layout.language) ; concept: null → jamais rempli automatiquement.
+cases:
+  # ------------------------------------------------------------- espagnol
+  - {lang: es, q: "Nombre del fondo", concept: fonds.nom}
+  - {lang: es, q: "Denominación completa del fondo", concept: fonds.nom}
+  - {lang: es, q: "Nombre de la clase de participaciones", concept: part.nom}
+  - {lang: es, q: "Código ISIN", concept: part.isin}
+  - {lang: es, q: "Forma jurídica", concept: fonds.forme_juridique}
+  - {lang: es, q: "País de domicilio del fondo", concept: fonds.domicile}
+  - {lang: es, q: "Fecha de lanzamiento del fondo", concept: fonds.date_creation}
+  - {lang: es, q: "Fecha de lanzamiento de la clase", concept: part.date_creation}
+  - {lang: es, q: "Divisa de referencia del fondo", concept: fonds.devise}
+  - {lang: es, q: "Divisa de la clase", concept: part.devise}
+  - {lang: es, q: "Sociedad gestora", concept: fonds.societe_gestion}
+  - {lang: es, q: "Nombre del gestor principal", concept: fonds.gerant}
+  - {lang: es, q: "Banco depositario", concept: fonds.depositaire}
+  - {lang: es, q: "Auditor externo", concept: fonds.commissaire_comptes}
+  - {lang: es, q: "Índice de referencia", concept: fonds.indice_reference}
+  - {lang: es, q: "Objetivo de inversión", concept: fonds.objectif_gestion}
+  - {lang: es, q: "Periodo de mantenimiento recomendado", concept: fonds.duree_placement}
+  - {lang: es, q: "Indicador sintético de riesgo (SRI)", concept: fonds.sri}
+  - {lang: es, q: "Clasificación SFDR", concept: fonds.sfdr}
+  - {lang: es, q: "Gastos corrientes de la clase (%)", concept: part.frais_courants_ex_post}
+  - {lang: es, q: "Comisión de gestión máxima de la clase (%)", concept: part.frais_gestion_max}
+  - {lang: es, q: "Comisión de suscripción máxima (%)", concept: part.droits_entree_max}
+  - {lang: es, q: "Comisión de reembolso máxima (%)", concept: part.droits_sortie_max}
+  - {lang: es, q: "¿La clase tiene comisión de éxito?", concept: part.commission_surperformance}
+  - {lang: es, q: "Frecuencia de valoración", concept: part.frequence_vl}
+  - {lang: es, q: "Hora límite de suscripción", concept: part.cut_off_souscription}
+  - {lang: es, q: "Inversión mínima inicial", concept: part.minimum_souscription}
+  - {lang: es, q: "Política de distribución", concept: part.affectation_resultats}
+  - {lang: es, q: "Patrimonio del fondo", concept: jump.encours_fonds}
+  - {lang: es, q: "Último valor liquidativo", concept: jump.vl}
+  - {lang: es, q: "Número de posiciones en cartera", concept: jump.nombre_lignes}
+  - {lang: es, q: "Código LEI del fondo", concept: fonds.lei}
+  - {lang: es, q: "¿El fondo utiliza apalancamiento?", concept: fonds.levier}
+  - {lang: es, q: "¿El fondo es UCITS?", concept: fonds.est_opcvm}
+  - {lang: es, q: "¿El fondo excluye el tabaco?", concept: fonds.exclusion_tabac}
+  - {lang: es, q: "Describa la filosofía de inversión del equipo", concept: null}
+  - {lang: es, q: "¿Por qué el equipo ha cambiado su proceso?", concept: null}
+  # ------------------------------------------------------------- italien
+  - {lang: it, q: "Nome del fondo", concept: fonds.nom}
+  - {lang: it, q: "Denominazione del comparto", concept: fonds.nom}
+  - {lang: it, q: "Nome della classe di quote", concept: part.nom}
+  - {lang: it, q: "Codice ISIN", concept: part.isin}
+  - {lang: it, q: "Forma giuridica", concept: fonds.forme_juridique}
+  - {lang: it, q: "Paese di domicilio", concept: fonds.domicile}
+  - {lang: it, q: "Data di lancio del fondo", concept: fonds.date_creation}
+  - {lang: it, q: "Data di lancio della classe", concept: part.date_creation}
+  - {lang: it, q: "Valuta di riferimento del fondo", concept: fonds.devise}
+  - {lang: it, q: "Valuta della classe", concept: part.devise}
+  - {lang: it, q: "Società di gestione", concept: fonds.societe_gestion}
+  - {lang: it, q: "Gestore principale", concept: fonds.gerant}
+  - {lang: it, q: "Banca depositaria", concept: fonds.depositaire}
+  - {lang: it, q: "Società di revisione", concept: fonds.commissaire_comptes}
+  - {lang: it, q: "Indice di riferimento", concept: fonds.indice_reference}
+  - {lang: it, q: "Obiettivo di investimento", concept: fonds.objectif_gestion}
+  - {lang: it, q: "Periodo di detenzione raccomandato", concept: fonds.duree_placement}
+  - {lang: it, q: "Indicatore sintetico di rischio (SRI)", concept: fonds.sri}
+  - {lang: it, q: "Classificazione SFDR", concept: fonds.sfdr}
+  - {lang: it, q: "Spese correnti della classe (%)", concept: part.frais_courants_ex_post}
+  - {lang: it, q: "Commissione di gestione massima della classe (%)", concept: part.frais_gestion_max}
+  - {lang: it, q: "Commissione di sottoscrizione massima (%)", concept: part.droits_entree_max}
+  - {lang: it, q: "Commissione di rimborso massima (%)", concept: part.droits_sortie_max}
+  - {lang: it, q: "La classe ha una commissione di performance?", concept: part.commission_surperformance}
+  - {lang: it, q: "Frequenza di valorizzazione", concept: part.frequence_vl}
+  - {lang: it, q: "Orario limite di sottoscrizione", concept: part.cut_off_souscription}
+  - {lang: it, q: "Investimento minimo iniziale", concept: part.minimum_souscription}
+  - {lang: it, q: "Politica di distribuzione", concept: part.affectation_resultats}
+  - {lang: it, q: "Patrimonio del fondo", concept: jump.encours_fonds}
+  - {lang: it, q: "Ultimo valore della quota", concept: jump.vl}
+  - {lang: it, q: "Numero di titoli in portafoglio", concept: jump.nombre_lignes}
+  - {lang: it, q: "Codice LEI del fondo", concept: fonds.lei}
+  - {lang: it, q: "Il fondo utilizza la leva finanziaria?", concept: fonds.levier}
+  - {lang: it, q: "Il fondo è conforme UCITS?", concept: fonds.est_opcvm}
+  - {lang: it, q: "Il fondo esclude il tabacco?", concept: fonds.exclusion_tabac}
+  - {lang: it, q: "Descrivere la filosofia di investimento del team", concept: null}
+  - {lang: it, q: "Perché il team ha cambiato il processo?", concept: null}

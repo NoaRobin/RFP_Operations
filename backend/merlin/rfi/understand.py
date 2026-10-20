@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any
 
+from .lexicon import question_language, to_pivot
 from .ontology import Ontology, Term, norm, tokens
 
 QUALITATIVE = re.compile(
@@ -58,14 +59,22 @@ class Period:
     def label(self, lang: str = "fr") -> str:
         if self.kind == "ytd":
             return "YTD"
+        words = PERIOD_WORDS.get(lang, PERIOD_WORDS["en"])
         if self.kind == "inception":
-            return "depuis la création" if lang == "fr" else "since inception"
+            return words["inception"]
         if self.kind == "calendar":
             return str(self.year)
-        unit = ("mois" if lang == "fr" else "months") if self.kind == "months" else ("an" if lang == "fr" else "year")
-        plural = "" if self.n == 1 or unit == "mois" else "s"
-        ann = "" if not self.annualized else (" annualisé" if lang == "fr" else " annualised")
-        return f"{self.n} {unit}{plural}{ann}"
+        unit = words["months"] if self.kind == "months" else (words["year"] if self.n == 1 else words["years"])
+        ann = f" {words['annualized']}" if self.annualized else ""
+        return f"{self.n} {unit}{ann}"
+
+
+PERIOD_WORDS = {
+    "fr": {"inception": "depuis la création", "months": "mois", "year": "an", "years": "ans", "annualized": "annualisé"},
+    "en": {"inception": "since inception", "months": "months", "year": "year", "years": "years", "annualized": "annualised"},
+    "es": {"inception": "desde el lanzamiento", "months": "meses", "year": "año", "years": "años", "annualized": "anualizada"},
+    "it": {"inception": "dal lancio", "months": "mesi", "year": "anno", "years": "anni", "annualized": "annualizzata"},
+}
 
 
 @dataclass
@@ -98,10 +107,11 @@ class Understanding:
     expected: str | None = None  # bool | date | percent | number | enum | text
     expected_from: str = ""  # liste déroulante | format de cellule | consigne | question
     options: list[str] = field(default_factory=list)
+    language: str = "fr"  # langue de la question (es / it : lue via le lexique pivot)
 
     @property
     def all_tokens(self) -> list[str]:
-        return self.q_tokens + tokens(norm(self.hint))
+        return self.q_tokens + tokens(to_pivot(norm(self.hint), self.language))
 
     def describe(self) -> list[str]:
         """Indices lisibles pour l'interface."""
@@ -266,21 +276,24 @@ def detect_countries(ontology: Ontology, q: str) -> list[str]:
 
 def understand(ontology: Ontology, text: str, *, hint: str = "", context: str = "", options: list[str] | None = None,
                number_format: str | None = None, as_of: date | None = None, entity_scope: str | None = None,
-               parent: str = "") -> Understanding:
+               parent: str = "", lang: str | None = None) -> Understanding:
     as_of = as_of or date.today()
-    own = EXCLUSION.sub(" ", norm(text))  # « (hors frais de transactions) » : ce qui est exclu n'est pas le sujet
+    # Question espagnole / italienne : réécrite en français de l'ontologie (lexique pivot), puis lue comme les autres
+    qlang = question_language(f"{text} {hint}", lang)
+    own = EXCLUSION.sub(" ", to_pivot(norm(text), qlang))  # « (hors frais de transactions) » : ce qui est exclu n'est pas le sujet
     # Sous-question conditionnelle (« Si oui, de quel montant ? ») : le sujet vient de la question parente
-    q = (norm(parent) + " " + own).strip() if parent else own
+    q = (to_pivot(norm(parent), qlang) + " " + own).strip() if parent else own
     seq = tokens(q)
-    u = Understanding(text=text, q=q, q_tokens=seq, hint=hint, context=context, options=list(options or []))
-    hint_n = norm(hint)
+    u = Understanding(text=text, q=q, q_tokens=seq, hint=hint, context=context, options=list(options or []), language=qlang)
+    hint_n = to_pivot(norm(hint), qlang)
+    context_n = to_pivot(norm(context), qlang)
     full = seq + tokens(hint_n)
     u.facets = detect_facets(ontology, full)
-    u.context_facets = {k: v for k, v in detect_facets(ontology, tokens(norm(context))).items() if k not in u.facets}
+    u.context_facets = {k: v for k, v in detect_facets(ontology, tokens(context_n)).items() if k not in u.facets}
     for scope, terms in ontology.scope_terms.items():
         if any(has_term(t, seq) for t in terms):
             u.scopes.add(scope)
-    ctx_seq = tokens(norm(context))
+    ctx_seq = tokens(context_n)
     for scope, terms in ontology.scope_terms.items():
         if any(has_term(t, ctx_seq) for t in terms):
             u.context_scopes.add(scope)

@@ -17,7 +17,8 @@ from ..rfi.demo import demo_docx, demo_xlsx
 from ..rfi.ontology import load_ontology
 from ..rfi.precedents import get_bindings, get_index
 from .documents import service_for
-from ..rfi.service import ALLOWED, RfiStore, _library, analyze, document_text, generate, load_layout, search_funds, suggest_funds
+from ..rfi.service import (ALLOWED, RfiStore, _library, analyze, document_shares, document_text, generate, load_layout, search_funds,
+                           suggest_funds)
 from ..state import AppState
 from .deps import bad_request, current_user, not_found, state
 
@@ -84,9 +85,11 @@ def _describe(s: AppState, doc_id: str) -> dict[str, Any]:
         suggestions = suggest_funds(s.data, document_text(path))
     except DataError:
         suggestions = []
+    shares = document_shares(s.data, layout)
     return {**store.meta(doc_id), "kind": layout.kind, "language": layout.language, "question_count": len(layout.slots),
             "dropdowns": sum(1 for s in layout.slots if s.options), "placeholders": sum(1 for s in layout.slots if s.state == "placeholder"),
-            "isins": layout.isins[:50], "notes": layout.notes, "suggestions": suggestions}
+            "isins": layout.isins[:50], "notes": layout.notes, "suggestions": suggestions, "shares": shares[:50],
+            "multi_share": sum(1 for sh in shares if sh["questions"]) >= 2}
 
 
 @router.get("/facts")
@@ -145,7 +148,7 @@ class AnswerRequest(BaseModel):
     pid: str | None = None
     isin: str | None = None
     as_of: str | None = None
-    language: str | None = Field(None, pattern="^(fr|en)$")
+    language: str | None = Field(None, pattern="^(fr|en|es|it)$")
     overrides: dict[str, Any] = Field(default_factory=dict)  # id → concept | None (ne pas remplir) | {"text": …}
     overwrite: bool = False
     accept: list[str] = Field(default_factory=list)  # propositions « à vérifier » validées par l'utilisateur

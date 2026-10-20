@@ -52,6 +52,8 @@ def test_gold_bank_is_error_free_in_auto_mode():
     ("Oui / Non", "placeholder"), ("[Yes/No]", "placeholder"), ("jj/mm/aaaa", "placeholder"), ("x,xx %", "placeholder"),
     ("Sélectionner", "placeholder"), ("TBC", "placeholder"), ("", "empty"), (None, "empty"),
     ("Oui", "answered"), ("EUR", "answered"), ("1,50 %", "answered"), ("Banque du Lac", "answered"),
+    ("Sí / No", "placeholder"), ("A completar", "placeholder"), ("Da compilare", "placeholder"), ("Indique la divisa", "placeholder"),
+    ("Sì", "answered"),
 ])
 def test_placeholders_are_not_answers(value, state):
     assert classify_cell(value)[0] == state
@@ -233,3 +235,83 @@ def test_short_uppercase_section_title_is_not_a_question(tmp_path):
     wb.save(path)
     questions = [s.question for s in detect(path).slots]
     assert "GESTION" not in questions and "SRI" in questions
+
+
+# ------------------------------------------------------------------ espagnol / italien, plusieurs parts
+GOLD_ES_IT = Path(__file__).with_name("rfi_gold_es_it.yaml")
+
+
+def test_spanish_and_italian_questions_bank_is_error_free():
+    report = run_cases(_ontology(), load_cases(GOLD_ES_IT))
+    assert report["wrong_auto"] == [], report["wrong_auto"]
+    assert report["auto_precision"] == 1.0
+    assert report["auto_coverage"] >= 0.9
+
+
+def test_language_detection_and_pivot():
+    from merlin.rfi.lexicon import detect_language, question_language, to_pivot
+    from merlin.rfi.ontology import norm
+
+    assert detect_language("¿Cuál es la comisión de gestión máxima de la clase? Nombre del fondo") == "es"
+    assert detect_language("Indicare la commissione di gestione massima della classe di quote. Nome del fondo") == "it"
+    assert detect_language("Quel est le nom du fonds ? Indiquez la devise de la part") == "fr"
+    assert detect_language("What is the fund name? Please provide the share class currency") == "en"
+    assert question_language("Nome del fondo", "it") == "it"  # « del » et « fondo » existent aussi en espagnol
+    assert question_language("Quelle est la devise de la part ?", "es") == "fr"  # document mixte
+    # une seule passe : « y » (et) traduit n'est jamais retraduit, « hay un » → « y a-t-il un »
+    assert to_pivot(norm("¿Hay un mecanismo de swing pricing?"), "es").startswith("y a-t-il un")
+    assert to_pivot(norm("Comisión de gestión máxima"), "es") == "commission de gestion maximum"
+
+
+def test_answers_are_written_in_spanish_and_italian():
+    from merlin.rfi.render import fmt_number
+
+    o = _ontology()
+    assert o.vocab_value("yes_no", "Sí").label("es") == "Sí" and o.vocab_value("yes_no", "si").label("it") == "Sì"
+    assert o.vocab_value("frequency", "Diaria").id == "daily"  # option de liste déroulante espagnole reconnue
+    assert o.vocab_value("legal_form", "SICAV").label("it") == "SICAV"  # pas de libellé italien : repli sur l'anglais
+    assert fmt_number(1234.5, 2, "es") == "1.234,50" and fmt_number(1234.5, 2, "it") == "1.234,50"
+    assert choose_option(["menos de 1 año", "entre 1 y 3 años", "más de 3 años"], number=5, texts=["5 años"])[0] == "más de 3 años"
+    assert choose_option(["meno di 1 anno", "tra 1 e 3 anni", "oltre 3 anni"], number=2, texts=["2 anni"])[0] == "tra 1 e 3 anni"
+
+
+def _two_shares(client):
+    funds = client.get("/api/rfi/funds").json()
+    fund = next(f for f in funds if len(f["shares"]) >= 2)
+    return fund, fund["shares"][0], fund["shares"][1]
+
+
+def test_list_questionnaire_with_one_section_per_share(client, tmp_path):
+    fund, a, b = _two_shares(client)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Cuestionario"
+    rows = [("Pregunta", "Respuesta"), ("Nombre del fondo", None), ("CLASE A", None), ("Código ISIN", a["isin"]),
+            ("Nombre de la clase de participaciones", None), ("Divisa de la clase", None),
+            ("CLASE B", None), ("Código ISIN", b["isin"]), ("Nombre de la clase de participaciones", None), ("Divisa de la clase", None)]
+    for r, (q, v) in enumerate(rows, start=1):
+        ws.cell(r, 1, q)
+        ws.cell(r, 2, v)
+    path = tmp_path / "cuestionario.xlsx"
+    wb.save(path)
+    doc = client.post("/api/rfi/documents", files={"file": ("cuestionario.xlsx", path.read_bytes())}).json()
+    assert doc["language"] == "es" and doc["multi_share"] is True
+    assert {s["isin"]: s["questions"] for s in doc["shares"]} == {a["isin"]: 3, b["isin"]: 3}
+    assert all(s["known"] and s["pid"] == fund["pid"] for s in doc["shares"])
+    analysis = client.post(f"/api/rfi/documents/{doc['id']}/answers", json={"pid": fund["pid"], "isin": a["isin"]}).json()
+    names = [x for x in analysis["questions"] if x["question"] == "Nombre de la clase de participaciones"]
+    assert [x["entity"]["isin"] for x in names] == [a["isin"], b["isin"]]
+    assert [x["answer"] for x in names] == [a["name"], b["name"]]  # chaque section lit SA part
+    fund_name = next(x for x in analysis["questions"] if x["question"] == "Nombre del fondo")
+    assert fund_name["entity"] == {} and fund_name["answer"] == fund["name"]
+
+
+def test_single_isin_in_a_list_keeps_the_chosen_share(tmp_path):
+    wb = Workbook()
+    ws = wb.active
+    for r, (q, v) in enumerate([("Question", "Réponse"), ("Code ISIN", "QZ0000000001"), ("Devise de la part", None)], start=1):
+        ws.cell(r, 1, q)
+        ws.cell(r, 2, v)
+    wb.save(tmp_path / "one.xlsx")
+    layout = detect(tmp_path / "one.xlsx")
+    assert all(not s.entity for s in layout.slots)  # une seule part citée : la part choisie à l'écran s'applique

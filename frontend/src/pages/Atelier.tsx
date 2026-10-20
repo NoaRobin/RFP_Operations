@@ -125,6 +125,8 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
   const [sheetName, setSheetName] = useState(recipe?.sheet ?? initial.suggested_sheet ?? initial.sheets[0]?.name)
   const sheet = analysis.sheets.find((s) => s.name === sheetName) ?? analysis.sheets[0]
   const [headerRow, setHeaderRow] = useState(recipe?.header_row ?? sheet?.header_row ?? 1)
+  const transposed = sheet?.orientation === 'columns'
+  const [labelColumn, setLabelColumn] = useState(recipe?.label_column ?? sheet?.label_column ?? '')
   const [keyColumn, setKeyColumn] = useState(recipe?.key_column ?? sheet?.key?.column ?? '')
   const [keyType, setKeyType] = useState(recipe?.key_type ?? sheet?.key?.key_type ?? 'isin_part')
   const [asOf, setAsOf] = useState(todayIso())
@@ -158,30 +160,34 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
     }
     firstSheet.current = false
     setHeaderRow(sheet.header_row)
+    setLabelColumn(sheet.label_column ?? '')
     setKeyColumn(sheet.key?.column ?? '')
     setKeyType(sheet.key?.key_type ?? 'isin_part')
     setMappings(sheet.columns.filter((c) => c.proposed).map((c) => ({ column: c.letter, extraction: c.proposed! })))
     setSelected(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheetName])
+  }, [sheetName, sheet?.orientation])
 
   useEffect(() => setPreview(null), [mappings, keyColumn, keyType, headerRow, asOf, overwrite, sheetName])
 
   const recipeBody = (): Recipe => ({
     id: savedRecipe?.id, name: recipeName, workbook_id: analysis.id, sheet: sheet.name, header_row: headerRow,
-    key_column: keyColumn, key_type: keyType, as_of: asOf, overwrite, highlight_changes: highlight, mappings,
+    key_column: transposed ? labelColumn : keyColumn, key_type: transposed ? 'isin_part' : keyType, as_of: asOf, overwrite,
+    highlight_changes: highlight, mappings, orientation: transposed ? 'columns' : 'rows',
+    key_row: transposed ? sheet.key_row ?? headerRow : null, label_column: transposed ? labelColumn || null : null,
   })
+  const ready = mappings.length > 0 && (transposed ? !!labelColumn : !!keyColumn)
 
   const assign = (column: string, extractionId: string) => {
     setMappings((all) => [...all.filter((m) => m.column !== column), { column, extraction: extractionId }])
-    toast('info', `${byId[extractionId]?.label ?? extractionId} → colonne ${column}`)
+    toast('info', `${byId[extractionId]?.label ?? extractionId} → ${column.startsWith('#') ? `ligne ${column.slice(1)}` : `colonne ${column}`}`)
   }
 
-  const reanalyze = async (row: number) => {
+  const reanalyze = async (row: number, orientation?: 'rows' | 'columns') => {
     setHeaderRow(row)
     setBusy('reload')
     try {
-      const next = await api.atelier.workbook(analysis.id, sheet.name, row)
+      const next = await api.atelier.workbook(analysis.id, sheet.name, orientation === 'columns' ? undefined : row, orientation ?? (transposed ? 'columns' : undefined))
       setAnalysis(next)
     } catch (e) {
       setError(e as ApiError)
@@ -258,6 +264,37 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
       </div>
 
       {/* Réglages */}
+      <div className="flex flex-wrap items-center gap-3" data-enter>
+        <div role="radiogroup" aria-label={texts.atelier.orientation} className="inline-flex rounded-full border border-line-strong p-0.5 text-sm">
+          {(['rows', 'columns'] as const).map((o) => (
+            <button key={o} role="radio" aria-checked={(o === 'columns') === transposed} disabled={busy === 'reload'}
+              onClick={() => (o === 'columns') !== transposed && reanalyze(headerRow, o)}
+              className={`rounded-full px-3.5 py-1.5 ${(o === 'columns') === transposed ? 'bg-fg/10 text-fg' : 'text-fg-2 hover:text-fg'}`}>
+              {o === 'rows' ? texts.atelier.orientationRows : texts.atelier.orientationColumns}
+            </button>
+          ))}
+        </div>
+        {sheet.language && <Badge tone="muted">{texts.atelier.languageDetected(texts.rfi.languages[sheet.language] ?? sheet.language)}</Badge>}
+        {transposed && <p className="text-sm text-fg-2">{texts.atelier.transposedHint(sheet.isin_columns?.length ?? 0)}</p>}
+      </div>
+      {transposed ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-enter>
+          <Field label={texts.atelier.keyRow} badge={<Badge tone="mint" className="!py-0 !text-[0.65rem]">{texts.atelier.detected}</Badge>}>
+            {({ id }) => <TextInput id={id} type="number" value={sheet.key_row ?? headerRow} readOnly />}
+          </Field>
+          <Field label={texts.atelier.labelColumn}>
+            {({ id }) => (
+              <Select id={id} value={labelColumn} onChange={(e) => setLabelColumn(e.target.value)}>
+                <option value="">{texts.automation.selectPlaceholder}</option>
+                {sheet.grid.cols.filter((c) => !sheet.isin_columns?.includes(c)).map((c) => <option key={c} value={c}>{c}</option>)}
+              </Select>
+            )}
+          </Field>
+          <Field label={texts.atelier.asOf}>
+            {({ id }) => <TextInput id={id} type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />}
+          </Field>
+        </div>
+      ) : (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-enter>
         <Field label={texts.atelier.headerRow} hint={busy === 'reload' ? texts.atelier.analyzing : undefined}>
           {({ id }) => <TextInput id={id} type="number" min={1} max={sheet.max_row} value={headerRow} onChange={(e) => reanalyze(Math.max(1, Number(e.target.value) || 1))} />}
@@ -284,6 +321,7 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
           {({ id }) => <TextInput id={id} type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />}
         </Field>
       </div>
+      )}
       <div className="flex flex-wrap gap-8" data-enter>
         <Switch checked={overwrite} onChange={setOverwrite} label={texts.atelier.overwrite} hint={texts.atelier.overwriteHint} />
         <Switch checked={highlight} onChange={setHighlight} label={texts.atelier.highlight} />
@@ -296,7 +334,7 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
           <span className="font-medium">{texts.atelier.suggestions} :</span>
           {proposals.map((c) => (
             <button key={c.letter} onClick={() => assign(c.letter, c.proposed!)} className="rounded-full border border-magic-400/40 px-3 py-1 text-sm text-magic-300 hover:bg-magic-500/15">
-              {c.letter} « {c.header} » → {byId[c.proposed!]?.label}
+              {c.letter.startsWith('#') ? `L${c.letter.slice(1)}` : c.letter} « {c.header} » → {byId[c.proposed!]?.label}
             </button>
           ))}
           <Button size="sm" variant="secondary" className="ml-auto"
@@ -309,12 +347,12 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
       {/* Grille + catalogue */}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="min-w-0" data-enter>
-          <SheetGrid sheet={sheet} headerRow={headerRow} keyColumn={keyColumn} mappings={mappings} extractions={byId}
+          <SheetGrid sheet={sheet} headerRow={transposed ? sheet.key_row ?? headerRow : headerRow} keyColumn={transposed ? '' : keyColumn} mappings={mappings} extractions={byId}
             selectedColumn={selected} onSelectColumn={setSelected} onDrop={assign}
             onRemove={(col) => setMappings((all) => all.filter((m) => m.column !== col))} preview={preview} showAfter={showAfter} />
         </div>
         <div data-enter>
-          <ExtractionPanel extractions={extractions} keyType={keyType} selectedColumn={selected}
+          <ExtractionPanel extractions={extractions} keyType={transposed ? 'isin_part' : keyType} selectedColumn={selected}
             usedIds={new Set(mappings.map((m) => m.extraction))}
             onAssign={(id) => selected && assign(selected, id)} />
         </div>
@@ -344,12 +382,12 @@ function Workbench({ analysis: initial, recipe, extractions, onClose }: {
           </p>
         )}
         <div className="ml-auto flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={() => setSaveOpen(true)} icon={<Save size={16} />} disabled={!mappings.length || !keyColumn}>{texts.atelier.saveRecipe}</Button>
-          <Button variant="ghost" onClick={() => (savedRecipe?.id ? setScheduleOpen(true) : save(true))} icon={<CalendarClock size={16} />} disabled={!mappings.length || !keyColumn}>{texts.atelier.schedule}</Button>
-          <Button variant="secondary" onClick={runPreview} loading={busy === 'preview'} icon={<Eye size={16} />} disabled={!mappings.length || !keyColumn}>
+          <Button variant="ghost" onClick={() => setSaveOpen(true)} icon={<Save size={16} />} disabled={!ready}>{texts.atelier.saveRecipe}</Button>
+          <Button variant="ghost" onClick={() => (savedRecipe?.id ? setScheduleOpen(true) : save(true))} icon={<CalendarClock size={16} />} disabled={!ready}>{texts.atelier.schedule}</Button>
+          <Button variant="secondary" onClick={runPreview} loading={busy === 'preview'} icon={<Eye size={16} />} disabled={!ready}>
             {busy === 'preview' ? texts.atelier.previewing : texts.atelier.preview}
           </Button>
-          <Button variant="primary" onClick={execute} loading={busy === 'run'} icon={<Play size={16} />} disabled={!mappings.length || !keyColumn}>{texts.atelier.run}</Button>
+          <Button variant="primary" onClick={execute} loading={busy === 'run'} icon={<Play size={16} />} disabled={!ready}>{texts.atelier.run}</Button>
         </div>
         {error && (
           <p role="alert" className="basis-full text-sm text-danger">{error.message} <span className="text-fg-2">{error.hint}</span></p>

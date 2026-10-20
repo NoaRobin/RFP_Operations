@@ -13,6 +13,7 @@ from ..atelier.analyzer import analyze_workbook
 from ..atelier.demo import build_demo_questionnaire
 from ..atelier.engine import RecipeError, compute_changes
 from ..atelier.extractions import get_extractions
+from ..atelier.ontology_bridge import ontology_for, palette
 from ..atelier.store import ALLOWED_SUFFIXES, AtelierStore
 from ..data.access import DataError
 from ..state import AppState
@@ -49,10 +50,11 @@ def _workbook(s: AppState, workbook_id: str):
     return folder, AtelierStore.original_path(folder)
 
 
-def _analysis(s: AppState, workbook_id: str, overrides: dict[str, int] | None = None) -> dict[str, Any]:
+def _analysis(s: AppState, workbook_id: str, overrides: dict[str, int] | None = None,
+              orientations: dict[str, str] | None = None) -> dict[str, Any]:
     folder, original = _workbook(s, workbook_id)
     try:
-        analysis = analyze_workbook(original, get_extractions(s.catalog), known_keys(s), overrides)
+        analysis = analyze_workbook(original, get_extractions(s.catalog), known_keys(s), overrides, ontology_for(s.data), orientations)
     except Exception as error:  # fichier corrompu, protégé par mot de passe…
         raise bad_request("Impossible de lire ce classeur.", f"Est-il protégé par mot de passe ou corrompu ? ({type(error).__name__})") from error
     return {**s.store.meta(workbook_id), **analysis}
@@ -61,9 +63,10 @@ def _analysis(s: AppState, workbook_id: str, overrides: dict[str, int] | None = 
 @router.get("/extractions")
 def extractions(s: AppState = Depends(state)) -> dict[str, Any]:
     catalog = get_extractions(s.catalog)
+    # Extractions Fabric directes, puis tout le modèle du compléteur RFI (concepts de l'ontologie, valeur lue par ISIN)
     return {
         "key_types": [{"id": k.id, "label": k.label} for k in catalog.key_types.values()],
-        "extractions": [e.to_dict() for e in catalog.extractions.values()],
+        "extractions": [e.to_dict() for e in catalog.extractions.values()] + palette(ontology_for(s.data)),
     }
 
 
@@ -95,9 +98,11 @@ def demo(s: AppState = Depends(state), user: str = Depends(current_user)):
 
 
 @router.get("/workbooks/{workbook_id}")
-def get_workbook(workbook_id: str, sheet: str | None = None, header_row: int | None = None, s: AppState = Depends(state)):
+def get_workbook(workbook_id: str, sheet: str | None = None, header_row: int | None = None, orientation: str | None = None,
+                 s: AppState = Depends(state)):
     overrides = {sheet: header_row} if sheet and header_row else None
-    return _analysis(s, workbook_id, overrides)
+    orientations = {sheet: orientation} if sheet and orientation in {"rows", "columns"} else None
+    return _analysis(s, workbook_id, overrides, orientations)
 
 
 @router.delete("/workbooks/{workbook_id}")
@@ -123,8 +128,8 @@ def download_version(workbook_id: str, name: str, s: AppState = Depends(state)):
 
 
 class Mapping(BaseModel):
-    column: str = Field(pattern=r"^[A-Z]{1,3}$")
-    extraction: str
+    column: str = Field(pattern=r"^(?:[A-Z]{1,3}|#\d{1,6})$")  # colonne, ou ligne « #n » d'un classeur transposé
+    extraction: str  # extraction Fabric ou concept de l'ontologie RFI (« onto:<concept> »)
 
 
 class RecipeBody(BaseModel):
@@ -133,8 +138,12 @@ class RecipeBody(BaseModel):
     workbook_id: str
     sheet: str
     header_row: int = Field(ge=1)
-    key_column: str = Field(pattern=r"^[A-Z]{1,3}$")
-    key_type: str
+    key_column: str = Field("", pattern=r"^(?:[A-Z]{1,3}|#\d{1,6})?$")
+    key_type: str = "isin_part"
+    orientation: str = Field("rows", pattern="^(rows|columns)$")  # columns : une colonne par ISIN (ligne clé)
+    key_row: int | None = Field(None, ge=1)
+    label_column: str | None = Field(None, pattern=r"^[A-Z]{1,3}$")
+    language: str | None = Field(None, pattern="^(fr|en|es|it)$")
     as_of: str | None = None
     overwrite: bool = False
     highlight_changes: bool = False

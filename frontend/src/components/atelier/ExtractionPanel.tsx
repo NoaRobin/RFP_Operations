@@ -6,6 +6,8 @@ import { gsap } from '../../motion/gsap'
 import { d, ease } from '../../motion/tokens'
 import { DRAG_TYPE } from './SheetGrid'
 
+const assignLabel = (target: string) => (target.startsWith('#') ? texts.atelier.assignToRow(target) : texts.atelier.assignTo(target))
+
 function normalize(text: string) {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
@@ -68,8 +70,8 @@ export function ExtractionPanel({
                       type="button"
                       onClick={() => onAssign(e.id)}
                       disabled={!selectedColumn}
-                      title={selectedColumn ? texts.atelier.assignTo(selectedColumn) : texts.atelier.selectColumnFirst}
-                      aria-label={selectedColumn ? `${texts.atelier.assignTo(selectedColumn)} : ${e.label}` : `${texts.atelier.assign} ${e.label} — ${texts.atelier.selectColumnFirst}`}
+                      title={selectedColumn ? assignLabel(selectedColumn) : texts.atelier.selectColumnFirst}
+                      aria-label={selectedColumn ? `${assignLabel(selectedColumn)} : ${e.label}` : `${texts.atelier.assign} ${e.label} — ${texts.atelier.selectColumnFirst}`}
                       className="shrink-0 rounded-full p-1.5 text-sun-300 transition-colors hover:bg-sun-400/15 disabled:text-fg-3 disabled:hover:bg-transparent"
                     >
                       <Wand2 size={16} />

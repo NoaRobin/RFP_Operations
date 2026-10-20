@@ -24,6 +24,7 @@ from lxml import etree
 from openpyxl import load_workbook
 from openpyxl.utils import column_index_from_string, get_column_letter, range_boundaries
 
+from .lexicon import detect_language as _detect_language
 from .ontology import norm
 
 MAX_ROWS, MAX_COLS = 3000, 60
@@ -48,13 +49,16 @@ _PH_EXACT = re.compile(
     r"fill in|select|selectionner|choisir|choose|please select|veuillez selectionner|liste deroulante|dropdown|"
     r"choisir dans la liste|choisir parmi la liste deroulante|choisir parmi la liste|reponse binaire|reponse libre|reponse numerique|"
     r"select from list|select from the list|select one|choisir une valeur|insert|enter|texte|text|information non disponible|"
-    r"montant|amount|date|valeur|value|commentaire|comment|comments|commentaires)$")
+    r"montant|amount|date|valeur|value|commentaire|comment|comments|commentaires|"
+    r"(?:si|si)\s*/\s*no|a completar|por completar|completar|rellenar|seleccionar|seleccione|elegir|respuesta|su respuesta|importe|fecha|valor|"
+    r"da compilare|da completare|compilare|selezionare|scegliere|risposta|la sua risposta|importo|data|valore|commento|comentario)$")
 _PH_BRACKET = re.compile(r"^[\[<({«].{0,120}[\]>)}»]$")
 _PH_INSTRUCTION = re.compile(
-    r"^(?:merci d[e']\s*|veuillez\s+|priere de\s+|svp\s+|please\s+|kindly\s+)?"
+    r"^(?:merci d[e']\s*|veuillez\s+|priere de\s+|svp\s+|please\s+|kindly\s+|por favor\s+|si prega di\s+|per favore\s+)?"
     r"(?:indiquer|indiquez|preciser|precisez|renseigner|renseignez|inserer|inserez|saisir|saisissez|mentionner|mentionnez|"
     r"donner|donnez|fournir|fournissez|completer|completez|selectionner|selectionnez|choisir|choisissez|cocher|cochez|"
-    r"indicate|insert|specify|provide|state|enter|fill in|fill|complete|select|choose|tick|confirm|list|give|input|type|inscrire|inscrivez)\b")
+    r"indicate|insert|specify|provide|state|enter|fill in|fill|complete|select|choose|tick|confirm|list|give|input|type|inscrire|inscrivez|"
+    r"indique|indicar|especifique|especificar|seleccione|marque|introduzca|indicare|indichi|specificare|specifichi|selezionare|inserire|inserisca)\b")
 _PH_MASK = re.compile(r"\b(?:xxx+|xx[,.]xx|\[\s*\.\.\.\s*\]|\.{3,}|_{3,}|<\s*\w+\s*>)")
 
 
@@ -94,10 +98,8 @@ def is_question_text(value: Any) -> bool:
 
 
 def detect_language(text: str) -> str:
-    words = norm(text).split()
-    fr = sum(w in {"le", "la", "les", "des", "du", "de", "et", "est", "votre", "vos", "quel", "quelle", "fonds", "part", "indiquer", "veuillez"} for w in words)
-    en = sum(w in {"the", "of", "and", "is", "your", "what", "which", "fund", "share", "please", "provide", "indicate"} for w in words)
-    return "en" if en > fr else "fr"
+    """fr | en | es | it (voir lexicon.py)."""
+    return _detect_language(text)
 
 
 @dataclass
@@ -247,15 +249,35 @@ def _font_flags(cell) -> tuple[bool, bool]:
 ANSWER_HEADER = re.compile(r"^(?:reponses?|answers?|responses?|valeurs?|values?|votre reponse|your answer|reponse du gerant|"
                            r"reponse de la societe de gestion|manager response|manager's response|asset manager response|"
                            r"donnees|data|information|informations|input|saisie|a completer|to be completed|fund response|"
-                           r"reponse fonds|reponse gestionnaire|your response|response from the manager)$")
-COMMENT_HEADER = re.compile(r"commentaire|comments?|precisions?|remarques?|observations?|notes?")
+                           r"reponse fonds|reponse gestionnaire|your response|response from the manager|"
+                           r"respuestas?|su respuesta|valor(?:es)?|datos|risposta|risposte|la sua risposta|valore|valori|dati)$")
+COMMENT_HEADER = re.compile(r"commentaire|comments?|precisions?|remarques?|observations?|notes?|comentarios?|observaciones|commenti|commento|osservazioni")
 INSTRUCTION_ROW = re.compile(r"^(?:-\s*)?(?:tous les champs|le fichier ne doit|si besoin|merci de|veuillez|please (?:complete|fill|note|answer)|"
                              r"all (?:fields|questions)|instructions?|important|nb|n\.b|note)\b")
 CONDITIONAL = re.compile(r"^(?:si oui|si non|sinon|dans l'affirmative|dans ce cas|le cas echeant|if yes|if no|if so|if not|otherwise|"
                          r"in that case|ce minimum|cette|lequel|laquelle|lesquels|lesquelles|which one|preciser|precisez|please specify|"
+                         r"en caso afirmativo|en caso negativo|si es asi|en tal caso|in caso affermativo|in caso negativo|se si|se no|in tal caso|"
                          r"details?|detaillez|si applicable|if applicable)\b")
 QUESTION_HEADER = re.compile(r"^(?:questions?|items?|criteres?|criteria|champs?|fields?|libelles?|labels?|intitules?|"
-                             r"rubriques?|sujets?|topics?|description|designation|information requested|information demandee|data point|datapoint)$")
+                             r"rubriques?|sujets?|topics?|description|designation|information requested|information demandee|data point|datapoint|"
+                             r"preguntas?|campos?|descripcion|domanda|domande|campo|campi|descrizione)$")
+
+
+def _row_isins(values: list[Any]) -> list[str]:
+    """ISIN cités sur une ligne (case seule « QZ… » ou dans un libellé « Part I – QZ… »)."""
+    return list(dict.fromkeys(ISIN_RE.findall(" ".join(str(v) for v in values if isinstance(v, str)))))
+
+
+def _section_isins(layout: "Layout") -> None:
+    """Questionnaire en liste couvrant plusieurs parts (une section par ISIN) : chaque case garde l'ISIN de sa section.
+    Avec une seule part citée, rien ne change : la part choisie dans l'écran s'applique à tout le document."""
+    found = {s.entity.get("isin") for s in layout.slots if s.entity.get("via") == "section"}
+    if len(found) >= 2:
+        layout.notes.append(f"{len(found)} parts citées dans des sections distinctes : chaque question reçoit l'ISIN de sa section")
+        return
+    for slot in layout.slots:
+        if slot.entity.get("via") == "section":
+            slot.entity = {}
 
 
 def _isin_cells(values: list[Any]) -> list[int]:
@@ -276,6 +298,7 @@ def detect_xlsx(path: Path) -> Layout:
             except (KeyError, etree.XMLSyntaxError):
                 dvs = {}
             _detect_sheet(ws, dvs, layout, sample)
+    _section_isins(layout)
     layout.text_sample = " ".join(sample)[:20000]
     layout.language = detect_language(layout.text_sample)
     layout.isins = sorted(set(ISIN_RE.findall(" ".join(sample))))
@@ -409,8 +432,12 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
                 question_col = max(near) if near else question_col
     section = ws.title
     previous_question = ""
+    current_isin = next((i[0] for i in (_row_isins(grid[rr]) for rr in range(header_row)) if len(i) == 1), None)
     for r in range(header_row, len(grid)):
         row = grid[r]
+        here = _row_isins(row)
+        if here:  # une part par section : l'ISIN cité vaut pour les questions qui suivent (plusieurs sur une ligne : ambigu)
+            current_isin = here[0] if len(here) == 1 else None
         cells = {c: v for c, v in enumerate(row) if f"{get_column_letter(c + 1)}{r + 1}" not in merged_tl}
         # Libellé de section dans une colonne à gauche des questions (« Demande », « Contacts SdG »…)
         if question_col is not None:
@@ -450,7 +477,7 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
             continue
         ref = f"{get_column_letter(target_col + 1)}{r + 1}"
         ref = merged_tl.get(ref, ref)
-        slot = _make_slot(layout, ws, ref, str(q_text), section, dvs, "list")
+        slot = _make_slot(layout, ws, ref, str(q_text), section, dvs, "list", {"isin": current_isin, "via": "section"} if current_isin else None)
         if comment_col is not None and comment_col != target_col and comment_col < len(row) and row[comment_col] is not None:
             slot.comment = str(row[comment_col]).strip()
             slot.comment_cell = f"{get_column_letter(comment_col + 1)}{r + 1}"
@@ -536,7 +563,11 @@ def detect_docx(path: Path) -> Layout:
             header = [norm(c.text) for c in rows[0].cells]
             answer_idx = next((i for i, h in enumerate(header) if ANSWER_HEADER.match(h)), None)
             isin_cols = [i for i, c in enumerate(rows[0].cells) if ISIN_RE.fullmatch(c.text.strip())]
+        table_isin = None
         for r_index, row in enumerate(rows):
+            here = _row_isins([c.text for c in row.cells]) if not isin_cols else []
+            if here:
+                table_isin = here[0] if len(here) == 1 else None
             if (answer_idx is not None or isin_cols) and r_index == 0:
                 continue
             cells = row.cells
@@ -568,13 +599,20 @@ def detect_docx(path: Path) -> Layout:
                 target = candidates[-1]
                 if is_question_text(target[1].text) and len(target[1].text) > 60:
                     continue
-            layout.slots.append(_docx_cell_slot(layout, target[1], q_text, t_index, r_index, target[0], f"Tableau {t_index + 1}, ligne {r_index + 1}", {}, "list"))
+            entity = {"isin": table_isin, "via": "section"} if table_isin else {}
+            layout.slots.append(_docx_cell_slot(layout, target[1], q_text, t_index, r_index, target[0], f"Tableau {t_index + 1}, ligne {r_index + 1}", entity, "list"))
 
     paragraphs = document.paragraphs
     section = ""
+    para_isin: str | None = None
+    para_isins: dict[int, str | None] = {}
     for p_index, paragraph in enumerate(paragraphs):
         text = paragraph.text.strip()
         el = paragraph._p
+        here = _row_isins([text])
+        if here:
+            para_isin = here[0] if len(here) == 1 else None
+        para_isins[p_index] = para_isin
         if not text:
             continue
         style = (paragraph.style.name or "").lower() if paragraph.style is not None else ""
@@ -630,6 +668,10 @@ def detect_docx(path: Path) -> Layout:
             if state != "answered":
                 layout.slots.append(Slot(id=f"p{len(layout.slots) + 1}", question=text, location=f"Paragraphe {p_index + 1}",
                                          target={"type": "next", "paragraph": p_index + 1}, state=state, hint=hint, context=section, layout="paragraph"))
+    for slot in layout.slots:
+        if slot.layout == "paragraph" and para_isins.get(slot.target.get("paragraph")):
+            slot.entity = {"isin": para_isins[slot.target["paragraph"]], "via": "section"}
+    _section_isins(layout)
     layout.text_sample = " ".join(sample)[:20000]
     layout.language = detect_language(layout.text_sample)
     full = "\n".join(p.text for p in paragraphs) + "\n" + "\n".join(c.text for t in document.tables for r in t.rows for c in r.cells)

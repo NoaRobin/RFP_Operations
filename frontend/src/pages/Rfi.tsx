@@ -9,6 +9,7 @@ import { CopilotDialog } from '../components/rfi/CopilotDialog'
 import { FundDocuments } from '../components/rfi/FundDocuments'
 import { Workbench } from '../components/rfi/review/Workbench'
 import { PrecedentsPanel } from '../components/rfi/PrecedentsPanel'
+import { SharesPanel } from '../components/rfi/SharesPanel'
 import { Button } from '../components/ui/Button'
 import { Field, Select, Switch, TextInput } from '../components/ui/Field'
 import { ErrorState, Loading } from '../components/ui/States'
@@ -17,7 +18,7 @@ import { texts } from '../content/texts'
 import { api, ApiError } from '../lib/api'
 import { formatRelative, todayIso } from '../lib/format'
 import { useAsync } from '../lib/hooks'
-import type { FundEntry, RfiAnalysis, RfiDocument, RfiGenerated, RfiPreview, RfiRequest } from '../lib/types'
+import type { FundEntry, RfiAnalysis, RfiDocument, RfiGenerated, RfiLanguage, RfiPreview, RfiRequest } from '../lib/types'
 import { gsap, useGSAP } from '../motion/gsap'
 import { d, ease, prefersReducedMotion } from '../motion/tokens'
 
@@ -108,7 +109,7 @@ export default function Rfi() {
   const [pid, setPid] = useState<string | null>(null)
   const [isin, setIsin] = useState<string | null>(null)
   const [asOf, setAsOf] = useState(todayIso())
-  const [language, setLanguage] = useState<'fr' | 'en'>('fr')
+  const [language, setLanguage] = useState<RfiLanguage>('fr')
   const [overrides, setOverrides] = useState<Record<string, Override>>({})
   const [accepted, setAccepted] = useState<Set<string>>(new Set())
   const [reusable, setReusable] = useState<Set<string>>(new Set())
@@ -291,7 +292,7 @@ export default function Rfi() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-xl font-semibold">{doc.filename}</p>
                 <p className="text-sm font-semibold text-fg-2">
-                  {texts.rfi.questions(doc.question_count ?? 0)} · {doc.language === 'en' ? 'anglais' : 'français'} {texts.rfi.detected}
+                  {texts.rfi.questions(doc.question_count ?? 0)} · {texts.rfi.languages[doc.language ?? 'fr'] ?? doc.language} {texts.rfi.detected}
                   {doc.dropdowns ? ` · ${doc.dropdowns} liste${doc.dropdowns > 1 ? 's' : ''} déroulante${doc.dropdowns > 1 ? 's' : ''}` : ''}
                   {doc.placeholders ? ` · ${doc.placeholders} consigne${doc.placeholders > 1 ? 's' : ''} client reconnue${doc.placeholders > 1 ? 's' : ''}` : ''}
                   {doc.notes?.length ? ` · ${doc.notes.join(' · ')}` : ''}
@@ -304,6 +305,9 @@ export default function Rfi() {
             <h2 className="mt-8 text-2xl">{texts.rfi.step1}</h2>
             <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <div className="flex flex-col gap-4">
+                {doc.multi_share && doc.shares && (
+                  <SharesPanel shares={doc.shares} isin={isin} onPick={(p, i) => { setPid(p); setIsin(i) }} />
+                )}
                 <FundPicker doc={doc} pid={pid} isin={isin} onPick={(p, i) => { setPid(p); setIsin(i) }} />
                 <FundDocuments isin={isin} />
               </div>
@@ -311,11 +315,10 @@ export default function Rfi() {
                 <Field label={texts.rfi.asOf}>
                   {({ id }) => <TextInput id={id} type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />}
                 </Field>
-                <Field label={texts.rfi.language}>
-                  {({ id }) => (
-                    <Select id={id} value={language} onChange={(e) => setLanguage(e.target.value as 'fr' | 'en')}>
-                      <option value="fr">Français</option>
-                      <option value="en">English</option>
+                <Field label={texts.rfi.language} hint={language === 'es' || language === 'it' ? texts.rfi.languageHint : undefined}>
+                  {({ id, describedBy }) => (
+                    <Select id={id} aria-describedby={describedBy} value={language} onChange={(e) => setLanguage(e.target.value as RfiLanguage)}>
+                      {texts.rfi.languageOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </Select>
                   )}
                 </Field>

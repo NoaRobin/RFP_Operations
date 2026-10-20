@@ -1,0 +1,680 @@
+# Lexique pivot : questions espagnoles (es) et italiennes (it) traduites mot à mot vers le français de l'ontologie.
+#
+# La compréhension (understand.py) ne connaît que les termes FR / EN de concepts.yaml et facets.yaml. Plutôt que de
+# dupliquer 224 concepts en quatre langues, la question es / it normalisée (minuscules, sans accents) est réécrite
+# en français avant l'analyse : « comisión de gestión máxima » → « commission de gestion maximum ».
+#   phrases : expressions remplacées d'abord (les plus longues en premier) ;
+#   words   : mots isolés remplacés ensuite (frontières de mots, jamais à l'intérieur d'un mot).
+# Les cibles doivent être des termes existants de l'ontologie (sinon la traduction n'apporte rien).
+# La réponse n'est pas traduite par ce lexique : libellés es / it dans vocabularies.yaml, sinon anglais.
+
+es:
+  markers: [el, los, las, del, su, sus, una, cual, cuales, por, para, como, cuantos, fondo, fondos, clase, participacion, participaciones,
+            comision, nombre, fecha, indique, gestora, gastos, rentabilidad, inversion, moneda, ano, anos, desde, esta, tiene, hay]
+  phrases:
+    clase de participaciones: classe de parts
+    clase de participacion: classe de parts
+    clase de acciones: classe de parts
+    clases de participaciones: classes de parts
+    clases de acciones: classes de parts
+    por favor: merci de
+    si / no: oui / non
+    si/no: oui/non
+    sociedad gestora: societe de gestion
+    entidad gestora: societe de gestion
+    gestora de inversiones: societe de gestion
+    gestor del fondo: gerant du fonds
+    gestor principal: gerant principal
+    gestor de la cartera: gerant
+    gestor de cartera: gerant
+    banco depositario: depositaire
+    entidad depositaria: depositaire
+    auditor externo: commissaire aux comptes
+    auditor de cuentas: commissaire aux comptes
+    agente de transferencia: agent de transfert
+    agente de transferencias: agent de transfert
+    forma juridica: forme juridique
+    forma legal: forme juridique
+    estructura juridica: structure juridique
+    estructura legal: structure juridique
+    pais de domicilio: pays de domicile
+    moneda base: devise de reference
+    moneda de referencia: devise de reference
+    divisa de referencia: devise de reference
+    divisa base: devise de reference
+    moneda de la clase: devise de la part
+    divisa de la clase: devise de la part
+    fecha de lanzamiento: date de lancement
+    fecha de inicio: date de lancement
+    fecha de creacion: date de creation
+    fecha de constitucion: date de creation
+    comision de gestion: commission de gestion
+    comision de exito: commission de surperformance
+    comision sobre resultados: commission de surperformance
+    comision de rentabilidad: commission de surperformance
+    comision de rendimiento: commission de surperformance
+    comision de suscripcion: droits d'entree
+    comision de entrada: droits d'entree
+    comision de reembolso: droits de sortie
+    comision de salida: droits de sortie
+    gastos corrientes: frais courants
+    gastos recurrentes: frais courants
+    costes de transaccion: couts de transaction
+    costos de transaccion: couts de transaction
+    indicador sintetico de riesgo: indicateur synthetique de risque
+    indicador de riesgo: indicateur de risque
+    nivel de riesgo: indicateur de risque
+    indice de referencia: indice de reference
+    objetivo de inversion: objectif d'investissement
+    objetivo de gestion: objectif de gestion
+    politica de inversion: politique d'investissement
+    periodo de mantenimiento recomendado: duree de placement recommandee
+    periodo de tenencia recomendado: duree de placement recommandee
+    horizonte de inversion recomendado: duree de placement recommandee
+    plazo de inversion recomendado: duree de placement recommandee
+    patrimonio del fondo: encours du fonds
+    activos bajo gestion: encours du fonds
+    patrimonio gestionado: encours du fonds
+    patrimonio de la clase: encours de la part
+    valor liquidativo: valeur liquidative
+    ultimo valor liquidativo: derniere vl
+    frecuencia de valoracion: frequence de valorisation
+    frecuencia de calculo del valor liquidativo: frequence de valorisation
+    hora limite: heure limite
+    hora de corte: heure limite
+    plazo de liquidacion: delai de reglement
+    inversion minima inicial: minimum de souscription initiale
+    inversion minima: minimum de souscription initiale
+    suscripcion minima inicial: minimum de souscription initiale
+    suscripcion minima: minimum de souscription initiale
+    importe minimo de suscripcion: minimum de souscription initiale
+    politica de distribucion: affectation des resultats
+    politica de dividendos: affectation des resultats
+    frecuencia de distribucion: frequence de distribution
+    cobertura de divisa: couverture de change
+    cobertura de divisas: couverture de change
+    cobertura del riesgo de cambio: couverture de change
+    clase cubierta: part couverte contre le risque de change
+    clasificacion sfdr: classification sfdr
+    perdida maxima: perte maximale
+    maxima perdida: perte maximale
+    error de seguimiento: ecart de suivi
+    desde el lanzamiento: depuis le lancement
+    desde el inicio: depuis la creation
+    desde la creacion: depuis la creation
+    en lo que va de ano: depuis le debut de l'annee
+    en lo que va del ano: depuis le debut de l'annee
+    ano en curso: annee en cours
+    un ano: 1 an
+    tres anos: 3 ans
+    cinco anos: 5 ans
+    diez anos: 10 ans
+    tres meses: 3 mois
+    seis meses: 6 mois
+    doce meses: 12 mois
+    numero de posiciones: nombre de lignes
+    numero de valores: nombre de lignes
+    numero de participaciones: nombre de parts
+    diez principales posiciones: 10 premieres lignes
+    10 principales posiciones: 10 premieres lignes
+    principales posiciones: 10 premieres lignes
+    clase de activos: classe d'actifs
+    zona geografica: zone geographique
+    efecto apalancamiento: effet de levier
+    apalancamiento: effet de levier
+    fondo de fondos: fonds de fonds
+    fondo subordinado: fonds nourricier
+    fondo principal: fonds maitre
+    cierre del ejercicio: cloture de l'exercice
+    fin del ejercicio: cloture de l'exercice
+    paises de registro: pays d'enregistrement
+    paises de comercializacion: pays de commercialisation
+    registrado para la venta: enregistre
+    inversores minoristas: clients non professionnels
+    inversores profesionales: clients professionnels
+    tipo de inversor: type d'investisseurs
+    tipo de inversores: type d'investisseurs
+    inversiones sostenibles: investissements durables
+    principales incidencias adversas: principales incidences negatives
+    acuerdo de paris: accord de paris
+    armas controvertidas: armes controversees
+    armas nucleares: armes nucleaires
+    juegos de azar: jeux d'argent
+    energia nuclear: energie nucleaire
+    capital garantizado: capital garanti
+    garantia de capital: garantie en capital
+    puntos basicos: points de base
+    miles de millones: milliards
+    fecha de los datos: date des donnees
+    datos a fecha de: donnees au
+    el fondo tiene: le fonds a-t-il
+    el fondo es: le fonds est-il
+    el fondo utiliza: le fonds utilise-t-il
+    el fondo invierte: le fonds investit-il
+    el fondo aplica: le fonds applique-t-il
+    el fondo excluye: le fonds exclut-il
+    la clase tiene: la part a-t-elle
+    existe un: existe-t-il un
+    existe una: existe-t-il une
+    hay un: y a-t-il un
+    hay una: y a-t-il une
+    por que: pourquoi
+    reino unido: royaume-uni
+    paises bajos: pays-bas
+  words:
+    fondo: fonds
+    fondos: fonds
+    subfondo: compartiment
+    compartimento: compartiment
+    participacion: part
+    participaciones: parts
+    clase: classe
+    clases: classes
+    nombre: nom
+    denominacion: denomination
+    codigo: code
+    moneda: devise
+    divisa: devise
+    fecha: date
+    lanzamiento: lancement
+    creacion: creation
+    domicilio: domicile
+    pais: pays
+    paises: pays
+    gestora: societe de gestion
+    gestor: gerant
+    depositario: depositaire
+    auditor: commissaire aux comptes
+    administrador: administrateur
+    comision: commission
+    comisiones: commissions
+    gastos: frais
+    costes: couts
+    costos: couts
+    maxima: maximum
+    maximo: maximum
+    maximos: maximum
+    minima: minimum
+    minimo: minimum
+    suscripcion: souscription
+    suscripciones: souscriptions
+    reembolso: rachat
+    reembolsos: rachats
+    rescate: rachat
+    rescates: rachats
+    entrada: entree
+    salida: sortie
+    riesgo: risque
+    indicador: indicateur
+    sintetico: synthetique
+    referencia: reference
+    objetivo: objectif
+    inversion: investissement
+    inversiones: investissements
+    politica: politique
+    rentabilidad: performance
+    rentabilidades: performances
+    rendimiento: performance
+    volatilidad: volatilite
+    ano: an
+    anos: ans
+    mes: mois
+    meses: mois
+    anualizada: annualisee
+    anualizado: annualise
+    acumulada: cumulee
+    acumulado: cumule
+    frecuencia: frequence
+    valoracion: valorisation
+    hora: heure
+    liquidacion: reglement
+    plazo: delai
+    distribucion: distribution
+    acumulacion: capitalisation
+    capitalizacion: capitalisation
+    cubierta: couverte
+    cobertura: couverture
+    articulo: article
+    clasificacion: classification
+    sostenible: durable
+    sostenibles: durables
+    exclusion: exclusion
+    exclusiones: exclusions
+    tabaco: tabac
+    alcohol: alcool
+    pornografia: pornographie
+    petroleo: petrole
+    gas: gaz
+    derivados: derives
+    ejercicio: exercice
+    inversor: investisseur
+    inversores: investisseurs
+    porcentaje: pourcentage
+    millones: millions
+    describa: decrivez
+    describe: decrivez
+    describir: decrire
+    explique: expliquez
+    explicar: expliquer
+    detalle: detaillez
+    presente: presentez
+    posiciones: lignes
+    numero: nombre
+    importe: montant
+    garantia: garantie
+    patrimonio: encours
+    activos: actifs
+    valor: valeur
+    ultimo: dernier
+    ultima: derniere
+    registro: enregistrement
+    registrado: enregistre
+    registrada: enregistree
+    comercializacion: commercialisation
+    sociedad: societe
+    datos: donnees
+    tipo: type
+    nivel: niveau
+    zona: zone
+    geografica: geographique
+    categoria: categorie
+    estrategia: strategie
+    producto: produit
+    cartera: portefeuille
+    inicial: initiale
+    transparencia: transparence
+    alemania: allemagne
+    austria: autriche
+    suiza: suisse
+    italia: italie
+    espana: espagne
+    francia: france
+    luxemburgo: luxembourg
+    belgica: belgique
+    irlanda: irlande
+    indique: indiquez
+    especifique: precisez
+    proporcione: fournissez
+    con: avec
+    sin: sans
+    para: pour
+    por: par
+    el: le
+    los: les
+    las: les
+    del: du
+    al: au
+    su: votre
+    sus: vos
+    y: et
+    o: ou
+    cual: quel
+    cuales: quels
+    es: est
+    esta: est
+    tiene: a
+    enero: janvier
+    febrero: fevrier
+    marzo: mars
+    abril: avril
+    mayo: mai
+    junio: juin
+    julio: juillet
+    agosto: aout
+    septiembre: septembre
+    octubre: octobre
+    noviembre: novembre
+    diciembre: decembre
+
+it:
+  markers: [gli, dell, dall, nell, sull, della, dello, dei, degli, delle, di, e, per, con, fondo, fondi, quota, quote, comparto, commissione,
+            nome, indicare, sono, che, nel, nella, sgr, rendimento, investimento, valuta, anni, anno, dal, dalla, ha, esiste]
+  phrases:
+    classe di quote: classe de parts
+    classe di azioni: classe de parts
+    classi di quote: classes de parts
+    classi di azioni: classes de parts
+    per favore: merci de
+    si / no: oui / non
+    si/no: oui/non
+    societa di gestione del risparmio: societe de gestion
+    societa di gestione: societe de gestion
+    gestore del fondo: gerant du fonds
+    gestore principale: gerant principal
+    gestore del portafoglio: gerant
+    banca depositaria: depositaire
+    societa di revisione: commissaire aux comptes
+    revisore legale: commissaire aux comptes
+    revisore esterno: commissaire aux comptes
+    agente di trasferimento: agent de transfert
+    forma giuridica: forme juridique
+    forma legale: forme juridique
+    struttura giuridica: structure juridique
+    struttura legale: structure juridique
+    paese di domicilio: pays de domicile
+    valuta di riferimento: devise de reference
+    valuta base: devise de reference
+    valuta di denominazione: devise de reference
+    valuta della classe: devise de la part
+    data di lancio: date de lancement
+    data di avvio: date de lancement
+    data di inizio: date de lancement
+    data di costituzione: date de creation
+    data di istituzione: date de creation
+    commissione di gestione: commission de gestion
+    commissioni di gestione: commission de gestion
+    commissione di performance: commission de surperformance
+    commissione di incentivo: commission de surperformance
+    commissione di overperformance: commission de surperformance
+    commissione di sovraperformance: commission de surperformance
+    commissione di sottoscrizione: droits d'entree
+    commissione di ingresso: droits d'entree
+    commissione di entrata: droits d'entree
+    commissione di rimborso: droits de sortie
+    commissione di uscita: droits de sortie
+    spese correnti: frais courants
+    costi correnti: frais courants
+    oneri correnti: frais courants
+    costi di transazione: couts de transaction
+    indicatore sintetico di rischio: indicateur synthetique de risque
+    indicatore di rischio: indicateur de risque
+    classe di rischio: indicateur de risque
+    livello di rischio: indicateur de risque
+    indice di riferimento: indice de reference
+    parametro di riferimento: indice de reference
+    obiettivo di investimento: objectif d'investissement
+    obiettivo di gestione: objectif de gestion
+    politica di investimento: politique d'investissement
+    periodo di detenzione raccomandato: duree de placement recommandee
+    periodo di detenzione consigliato: duree de placement recommandee
+    periodo minimo di investimento consigliato: duree de placement recommandee
+    orizzonte temporale consigliato: duree de placement recommandee
+    orizzonte di investimento consigliato: duree de placement recommandee
+    patrimonio del fondo: encours du fonds
+    patrimonio gestito: encours du fonds
+    masse gestite: encours du fonds
+    patrimonio netto: actif net
+    patrimonio della classe: encours de la part
+    valore della quota: valeur liquidative
+    valore patrimoniale netto: valeur liquidative
+    valore unitario della quota: valeur liquidative
+    ultimo valore della quota: derniere vl
+    frequenza di valorizzazione: frequence de valorisation
+    frequenza di calcolo del nav: frequence de valorisation
+    frequenza di calcolo del valore della quota: frequence de valorisation
+    orario limite: heure limite
+    orario di cut-off: heure limite
+    orario di cut off: heure limite
+    tempi di regolamento: delai de reglement
+    termini di regolamento: delai de reglement
+    investimento minimo iniziale: minimum de souscription initiale
+    investimento minimo: minimum de souscription initiale
+    sottoscrizione minima iniziale: minimum de souscription initiale
+    sottoscrizione minima: minimum de souscription initiale
+    importo minimo di sottoscrizione: minimum de souscription initiale
+    politica di distribuzione: affectation des resultats
+    politica dei proventi: affectation des resultats
+    frequenza di distribuzione: frequence de distribution
+    copertura valutaria: couverture de change
+    copertura del rischio di cambio: couverture de change
+    classe coperta: part couverte contre le risque de change
+    classificazione sfdr: classification sfdr
+    perdita massima: perte maximale
+    massimo drawdown: max drawdown
+    errore di replica: ecart de suivi
+    dal lancio: depuis le lancement
+    dall'avvio: depuis le lancement
+    dalla partenza: depuis le lancement
+    dalla costituzione: depuis la creation
+    dall'inizio: depuis la creation
+    da inizio anno: depuis le debut de l'annee
+    dall'inizio dell'anno: depuis le debut de l'annee
+    anno in corso: annee en cours
+    un anno: 1 an
+    tre anni: 3 ans
+    cinque anni: 5 ans
+    dieci anni: 10 ans
+    tre mesi: 3 mois
+    sei mesi: 6 mois
+    dodici mesi: 12 mois
+    numero di titoli: nombre de lignes
+    numero di posizioni: nombre de lignes
+    numero di quote: nombre de parts
+    primi 10 titoli: 10 premieres lignes
+    prime 10 posizioni: 10 premieres lignes
+    primi dieci titoli: 10 premieres lignes
+    prime dieci posizioni: 10 premieres lignes
+    classe di attivita: classe d'actifs
+    asset class: classe d'actifs
+    area geografica: zone geographique
+    zona geografica: zone geographique
+    leva finanziaria: effet de levier
+    effetto leva: effet de levier
+    fondo di fondi: fonds de fonds
+    fondo feeder: fonds nourricier
+    fondo master: fonds maitre
+    chiusura dell'esercizio: cloture de l'exercice
+    chiusura dell'esercizio contabile: cloture de l'exercice
+    paesi di registrazione: pays d'enregistrement
+    paesi di commercializzazione: pays de commercialisation
+    autorizzato alla commercializzazione: enregistre
+    investitori al dettaglio: clients non professionnels
+    clientela al dettaglio: clients non professionnels
+    investitori retail: clients non professionnels
+    investitori professionali: clients professionnels
+    tipo di investitore: type d'investisseurs
+    tipo di investitori: type d'investisseurs
+    investimenti sostenibili: investissements durables
+    principali effetti negativi: principales incidences negatives
+    accordo di parigi: accord de paris
+    armi controverse: armes controversees
+    armi nucleari: armes nucleaires
+    gioco d'azzardo: jeux d'argent
+    giochi d'azzardo: jeux d'argent
+    energia nucleare: energie nucleaire
+    capitale garantito: capital garanti
+    garanzia del capitale: garantie en capital
+    punti base: points de base
+    data di riferimento dei dati: date des donnees
+    dati al: donnees au
+    il fondo ha: le fonds a-t-il
+    il fondo e: le fonds est-il
+    il fondo utilizza: le fonds utilise-t-il
+    il fondo investe: le fonds investit-il
+    il fondo applica: le fonds applique-t-il
+    il fondo esclude: le fonds exclut-il
+    la classe ha: la part a-t-elle
+    esiste un: existe-t-il un
+    esiste una: existe-t-il une
+    c'e un: y a-t-il un
+    c'e: y a-t-il
+    ci sono: y a-t-il
+    c'e una: y a-t-il une
+    regno unito: royaume-uni
+    paesi bassi: pays-bas
+  words:
+    fondo: fonds
+    fondi: fonds
+    comparto: compartiment
+    quota: part
+    quote: parts
+    classe: classe
+    classi: classes
+    nome: nom
+    denominazione: denomination
+    codice: code
+    valuta: devise
+    divisa: devise
+    data: date
+    lancio: lancement
+    avvio: lancement
+    costituzione: creation
+    domicilio: domicile
+    paese: pays
+    paesi: pays
+    sgr: societe de gestion
+    gestore: gerant
+    depositaria: depositaire
+    depositario: depositaire
+    revisore: commissaire aux comptes
+    amministratore: administrateur
+    commissione: commission
+    commissioni: commissions
+    spese: frais
+    costi: couts
+    costo: cout
+    oneri: frais
+    massima: maximum
+    massimo: maximum
+    massime: maximum
+    minima: minimum
+    minimo: minimum
+    sottoscrizione: souscription
+    sottoscrizioni: souscriptions
+    rimborso: rachat
+    rimborsi: rachats
+    ingresso: entree
+    entrata: entree
+    uscita: sortie
+    gestione: gestion
+    rischio: risque
+    indicatore: indicateur
+    sintetico: synthetique
+    riferimento: reference
+    obiettivo: objectif
+    investimento: investissement
+    investimenti: investissements
+    politica: politique
+    rendimento: performance
+    rendimenti: performances
+    volatilita: volatilite
+    anno: an
+    anni: ans
+    mese: mois
+    mesi: mois
+    annualizzata: annualisee
+    annualizzato: annualise
+    cumulata: cumulee
+    cumulato: cumule
+    frequenza: frequence
+    valorizzazione: valorisation
+    orario: heure
+    regolamento: reglement
+    distribuzione: distribution
+    accumulazione: capitalisation
+    capitalizzazione: capitalisation
+    copertura: couverture
+    coperta: couverte
+    articolo: article
+    classificazione: classification
+    sostenibile: durable
+    sostenibili: durables
+    esclusione: exclusion
+    esclusioni: exclusions
+    tabacco: tabac
+    alcol: alcool
+    pornografia: pornographie
+    petrolio: petrole
+    gas: gaz
+    derivati: derives
+    esercizio: exercice
+    investitore: investisseur
+    investitori: investisseurs
+    percentuale: pourcentage
+    milioni: millions
+    miliardi: milliards
+    descrivere: decrire
+    descriva: decrivez
+    descrivete: decrivez
+    spiegare: expliquer
+    spieghi: expliquez
+    illustrare: presenter
+    illustri: presentez
+    dettagliare: detailler
+    posizioni: lignes
+    titoli: lignes
+    numero: nombre
+    importo: montant
+    garanzia: garantie
+    patrimonio: encours
+    attivi: actifs
+    valore: valeur
+    ultimo: dernier
+    ultima: derniere
+    registrazione: enregistrement
+    registrato: enregistre
+    registrata: enregistree
+    commercializzazione: commercialisation
+    societa: societe
+    dati: donnees
+    tipo: type
+    livello: niveau
+    zona: zone
+    area: zone
+    geografica: geographique
+    categoria: categorie
+    strategia: strategie
+    prodotto: produit
+    portafoglio: portefeuille
+    iniziale: initiale
+    principale: principal
+    trasparenza: transparence
+    germania: allemagne
+    austria: autriche
+    svizzera: suisse
+    italia: italie
+    spagna: espagne
+    francia: france
+    lussemburgo: luxembourg
+    belgio: belgique
+    irlanda: irlande
+    oicr: opc
+    oicvm: opcvm
+    indicare: indiquez
+    indichi: indiquez
+    specificare: precisez
+    specifichi: precisez
+    fornire: fournissez
+    fornisca: fournissez
+    con: avec
+    senza: sans
+    per: pour
+    il: le
+    lo: le
+    gli: les
+    del: du
+    dello: du
+    della: de la
+    dell': de l'
+    dei: des
+    degli: des
+    delle: des
+    di: de
+    al: au
+    alla: a la
+    ai: aux
+    nel: dans le
+    nella: dans la
+    dal: depuis le
+    dalla: depuis la
+    e: et
+    o: ou
+    quale: quel
+    quali: quels
+    perche: pourquoi
+    come: comment
+    una: une
+    uno: un
+    ha: a
+    gennaio: janvier
+    febbraio: fevrier
+    marzo: mars
+    aprile: avril
+    maggio: mai
+    giugno: juin
+    luglio: juillet
+    agosto: aout
+    settembre: septembre
+    ottobre: octobre
+    novembre: novembre
+    dicembre: decembre

@@ -14,6 +14,9 @@ from openpyxl.cell.cell import Cell
 from openpyxl.utils import get_column_letter
 
 from .extractions import ExtractionCatalog
+from .ontology_bridge import sheet_language, suggest as suggest_concepts
+
+ISIN = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}\d$")
 
 GRID_MAX_ROWS = 80
 GRID_MAX_COLS = 26
@@ -88,11 +91,45 @@ def detect_header_row(rows: list[list[Any]]) -> int:
     return best
 
 
+def _merge_suggestions(suggestions: list[dict[str, Any]], ontology_suggestions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen = {s["extraction"] for s in suggestions}
+    merged = suggestions + [o for o in ontology_suggestions if o["extraction"] not in seen]
+    return sorted(merged, key=lambda s: s["score"], reverse=True)[:4]
+
+
+def _propose(suggestions: list[dict[str, Any]], ontology_suggestions: list[dict[str, Any]], used: set[str]) -> str | None:
+    """Extraction Fabric directe si l'en-tête est net ; sinon concept de l'ontologie RFI lu sans réserve (même seuil que le RFI)."""
+    if suggestions and suggestions[0]["score"] >= 0.62 and suggestions[0]["extraction"] not in used:
+        return suggestions[0]["extraction"]
+    best = ontology_suggestions[0] if ontology_suggestions else None
+    if best and best["auto"] and best["extraction"] not in used:
+        return best["extraction"]
+    return None
+
+
+def find_isin_row(values: list[list[Any]]) -> int | None:
+    """Classeur transposé : ligne (1-based) portant au moins deux ISIN, une colonne par part."""
+    for index, row in enumerate(values[:40], start=1):
+        if sum(1 for v in row if isinstance(v, str) and ISIN.match(v.strip().upper())) >= 2:
+            return index
+    return None
+
+
+def _isin_column_count(values: list[list[Any]], header_row: int) -> int:
+    best = 0
+    for c in range(max((len(r) for r in values), default=0)):
+        best = max(best, sum(1 for row in values[header_row:] if c < len(row) and isinstance(row[c], str) and ISIN.match(row[c].strip().upper())))
+    return best
+
+
 def analyze_sheet(ws, ws_formulas, extractions: ExtractionCatalog, known_keys: dict[str, set[str]],
-                  header_row: int | None = None) -> dict[str, Any]:
+                  header_row: int | None = None, ontology=None, orientation: str | None = None) -> dict[str, Any]:
     max_row = min(ws.max_row or 1, DATA_MAX_ROWS)
     max_col = min(ws.max_column or 1, 200)
     values = [[ws.cell(r, c).value for c in range(1, max_col + 1)] for r in range(1, min(max_row, 40) + 1)]
+    isin_row = find_isin_row(values)
+    if orientation != "rows" and isin_row and (orientation == "columns" or _isin_column_count(values, detect_header_row(values)) < 2):
+        return analyze_transposed(ws, ws_formulas, extractions, isin_row, ontology)
     header_row = header_row or detect_header_row(values)
 
     headers = {c: ws.cell(header_row, c).value for c in range(1, max_col + 1)}
@@ -126,6 +163,7 @@ def analyze_sheet(ws, ws_formulas, extractions: ExtractionCatalog, known_keys: d
     key_rows = [r for r in data_rows if key and not is_empty(ws.cell(r, key["index"]).value)] if key else []
 
     # ----------------------------------------------------------------- colonnes & propositions
+    lang = sheet_language([str(v) for v in headers.values() if isinstance(v, str)])
     columns, targets = [], []
     used_extractions: set[str] = set()
     pool = extractions.for_key(key["key_type"]) if key else [e for e in extractions.extractions.values() if not e.problems]
@@ -146,10 +184,11 @@ def analyze_sheet(ws, ws_formulas, extractions: ExtractionCatalog, known_keys: d
                 if score >= 0.5:
                     scored.append({"extraction": e.id, "label": e.label, "score": round(score, 3)})
             suggestions = sorted(scored, key=lambda s: s["score"], reverse=True)[:3]
-        proposed = None
-        if suggestions and suggestions[0]["score"] >= 0.62 and suggestions[0]["extraction"] not in used_extractions:
-            proposed = suggestions[0]["extraction"]
+        onto = suggest_concepts(ontology, str(header), lang) if ontology is not None and not is_key and header not in (None, "") else []
+        proposed = _propose(suggestions, onto, used_extractions) if not is_key else None
+        if proposed:
             used_extractions.add(proposed)
+        suggestions = _merge_suggestions(suggestions, onto)
         columns.append({
             "letter": letter, "index": c, "header": display(header), "is_key": is_key,
             "empty": len(empty_cells), "filled": len(rows_scope) - len(empty_cells) - formulas, "formulas": formulas,
@@ -160,9 +199,68 @@ def analyze_sheet(ws, ws_formulas, extractions: ExtractionCatalog, known_keys: d
             for r in sorted(set(empty_cells) | set(highlighted)):
                 targets.append(f"{letter}{r}")
 
-    # ----------------------------------------------------------------- grille d'aperçu
+    return {
+        "name": ws.title, "orientation": "rows", "language": lang, "max_row": last_data_row, "max_col": max_col, "header_row": header_row,
+        "data_rows": len(data_rows), "key": key, "key_candidates": key_candidates[:5], "key_rows": len(key_rows),
+        "columns": columns, "targets": targets[:2000], "target_count": len(targets),
+        "grid": _grid(ws, ws_formulas, max_col, max(last_data_row, header_row)),
+    }
+
+
+def analyze_transposed(ws, ws_formulas, extractions: ExtractionCatalog, isin_row: int, ontology=None) -> dict[str, Any]:
+    """Une colonne par part (ISIN sur une ligne), une ligne par donnée : chaque libellé de ligne est lu comme une question."""
+    max_row = min(ws.max_row or 1, DATA_MAX_ROWS)
+    max_col = min(ws.max_column or 1, 200)
+    isin_cols = [c for c in range(1, max_col + 1)
+                 if isinstance(ws.cell(isin_row, c).value, str) and ISIN.match(str(ws.cell(isin_row, c).value).strip().upper())]
+    first = min(isin_cols)
+    label_counts = {c: sum(1 for r in range(1, max_row + 1) if r != isin_row and isinstance(ws.cell(r, c).value, str)
+                           and ws.cell(r, c).value.strip() and not ISIN.match(ws.cell(r, c).value.strip().upper()))
+                    for c in range(1, first)}
+    label_col = max(label_counts, key=lambda c: (label_counts[c], c)) if label_counts and max(label_counts.values()) else None
+    labels = {r: ws.cell(r, label_col).value for r in range(1, max_row + 1)} if label_col else {}
+    lang = sheet_language([str(v) for v in labels.values() if isinstance(v, str)])
+    pool = extractions.for_key("isin_part")
+    known = len(isin_cols)
+    columns, targets, used = [], [], set()
+    for r in range(1, max_row + 1):
+        label = labels.get(r)
+        if r == isin_row or not isinstance(label, str) or not label.strip() or label_col is None:
+            continue
+        cells = [ws.cell(r, c).value for c in isin_cols]
+        empty = [c for c in isin_cols if is_empty(ws.cell(r, c).value) and not str(ws_formulas.cell(r, c).value or "").startswith("=")]
+        formulas = sum(1 for c in isin_cols if str(ws_formulas.cell(r, c).value or "").startswith("="))
+        if r < isin_row and len(empty) == len(isin_cols):
+            continue  # titre au-dessus de la ligne des ISIN
+        scored = []
+        for e in pool:
+            score = max(similarity(label, cand) for cand in [e.label, *e.synonyms])
+            if score >= 0.5:
+                scored.append({"extraction": e.id, "label": e.label, "score": round(score, 3)})
+        suggestions = sorted(scored, key=lambda x: x["score"], reverse=True)[:3]
+        onto = suggest_concepts(ontology, label, lang) if ontology is not None else []
+        proposed = _propose(suggestions, onto, used)
+        if proposed:
+            used.add(proposed)
+        columns.append({"letter": f"#{r}", "index": r, "header": display(label), "is_key": False, "empty": len(empty),
+                        "filled": len(isin_cols) - len(empty) - formulas, "formulas": formulas, "highlighted": 0,
+                        "suggestions": _merge_suggestions(suggestions, onto), "proposed": proposed,
+                        "samples": [display(v) for v in cells if not is_empty(v)][:3]})
+        targets.extend(f"{get_column_letter(c)}{r}" for c in empty)
+    key = {"column": f"#{isin_row}", "index": isin_row, "key_type": "isin_part", "score": 1.0, "recognized": known, "total": known}
+    return {
+        "name": ws.title, "orientation": "columns", "language": lang, "max_row": max_row, "max_col": max_col, "header_row": isin_row,
+        "key_row": isin_row, "label_column": get_column_letter(label_col) if label_col else None,
+        "isin_columns": [get_column_letter(c) for c in isin_cols],
+        "data_rows": len(columns), "key": key, "key_candidates": [key], "key_rows": known,
+        "columns": columns, "targets": targets[:2000], "target_count": len(targets),
+        "grid": _grid(ws, ws_formulas, max_col, max_row),
+    }
+
+
+def _grid(ws, ws_formulas, max_col: int, last_row: int) -> dict[str, Any]:
     grid_cols = min(max_col, GRID_MAX_COLS)
-    grid_rows = min(max(last_data_row, header_row), GRID_MAX_ROWS)
+    grid_rows = min(last_row, GRID_MAX_ROWS)
     grid = []
     for r in range(1, grid_rows + 1):
         row = []
@@ -171,18 +269,12 @@ def analyze_sheet(ws, ws_formulas, extractions: ExtractionCatalog, known_keys: d
             formula = str(ws_formulas.cell(r, c).value or "").startswith("=")
             row.append({"v": display(raw), "f": formula, "n": isinstance(raw, (int, float)) and not isinstance(raw, bool)})
         grid.append(row)
-
-    return {
-        "name": ws.title, "max_row": last_data_row, "max_col": max_col, "header_row": header_row,
-        "data_rows": len(data_rows), "key": key, "key_candidates": key_candidates[:5], "key_rows": len(key_rows),
-        "columns": columns, "targets": targets[:2000], "target_count": len(targets),
-        "grid": {"rows": grid, "cols": [get_column_letter(c) for c in range(1, grid_cols + 1)],
-                 "truncated_rows": last_data_row > grid_rows, "truncated_cols": max_col > grid_cols},
-    }
+    return {"rows": grid, "cols": [get_column_letter(c) for c in range(1, grid_cols + 1)],
+            "truncated_rows": last_row > grid_rows, "truncated_cols": max_col > grid_cols}
 
 
 def analyze_workbook(path: Path, extractions: ExtractionCatalog, known_keys: dict[str, set[str]],
-                     overrides: dict[str, int] | None = None) -> dict[str, Any]:
+                     overrides: dict[str, int] | None = None, ontology=None, orientations: dict[str, str] | None = None) -> dict[str, Any]:
     overrides = overrides or {}
     wb_values = load_workbook(path, data_only=True, read_only=False)
     wb_formulas = load_workbook(path, data_only=False, read_only=False)
@@ -190,6 +282,7 @@ def analyze_workbook(path: Path, extractions: ExtractionCatalog, known_keys: dic
     for ws in wb_values.worksheets:
         if ws.sheet_state != "visible":
             continue
-        sheets.append(analyze_sheet(ws, wb_formulas[ws.title], extractions, known_keys, overrides.get(ws.title)))
+        sheets.append(analyze_sheet(ws, wb_formulas[ws.title], extractions, known_keys, overrides.get(ws.title), ontology,
+                                    (orientations or {}).get(ws.title)))
     best = max(sheets, key=lambda s: (bool(s["key"]), sum(1 for c in s["columns"] if c["proposed"]), s["target_count"]), default=None)
     return {"sheets": sheets, "suggested_sheet": best["name"] if best else None}

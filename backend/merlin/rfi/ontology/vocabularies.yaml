@@ -1,12 +1,12 @@
-# Vocabulaires contrôlés : valeurs canoniques d'un concept, libellés FR / EN et synonymes.
+# Vocabulaires contrôlés : valeurs canoniques d'un concept, libellés FR / EN (ES / IT facultatifs, repli sur EN) et synonymes.
 # Servent à : (1) normaliser la valeur Product Info (souvent saisie en anglais ou en français),
 #             (2) traduire la réponse dans la langue du questionnaire,
 #             (3) choisir la bonne option d'une liste déroulante Excel / Word.
 # Synonymes en texte normalisé (minuscules, sans accents).
 vocabularies:
   yes_no:
-    - {id: "yes", fr: Oui, en: "Yes", synonyms: [oui, "yes", y, o, true, vrai, "1", x, si, ja, "✓", "✔", "v"]}
-    - {id: "no", fr: Non, en: "No", synonyms: [non, "no", n, false, faux, "0", nein]}
+    - {id: "yes", fr: Oui, en: "Yes", es: "Sí", it: "Sì", synonyms: [oui, "yes", y, o, true, vrai, "1", x, si, ja, "✓", "✔", "v", sì, vero, verdadero]}
+    - {id: "no", fr: Non, en: "No", es: "No", it: "No", synonyms: [non, "no", n, false, faux, "0", nein, falso]}
 
   sfdr:
     - {id: art6, fr: Article 6, en: Article 6, synonyms: [article 6, art 6, art. 6, art6, "6", sfdr 6, article 6 sfdr, non applicable sfdr]}
@@ -19,18 +19,18 @@ vocabularies:
     - {id: cat3, fr: Catégorie 3, en: Category 3, synonyms: [categorie 3, category 3, cat 3, cat. 3, "3", approche limitee, non engageante]}
 
   frequency:
-    - {id: daily, fr: Quotidienne, en: Daily, synonyms: [quotidienne, quotidien, journaliere, journalier, daily, chaque jour, chaque jour ouvre, every business day, every day, each business day, tous les jours, j, d]}
-    - {id: weekly, fr: Hebdomadaire, en: Weekly, synonyms: [hebdomadaire, weekly, chaque semaine, every week, w]}
-    - {id: fortnightly, fr: Bimensuelle, en: Fortnightly, synonyms: [bimensuelle, bimensuel, fortnightly, bi-monthly, bimonthly, toutes les deux semaines, every two weeks]}
-    - {id: monthly, fr: Mensuelle, en: Monthly, synonyms: [mensuelle, mensuel, monthly, chaque mois, every month, m]}
-    - {id: quarterly, fr: Trimestrielle, en: Quarterly, synonyms: [trimestrielle, trimestriel, quarterly, chaque trimestre, every quarter, q]}
-    - {id: semiannual, fr: Semestrielle, en: Semi-annual, synonyms: [semestrielle, semestriel, semi-annual, semi annual, semiannual, half-yearly, half yearly, biannual]}
-    - {id: annual, fr: Annuelle, en: Annual, synonyms: [annuelle, annuel, annual, annually, yearly, chaque annee, every year, a]}
+    - {id: daily, fr: Quotidienne, en: Daily, es: "Diaria", it: "Giornaliera", synonyms: [quotidienne, quotidien, journaliere, journalier, daily, chaque jour, chaque jour ouvre, every business day, every day, each business day, tous les jours, j, d, diario, giornaliero, quotidiana, ogni giorno, cada dia]}
+    - {id: weekly, fr: Hebdomadaire, en: Weekly, es: "Semanal", it: "Settimanale", synonyms: [hebdomadaire, weekly, chaque semaine, every week, w]}
+    - {id: fortnightly, fr: Bimensuelle, en: Fortnightly, es: "Quincenal", it: "Quindicinale", synonyms: [bimensuelle, bimensuel, fortnightly, bi-monthly, bimonthly, toutes les deux semaines, every two weeks]}
+    - {id: monthly, fr: Mensuelle, en: Monthly, es: "Mensual", it: "Mensile", synonyms: [mensuelle, mensuel, monthly, chaque mois, every month, m, mensile, mensual]}
+    - {id: quarterly, fr: Trimestrielle, en: Quarterly, es: "Trimestral", it: "Trimestrale", synonyms: [trimestrielle, trimestriel, quarterly, chaque trimestre, every quarter, q]}
+    - {id: semiannual, fr: Semestrielle, en: Semi-annual, es: "Semestral", it: "Semestrale", synonyms: [semestrielle, semestriel, semi-annual, semi annual, semiannual, half-yearly, half yearly, biannual]}
+    - {id: annual, fr: Annuelle, en: Annual, es: "Anual", it: "Annuale", synonyms: [annuelle, annuel, annual, annually, yearly, chaque annee, every year, a]}
 
   distribution_policy:
-    - {id: acc, fr: Capitalisation, en: Accumulation, synonyms: [capitalisation, capitalisante, capitalise, c, acc, accumulation, accumulating, capitalization, capitalisation des revenus, reinvested, reinvestment, cap]}
-    - {id: dist, fr: Distribution, en: Distribution, synonyms: [distribution, distribuante, distribue, d, dis, dist, distributing, income, paying, distribution des revenus, dividend]}
-    - {id: both, fr: Capitalisation et/ou distribution, en: Accumulation and/or distribution, synonyms: [capitalisation et/ou distribution, capitalisation et ou distribution, c/d, c et/ou d, mixte, mixed, accumulation and/or distribution, capitalisation ou distribution]}
+    - {id: acc, fr: Capitalisation, en: Accumulation, es: "Acumulación", it: "Accumulazione", synonyms: [capitalisation, capitalisante, capitalise, c, acc, accumulation, accumulating, capitalization, capitalisation des revenus, reinvested, reinvestment, cap, acumulacion, capitalizacion, capitalizzazione, accumulo, ad accumulazione, de acumulacion]}
+    - {id: dist, fr: Distribution, en: Distribution, es: "Distribución", it: "Distribuzione", synonyms: [distribution, distribuante, distribue, d, dis, dist, distributing, income, paying, distribution des revenus, dividend, distribucion, reparto, a distribuzione, de distribucion]}
+    - {id: both, fr: Capitalisation et/ou distribution, en: Accumulation and/or distribution, es: "Acumulación y/o distribución", it: "Accumulazione e/o distribuzione", synonyms: [capitalisation et/ou distribution, capitalisation et ou distribution, c/d, c et/ou d, mixte, mixed, accumulation and/or distribution, capitalisation ou distribution]}
 
   legal_form:
     - {id: fcp, fr: FCP, en: FCP (French mutual fund), synonyms: [fcp, fonds commun de placement, mutual fund, common fund, unit trust, contractual fund]}
@@ -42,29 +42,29 @@ vocabularies:
     - {id: sca, fr: SCA, en: SCA, synonyms: [sca, societe en commandite par actions]}
 
   regulation:
-    - {id: ucits, fr: OPCVM (UCITS), en: UCITS, synonyms: [opcvm, ucits, ucits v, directive 2009/65/ce, directive 2009/65/ec, oui ucits, ucits compliant]}
-    - {id: aif, fr: FIA, en: AIF, synonyms: [fia, aif, aifm, aifmd, fonds d'investissement alternatif, alternative investment fund, directive 2011/61/ue, non-ucits, non ucits]}
+    - {id: ucits, fr: OPCVM (UCITS), en: UCITS, es: "UCITS", it: "OICVM (UCITS)", synonyms: [opcvm, ucits, ucits v, directive 2009/65/ce, directive 2009/65/ec, oui ucits, ucits compliant]}
+    - {id: aif, fr: FIA, en: AIF, es: "FIA (AIF)", it: "FIA (AIF)", synonyms: [fia, aif, aifm, aifmd, fonds d'investissement alternatif, alternative investment fund, directive 2011/61/ue, non-ucits, non ucits]}
 
   asset_class:
-    - {id: equity, fr: Actions, en: Equity, synonyms: [actions, action, equity, equities, stocks, shares]}
-    - {id: bond, fr: Obligations, en: Fixed income, synonyms: [obligations, obligation, obligataire, taux, fixed income, bonds, bond, credit, debt]}
-    - {id: money_market, fr: Monétaire, en: Money market, synonyms: [monetaire, money market, mmf, tresorerie, liquidites, cash]}
-    - {id: multi_asset, fr: Diversifié, en: Multi-asset, synonyms: [diversifie, diversifiee, allocation, multi-asset, multi asset, multiasset, balanced, mixed, flexible, patrimonial]}
-    - {id: convertible, fr: Convertibles, en: Convertible bonds, synonyms: [convertibles, convertible, obligations convertibles, convertible bonds]}
-    - {id: alternative, fr: Alternatif, en: Alternative, synonyms: [alternatif, alternative, alternatives, hedge fund, absolute return, rendement absolu, performance absolue]}
-    - {id: fund_of_funds, fr: Multigestion, en: Fund of funds, synonyms: [multigestion, multi-gestion, fonds de fonds, fund of funds, fof, architecture ouverte, open architecture]}
-    - {id: private, fr: Non coté, en: Private assets, synonyms: [non cote, private equity, private debt, private assets, capital investissement, dette privee, infrastructure]}
+    - {id: equity, fr: Actions, en: Equity, es: "Renta variable", it: "Azionario", synonyms: [actions, action, equity, equities, stocks, shares]}
+    - {id: bond, fr: Obligations, en: Fixed income, es: "Renta fija", it: "Obbligazionario", synonyms: [obligations, obligation, obligataire, taux, fixed income, bonds, bond, credit, debt]}
+    - {id: money_market, fr: Monétaire, en: Money market, es: "Monetario", it: "Monetario", synonyms: [monetaire, money market, mmf, tresorerie, liquidites, cash]}
+    - {id: multi_asset, fr: Diversifié, en: Multi-asset, es: "Mixto", it: "Bilanciato", synonyms: [diversifie, diversifiee, allocation, multi-asset, multi asset, multiasset, balanced, mixed, flexible, patrimonial]}
+    - {id: convertible, fr: Convertibles, en: Convertible bonds, es: "Convertibles", it: "Obbligazioni convertibili", synonyms: [convertibles, convertible, obligations convertibles, convertible bonds]}
+    - {id: alternative, fr: Alternatif, en: Alternative, es: "Alternativo", it: "Alternativo", synonyms: [alternatif, alternative, alternatives, hedge fund, absolute return, rendement absolu, performance absolue]}
+    - {id: fund_of_funds, fr: Multigestion, en: Fund of funds, es: "Fondo de fondos", it: "Fondo di fondi", synonyms: [multigestion, multi-gestion, fonds de fonds, fund of funds, fof, architecture ouverte, open architecture]}
+    - {id: private, fr: Non coté, en: Private assets, es: "Activos no cotizados", it: "Private markets", synonyms: [non cote, private equity, private debt, private assets, capital investissement, dette privee, infrastructure]}
 
   investor_type:
-    - {id: all, fr: Tous souscripteurs, en: All investors, synonyms: [tous souscripteurs, tout souscripteur, ouverte a tout souscripteur, tous investisseurs, all investors, all subscribers, retail and professional, grand public]}
-    - {id: retail, fr: Clients non professionnels, en: Retail investors, synonyms: [non professionnels, clients non professionnels, retail, retail investors, particuliers, investisseurs particuliers]}
-    - {id: professional, fr: Clients professionnels, en: Professional investors, synonyms: [professionnels, clients professionnels, professional, professional investors, institutional, institutionnels, investisseurs institutionnels, institutional investors]}
-    - {id: eligible, fr: Contreparties éligibles, en: Eligible counterparties, synonyms: [contreparties eligibles, eligible counterparties, eligible counterparty]}
+    - {id: all, fr: Tous souscripteurs, en: All investors, es: "Todos los inversores", it: "Tutti gli investitori", synonyms: [tous souscripteurs, tout souscripteur, ouverte a tout souscripteur, tous investisseurs, all investors, all subscribers, retail and professional, grand public]}
+    - {id: retail, fr: Clients non professionnels, en: Retail investors, es: "Inversores minoristas", it: "Investitori al dettaglio", synonyms: [non professionnels, clients non professionnels, retail, retail investors, particuliers, investisseurs particuliers]}
+    - {id: professional, fr: Clients professionnels, en: Professional investors, es: "Inversores profesionales", it: "Investitori professionali", synonyms: [professionnels, clients professionnels, professional, professional investors, institutional, institutionnels, investisseurs institutionnels, institutional investors]}
+    - {id: eligible, fr: Contreparties éligibles, en: Eligible counterparties, es: "Contrapartes elegibles", it: "Controparti qualificate", synonyms: [contreparties eligibles, eligible counterparties, eligible counterparty]}
 
   global_exposure:
-    - {id: commitment, fr: Méthode de l'engagement, en: Commitment approach, synonyms: [engagement, methode de l'engagement, methode de l engagement, commitment, commitment approach, commitment method]}
-    - {id: relative_var, fr: VaR relative, en: Relative VaR, synonyms: [var relative, relative var, relative value at risk]}
-    - {id: absolute_var, fr: VaR absolue, en: Absolute VaR, synonyms: [var absolue, absolute var, absolute value at risk]}
+    - {id: commitment, fr: Méthode de l'engagement, en: Commitment approach, es: "Método del compromiso", it: "Metodo degli impegni", synonyms: [engagement, methode de l'engagement, methode de l engagement, commitment, commitment approach, commitment method]}
+    - {id: relative_var, fr: VaR relative, en: Relative VaR, es: "VaR relativo", it: "VaR relativo", synonyms: [var relative, relative var, relative value at risk]}
+    - {id: absolute_var, fr: VaR absolue, en: Absolute VaR, es: "VaR absoluto", it: "VaR assoluto", synonyms: [var absolue, absolute var, absolute value at risk]}
 
   sri:
     - {id: "1", fr: "1", en: "1", synonyms: ["1", sri 1, risque 1, 1/7, "1 - lowest risk", "1 - risque le plus faible"]}

@@ -55,6 +55,8 @@ def fmt_number(value: float, decimals: int, lang: str) -> str:
     text = f"{value:,.{decimals}f}"
     if lang == "fr":
         text = text.replace(",", " ").replace(".", ",")
+    elif lang in {"es", "it"}:
+        text = text.replace(",", "\x00").replace(".", ",").replace("\x00", ".")  # 1.234,56
     return text
 
 
@@ -66,7 +68,7 @@ def _decimals(value: float, max_dec: int = 2) -> int:
 
 
 def _settlement(text: str, lang: str) -> str:
-    if lang == "en":
+    if lang != "fr":  # es / it : notation D+N, comme en anglais
         text = re.sub(r"\bJ\s*([+-])\s*(\d+)", r"D\1\2", text)
         text = re.sub(r"\bjours? ouvres?\b", "business days", text, flags=re.I)
     else:
@@ -83,8 +85,9 @@ def _time(text: str, lang: str) -> str:
 
 
 # --------------------------------------------------------------------------- listes déroulantes
-_RANGE = re.compile(r"^\s*(?:(?P<op>inferieur ou egal a|au moins|moins de|plus de|less than|more than|over|under|up to|jusqu'a|au-dela de|superieur a|inferieur a|at least)\s*)?"
-                    r"(?:entre|between|de|from)?\s*(?P<a>-?\d+(?:[.,]\d+)?)\s*%?\s*(?:(?:-|–|à|a|to|and|et)\s*(?P<b>-?\d+(?:[.,]\d+)?)\s*%?)?")
+_RANGE = re.compile(r"^\s*(?:(?P<op>inferieur ou egal a|au moins|moins de|plus de|less than|more than|over|under|up to|jusqu'a|au-dela de|superieur a|inferieur a|at least|"
+                    r"menos de|mas de|hasta|al menos|meno di|piu di|oltre|fino a|almeno|inferiore a|superiore a)\s*)?"
+                    r"(?:entre|between|de|from|tra|fra|da|desde)?\s*(?P<a>-?\d+(?:[.,]\d+)?)\s*%?\s*(?:(?:-|–|à|a|to|and|et|y|e)\s*(?P<b>-?\d+(?:[.,]\d+)?)\s*%?)?")
 
 
 def _opnorm(text: str) -> str:
@@ -98,7 +101,7 @@ def _opnorm(text: str) -> str:
 
 def _bounds(option: str) -> tuple[float, float, bool, bool] | None:
     """(bas, haut, bas inclus, haut inclus) d'une option « 1-3 ans », « < 1 % », « > 5 years », « 4 »."""
-    o = re.sub(r"\b(?:ans?|annees?|years?|mois|months?|jours?|days?)\b", "", _opnorm(option)).strip()
+    o = re.sub(r"\b(?:ans?|annees?|years?|mois|months?|jours?|days?|anos?|anni|anno|mese?s|mesi|mese|dias?|giorni|giorno)\b", "", _opnorm(option)).strip()
     m = _RANGE.match(o)
     if not m or not m.group("a"):
         return None
@@ -109,13 +112,13 @@ def _bounds(option: str) -> tuple[float, float, bool, bool] | None:
     op = (m.group("op") or "").strip()
     if b:
         return a, float(b.replace(",", ".")), True, True
-    if op in {"moins de", "less than", "under", "inferieur a"}:
+    if op in {"moins de", "less than", "under", "inferieur a", "menos de", "meno di", "inferiore a"}:
         return float("-inf"), a, False, False
-    if op in {"inferieur ou egal a", "up to", "jusqu'a"}:
+    if op in {"inferieur ou egal a", "up to", "jusqu'a", "hasta", "fino a"}:
         return float("-inf"), a, False, True
-    if op in {"plus de", "more than", "over", "au-dela de", "superieur a"}:
+    if op in {"plus de", "more than", "over", "au-dela de", "superieur a", "mas de", "piu di", "oltre", "superiore a"}:
         return a, float("inf"), False, False
-    if op in {"au moins", "at least"}:
+    if op in {"au moins", "at least", "al menos", "almeno"}:
         return a, float("inf"), True, False
     return a, a, True, True
 
@@ -261,7 +264,7 @@ def render(ontology: Ontology, concept: Concept, raw: Raw, u: Understanding, lan
             scale = u.scale
             if scale == 1.0 and number >= 1e6 and concept.id.startswith("jump.encours"):
                 scale = 1e6  # un encours brut à l'euro près n'est jamais attendu : millions par défaut, unité affichée
-                shown = fmt_number(number / scale, 1, lang) + (" M" if lang == "fr" else " m") + (f" {ccy}" if ccy else "")
+                shown = fmt_number(number / scale, 1, lang) + (" m" if lang == "en" else " M") + (f" {ccy}" if ccy else "")
                 return Rendered(shown, shown, issues)
             scaled = number / scale
             decimals = 0 if scale == 1 else (1 if scaled >= 10 else 2)

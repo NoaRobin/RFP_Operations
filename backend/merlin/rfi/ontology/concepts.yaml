@@ -32,7 +32,7 @@ concepts:
     scope: fund
     type: text
     source: pi_out_product_active.Product_Name
-    terms: [nom du fonds, denomination & fonds, nom complet & fonds, full name & fund, legal name & fund, nom de l'opc, nom de l'opcvm, nom du compartiment, nom du produit, denomination du fonds, denomination de l'opc, libelle du fonds, nom de la strategie, fund name, name of the fund, fund's name, product name, sub-fund name, name of sub-fund, strategy name, fund legal name, fund full name, nom complet du fonds]
+    terms: [nom du fonds, denomination & fonds, nom complet & fonds, full name & fund, legal name & fund, nom de l'opc, nom de l'opcvm, nom du compartiment, denomination du compartiment, nom du produit, denomination du fonds, denomination de l'opc, libelle du fonds, nom de la strategie, fund name, name of the fund, fund's name, product name, sub-fund name, name of sub-fund, strategy name, fund legal name, fund full name, nom complet du fonds]
     exclude: [gerant, manager, benchmark, indice, ombrelle, umbrella, sicav, maitre, master, societe de gestion, management company, part, share class, strategie, strategy]
 
   - id: fonds.ombrelle

@@ -197,6 +197,47 @@ Le classeur Excel reste disponible pour les très longs questionnaires. Détail 
 - le choix s'affiche immédiatement ; une réponse serveur arrivée après une plus récente est ignorée ;
 - le bouton « Analyser » repart de zéro (`fresh`).
 
+## 7 quater. Plusieurs parts, espagnol et italien, Atelier Excel sur le même modèle
+
+### Plusieurs ISIN dans un questionnaire
+- **Grilles par part** (déjà en place) : une ligne ou une colonne par ISIN, chaque case lit la fiche de SA part.
+- **Listes avec une section par part** (nouveau, `layout.py`) : un ISIN cité sur une ligne (« Código ISIN | QZ… », « Part I – QZ… »,
+  paragraphe Word, ligne d'un tableau Word) vaut pour les questions qui suivent, jusqu'au prochain ISIN. Deux ISIN sur la même
+  ligne : ambigu, aucune part n'est retenue. Cette règle ne s'applique que si **au moins deux** parts sont citées ainsi ;
+  avec une seule, la part choisie à l'écran s'applique à tout le document (comportement inchangé).
+- Une question de section garde sa portée propre : « Nom du fonds » sous la part B reste le fonds… de la part B
+  (`_share_fund`). Seules les grilles imposent la portée « part ».
+- `GET /api/rfi/documents/{id}` renvoie `shares` (ISIN, fonds Product Info, nom de part, nombre de cases, `known`) et
+  `multi_share`. L'écran affiche « N parts détectées » ; un clic choisit la part principale (questions générales).
+  Un ISIN inconnu de Product Info est listé « inconnu » : ses cases restent sans donnée, rien n'est deviné.
+
+### Questions espagnoles et italiennes
+- `lexicon.py` + `ontology/lexicon.yaml` : détection fr / en / es / it par mots propres à chaque langue (les mots communs,
+  « la », « de », « gestion », ne départagent rien), puis **traduction pivot** de la question normalisée vers le français
+  de l'ontologie, en **une seule passe**, expressions les plus longues d'abord (« comisión de gestión máxima » →
+  « commission de gestion maximum »). Un mot absent du lexique reste tel quel : jamais deviné.
+- La langue du document (`layout.language`) est passée à `understand(lang=…)` ; une question nettement d'une autre langue
+  (document mixte) est lue dans sa langue.
+- Réponses : libellés `es` / `it` des vocabulaires (Sí / Sì, Diaria / Giornaliera, Acumulación…), sinon anglais ; textes
+  publiés FR / EN : version anglaise ; nombres « 1.234,56 » ; options de listes « entre 1 y 3 años », « oltre 5 anni ».
+- Consignes et en-têtes reconnus : « A completar », « Da compilare », « Sí / No », « Respuesta », « Risposta »,
+  « En caso afirmativo », « In caso affermativo »…
+- Banc dédié `tests/rfi_gold_es_it.yaml` : **100 % de précision automatique** exigée (comme `rfi_gold.yaml`), 97 % de
+  couverture automatique aujourd'hui. Pour un nouveau terme : l'ajouter au lexique (cible = terme existant de l'ontologie),
+  puis relancer les deux bancs.
+
+### Atelier Excel branché sur l'ontologie (`atelier/ontology_bridge.py`)
+- Les 224 concepts de l'ontologie sont proposés dans le catalogue de l'Atelier (`onto:<concept>`, groupes « Ontologie RFI »),
+  à côté des extractions Fabric directes.
+- L'en-tête de colonne est lu comme une question de RFI (période, unité, langue) ; la valeur de **chaque ISIN** est lue par
+  `Values` (fiche de la part et de son fonds) puis mise en forme par `render` selon le format de la cellule : même chemin
+  que le compléteur. Proposition automatique seulement sans réserve (même seuil 0,70) ; sinon, glisser-déposer.
+- **Classeur transposé** (une colonne par ISIN, une ligne par donnée) : détecté quand une ligne porte au moins deux ISIN ;
+  les correspondances visent alors des lignes (`#n`), le libellé de la ligne sert de question. Bascule possible à l'écran
+  (« Une ligne par part » / « Une colonne par part »).
+- ISIN inconnu : « introuvable » avec la raison dans le journal ; valeur différente déjà présente : « différence », jamais
+  écrasée sans « Remplacer » ; l'original n'est jamais modifié.
+
 ## 8. Mesurer et faire progresser
 
 - `python -m merlin.rfi.replay <bibliothèque>` : couverture et concordance sur de vrais questionnaires (voir plus haut).

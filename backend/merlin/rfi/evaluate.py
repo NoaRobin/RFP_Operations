@@ -44,9 +44,10 @@ class Outcome:
 
 
 def classify(ontology: Ontology, question: str, options: list[str] | None = None, hint: str = "", context: str = "",
-             entity_scope: str | None = None) -> tuple[str | None, str, float]:
-    """(concept prédit, bande, score) sans accès aux données : bande « auto » si aucune réserve sémantique."""
-    u = understand(ontology, question, options=options, hint=hint, context=context, entity_scope=entity_scope)
+             entity_scope: str | None = None, lang: str | None = None) -> tuple[str | None, str, float]:
+    """(concept prédit, bande, score) sans accès aux données : bande « auto » si aucune réserve sémantique.
+    `lang` : langue du document (es / it : lecture via le lexique pivot)."""
+    u = understand(ontology, question, options=options, hint=hint, context=context, entity_scope=entity_scope, lang=lang)
     cands = match(ontology, u)
     if not cands or cands[0].score < MIN_SCORE:
         return None, "none", cands[0].score if cands else 0.0
@@ -60,7 +61,7 @@ def run_cases(ontology: Ontology, cases: list[dict[str, Any]]) -> dict[str, Any]
     outcomes = []
     for case in cases:
         predicted, band, score = classify(ontology, case["q"], case.get("options"), case.get("hint", ""), case.get("context", ""),
-                                          case.get("entity"))
+                                          case.get("entity"), case.get("lang"))
         outcomes.append(Outcome(case["q"], case.get("concept"), predicted, band, score))
     auto = [o for o in outcomes if o.band == "auto"]
     answerable = [o for o in outcomes if o.expected]
