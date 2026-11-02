@@ -64,6 +64,21 @@ Biais assumé : un corpus de 68 contenus est petit ; sur la vraie bibliothèque,
 
     cd backend && python -m merlin.qvidian.evaluate --models ../data/models --eval mes_questions.yaml --details
 
+### Apprentissage par les anciens RFI
+
+Avec les questions des anciens RFI rattachées aux textes choisis (5 anciens questionnaires fictifs de démonstration) :
+
+| Configuration | nDCG@10 réglage | nDCG@10 jamais vu |
+|---|---|---|
+| Lexical | 0,960 | 0,901 |
+| Lexical + historique | 0,955 | **0,938** |
+| e5-small + reranker | 0,955 | 0,954 |
+| e5-small + reranker + historique | — | 0,955 |
+
+Première version sans garde-fou : 0,77 (un texte souvent choisi remontait partout). Corrigé : une question passée ne
+compte que si elle couvre au moins la moitié de la question posée (mots rares d'abord, mot inconnu = le plus
+informatif), et « choisi dans N RFI » ne pèse que pour cette question-là.
+
 ## 5. Installation des modèles (facultatif)
 
 Écran **Qvidian › API & moteur** → « Installer » (téléchargement explicite, écriture atomique dans `data/models/<id>/`,

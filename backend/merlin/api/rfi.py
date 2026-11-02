@@ -31,12 +31,19 @@ def _store(s: AppState) -> RfiStore:
     return RfiStore(s.settings.data_dir / "rfi")
 
 
-def _qvidian(s: AppState):
-    """Bibliothèque Qvidian du compléteur : la vraie (synchronisée) ; la démo seulement avec des données fictives."""
+def _qvidian(s: AppState, enabled: bool = True):
+    """Bibliothèque Qvidian du compléteur : la vraie (synchronisée) ; la démo seulement avec des données fictives.
+    L'option « Qvidian » de l'écran la désactive. Le moteur de recherche (questions des anciens RFI) est préparé."""
     from .qvidian import service as qvidian_service
 
+    if not enabled:
+        return None
     try:
-        return qvidian_service(s).rfi_snapshot(s.data.mode)
+        svc = qvidian_service(s)
+        snap = svc.rfi_snapshot(s.data.mode)
+        if snap is not None:
+            svc.search.get(snap, wait=False)  # questions des anciens RFI ↔ textes choisis : lues par suggest.py
+        return snap
     except Exception:  # noqa: BLE001 - Qvidian absent ou illisible : le compléteur fonctionne sans
         return None
 
@@ -86,10 +93,16 @@ def _describe(s: AppState, doc_id: str) -> dict[str, Any]:
     except DataError:
         suggestions = []
     shares = document_shares(s.data, layout)
+    from ..rfi.service import _form_model
+
+    form = _form_model(get_index(store.root), layout)
+    qv = _qvidian(s)
     return {**store.meta(doc_id), "kind": layout.kind, "language": layout.language, "question_count": len(layout.slots),
             "dropdowns": sum(1 for s in layout.slots if s.options), "placeholders": sum(1 for s in layout.slots if s.state == "placeholder"),
             "isins": layout.isins[:50], "notes": layout.notes, "suggestions": suggestions, "shares": shares[:50],
-            "multi_share": sum(1 for sh in shares if sh["questions"]) >= 2}
+            "multi_share": sum(1 for sh in shares if sh["questions"]) >= 2,
+            "form_sources": form.public() if form is not None else [],
+            "qvidian_available": qv is not None, "qvidian_count": int(qv.meta().get("count") or 0) if qv is not None else 0}
 
 
 @router.get("/facts")
@@ -155,6 +168,8 @@ class AnswerRequest(BaseModel):
     reusable: list[str] = Field(default_factory=list)  # réponses saisies réutilisables pour tous les fonds
     remember: bool = True
     fresh: bool = False  # True : ignorer le cache des cases (bouton « Analyser »)
+    use_qvidian: bool = True  # bibliothèque Qvidian comme source (option de l'écran)
+    highlight_missing: bool = False  # au téléchargement : cases sans réponse surlignées en jaune (à demander)
 
 
 @router.post("/documents/{doc_id}/answers")
@@ -164,7 +179,7 @@ def answers(doc_id: str, body: AnswerRequest, s: AppState = Depends(state)):
         path, layout = load_layout(store, doc_id)
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
-    qvidian = _qvidian(s)
+    qvidian = _qvidian(s, body.use_qvidian)
     try:
         result = analyze(s.data, store, path, layout, body.pid, body.isin, body.as_of, body.language, body.overrides,
                          get_index(store.root), documents=service_for(s),
@@ -182,12 +197,12 @@ def generate_version(doc_id: str, body: AnswerRequest, s: AppState = Depends(sta
     store = _store(s)
     try:
         meta = store.meta(doc_id)
-        qvidian = _qvidian(s)
+        qvidian = _qvidian(s, body.use_qvidian)
         result = generate(s.data, store, doc_id, body.pid, body.isin, body.as_of, body.language, body.overrides, body.overwrite,
                           body.accept, user, remember=body.remember, reusable=body.reusable,
                           precedents=get_index(store.root), documents=service_for(s),
                           bindings=get_bindings(store.root), qvidian=qvidian, half_life=s.settings.qvidian.half_life_days,
-                          cache=_cache_for(s, store, doc_id, body, qvidian))
+                          cache=_cache_for(s, store, doc_id, body, qvidian), highlight_missing=body.highlight_missing)
     except FileNotFoundError as error:
         raise not_found("Ce RFI n'est plus là.") from error
     except DataError as error:

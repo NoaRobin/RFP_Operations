@@ -102,19 +102,91 @@ def _is_date_format(fmt: str | None) -> bool:
     return expected_from_format(fmt) == "date"
 
 
-def write_xlsx(source: Path, target: Path, answers: list[tuple]) -> int:
+YELLOW = "FFFFFF00"
+
+
+def _cell(sheet_root, ref: str):
+    """Cellule existante, ou créée vide à sa place (ligne et colonne dans l'ordre)."""
+    sheet_data = sheet_root.find(f"{{{NS}}}sheetData")
+    r_idx = _row_index(ref)
+    row = next((r for r in sheet_data.findall(f"{{{NS}}}row") if int(r.get("r", 0)) == r_idx), None)
+    if row is None:
+        row = etree.Element(f"{{{NS}}}row", r=str(r_idx))
+        later = [r for r in sheet_data.findall(f"{{{NS}}}row") if int(r.get("r", 0)) > r_idx]
+        if later:
+            later[0].addprevious(row)
+        else:
+            sheet_data.append(row)
+    cell = next((c for c in row.findall(f"{{{NS}}}c") if c.get("r") == ref), None)
+    if cell is None:
+        cell = etree.Element(f"{{{NS}}}c", r=ref)
+        later = [c for c in row.findall(f"{{{NS}}}c") if _col_index(c.get("r")) > _col_index(ref)]
+        if later:
+            later[0].addprevious(cell)
+        else:
+            row.append(cell)
+    return cell
+
+
+def _yellow_styles(styles: bytes, used: set[int]) -> tuple[bytes, dict[int, int]]:
+    """Ajoute un remplissage jaune et, pour chaque style de cellule utilisé, sa copie jaune (le reste du style intact)."""
+    root = etree.fromstring(styles)
+    fills = root.find(f"{{{NS}}}fills")
+    xfs = root.find(f"{{{NS}}}cellXfs")
+    if fills is None or xfs is None:
+        return styles, {}
+    fill = etree.SubElement(fills, f"{{{NS}}}fill")
+    pattern = etree.SubElement(fill, f"{{{NS}}}patternFill", patternType="solid")
+    etree.SubElement(pattern, f"{{{NS}}}fgColor", rgb=YELLOW)
+    etree.SubElement(pattern, f"{{{NS}}}bgColor", indexed="64")
+    fills.set("count", str(len(fills)))
+    fill_id = len(fills) - 1
+    existing = xfs.findall(f"{{{NS}}}xf")
+    mapping: dict[int, int] = {}
+    for old in sorted(used):
+        base = existing[old] if old < len(existing) else existing[0]
+        clone = copy.deepcopy(base)
+        clone.set("fillId", str(fill_id))
+        clone.set("applyFill", "1")
+        xfs.append(clone)
+        mapping[old] = len(xfs.findall(f"{{{NS}}}xf")) - 1
+    xfs.set("count", str(len(xfs.findall(f"{{{NS}}}xf"))))
+    return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True), mapping
+
+
+def write_xlsx(source: Path, target: Path, answers: list[tuple], highlight: list[dict[str, Any]] | None = None) -> int:
     by_sheet: dict[str, list[tuple[str, Any, bool]]] = {}
     for tgt, value, *_ in answers:
         by_sheet.setdefault(tgt["sheet"], []).append((tgt["cell"], value, _is_date_format(tgt.get("number_format"))))
+    marks: dict[str, list[str]] = {}
+    for tgt in highlight or []:
+        if tgt.get("sheet") and tgt.get("cell"):
+            marks.setdefault(tgt["sheet"], []).append(tgt["cell"])
     with zipfile.ZipFile(source) as zin:
         paths = _sheet_paths(zin)
         patched: dict[str, bytes] = {}
+        roots: dict[str, Any] = {}
+        for sheet in set(by_sheet) | set(marks):
+            if sheet not in paths:
+                continue
+            roots[sheet] = etree.fromstring(zin.read(paths[sheet]))
         for sheet, cells in by_sheet.items():
-            path = paths[sheet]
-            root = etree.fromstring(zin.read(path))
+            root = roots.get(sheet)
+            if root is None:
+                continue
             for ref, value, date_cell in cells:
                 _set_cell(root, ref, value, date_cell)
-            patched[path] = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+        # Réponses à demander : case surlignée en jaune (seulement les cases réponse ; styles d'origine copiés)
+        if marks and "xl/styles.xml" in zin.namelist():
+            targets = [(roots[sheet], _cell(roots[sheet], ref)) for sheet, refs in marks.items() if sheet in roots for ref in refs]
+            used = {int(c.get("s") or 0) for _, c in targets}
+            styles, mapping = _yellow_styles(zin.read("xl/styles.xml"), used)
+            if mapping:
+                patched["xl/styles.xml"] = styles
+                for _, c in targets:
+                    c.set("s", str(mapping[int(c.get("s") or 0)]))
+        for sheet, root in roots.items():
+            patched[paths[sheet]] = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
         drop_calc = "xl/calcChain.xml" in zin.namelist() and patched
         with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as zout:
             for item in zin.infolist():
@@ -220,7 +292,36 @@ def _tick(container, label: str, options: list[str]) -> bool:
     return False
 
 
-def write_docx(source: Path, target: Path, answers: list[tuple]) -> int:
+def _highlight_docx(document, tgt: dict[str, Any]) -> None:
+    """Case réponse sans réponse : cellule ombrée en jaune, ou paragraphe surligné (« [à compléter] » s'il est vide)."""
+    from docx.enum.text import WD_COLOR_INDEX
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    if tgt.get("table") is not None:
+        cell = document.tables[tgt["table"]].rows[tgt["row"]].cells[tgt["col"]]
+        pr = cell._tc.get_or_add_tcPr()
+        for old in pr.findall(qn("w:shd")):
+            pr.remove(old)
+        shd = OxmlElement("w:shd")
+        shd.set(qn("w:val"), "clear")
+        shd.set(qn("w:color"), "auto")
+        shd.set(qn("w:fill"), "FFFF00")
+        pr.append(shd)
+        return
+    index = tgt.get("paragraph")
+    if index is None or index >= len(document.paragraphs):
+        return
+    paragraph = document.paragraphs[index]
+    if tgt.get("type") in {"next", "inline"} and not paragraph.text.strip() or tgt.get("type") == "inline":
+        run = paragraph.add_run(" [à compléter]")
+        run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+        return
+    for run in paragraph.runs:
+        run.font.highlight_color = WD_COLOR_INDEX.YELLOW
+
+
+def write_docx(source: Path, target: Path, answers: list[tuple], highlight: list[dict[str, Any]] | None = None) -> int:
     import docx
 
     document = docx.Document(str(source))
@@ -278,14 +379,20 @@ def write_docx(source: Path, target: Path, answers: list[tuple]) -> int:
         else:
             continue
         written += 1
+    for tgt in highlight or []:
+        try:
+            _highlight_docx(document, tgt)
+        except (IndexError, KeyError):
+            continue
     document.save(str(target))
     return written
 
 
-def write(source: Path, target: Path, answers: list[tuple]) -> int:
-    if not answers:
+def write(source: Path, target: Path, answers: list[tuple], highlight: list[dict[str, Any]] | None = None) -> int:
+    """highlight : cases réponse restées sans réponse, surlignées en jaune (option « réponses à demander »)."""
+    if not answers and not highlight:
         shutil.copy2(source, target)
         return 0
     if source.suffix.lower() in {".xlsx", ".xlsm"}:
-        return write_xlsx(source, target, answers)
-    return write_docx(source, target, answers)
+        return write_xlsx(source, target, answers, highlight)
+    return write_docx(source, target, answers, highlight)

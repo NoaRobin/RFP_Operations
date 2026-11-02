@@ -149,6 +149,17 @@ def api_stats_reset(s: AppState = Depends(state)) -> dict[str, Any]:
     return service(s).api_stats()
 
 
+@router.get("/history")
+def history(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Questions des anciens RFI rapprochées des textes Qvidian choisis (résumé + contenus les plus choisis)."""
+    return _guard(service(s).history_summary)
+
+
+@router.post("/history/rebuild")
+def history_rebuild(s: AppState = Depends(state)) -> dict[str, Any]:
+    return _guard(service(s).rebuild_history)
+
+
 @router.get("/folders")
 def folders(s: AppState = Depends(state)) -> list[dict[str, Any]]:
     return service(s).snapshot().folders()

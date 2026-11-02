@@ -220,14 +220,17 @@ function ConnectionPanel({ status, onChange }: { status: QvidianStatus; onChange
           <Button size="sm" variant="ghost" className="ml-auto" onClick={async () => { await api.qvidian.disconnect(); onChange() }} icon={<LogOut size={15} />}>{Q.disconnect}</Button>
         )}
       </div>
-      {status.mode !== 'off' && !connected && (
+      {status.api_key_configured && (
+        <p className="rounded-2xl border-2 border-fg bg-mint-400/25 p-3 text-sm font-bold">{Q.apiKeyConnected}{status.connect_error ? ` — ${status.connect_error}` : ''}</p>
+      )}
+      {status.mode !== 'off' && !connected && !status.api_key_configured && (
         <div className="flex flex-wrap items-center gap-3 rounded-2xl border-[2.5px] border-fg bg-sun-400/30 p-3">
           <Button variant="primary" onClick={sso} disabled={!status.sso} icon={<LogIn size={17} />}>{Q.sso}</Button>
           <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso_suffix ? Q.ssoHint : Q.ssoNoSuffix}</p>
           {status.last_sso_error && <p role="alert" className="w-full text-sm font-bold text-danger">{Q.ssoLast} {status.last_sso_error}</p>}
         </div>
       )}
-      {status.mode !== 'off' && !connected && (
+      {status.mode !== 'off' && !connected && !status.api_key_configured && (
         <details className="rounded-2xl border-2 border-fg/20 bg-card p-3" open={status.mode === 'demo'}>
           <summary className="cursor-pointer font-display font-semibold">{Q.connectOther}</summary>
           <p className="mt-1 text-xs font-semibold text-fg-3">{Q.connectHint}</p>

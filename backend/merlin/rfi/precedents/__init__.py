@@ -19,10 +19,25 @@ from pathlib import Path as _Path
 from .retrieval import PrecedentIndex, default_embedder
 
 
+def _onnx_encoder(models: _Path):
+    """Encodeur E5 local s'il est installé (écran Qvidian › API & moteur) : même modèle que la recherche Qvidian."""
+    try:
+        from ...search import neural
+
+        if not neural.available():
+            return None
+        for mid in ("e5-small", "e5-base"):
+            if neural.installed(models, mid):
+                return neural.Encoder(models, mid)
+    except Exception:  # noqa: BLE001 - modèle abîmé : lexical seul
+        return None
+    return None
+
+
 @_lru_cache
 def get_index(root: _Path) -> PrecedentIndex:
-    """Index unique par dossier de données (data/rfi/precedents.sqlite)."""
-    return PrecedentIndex(PrecedentStore(root / "precedents.sqlite"), default_embedder())
+    """Index unique par dossier de données (data/rfi/precedents.sqlite) ; encodeur E5 de data/models/ s'il existe."""
+    return PrecedentIndex(PrecedentStore(root / "precedents.sqlite"), default_embedder(), _onnx_encoder(root.parent / "models"))
 
 
 __all__ += ["PrecedentIndex", "get_index"]

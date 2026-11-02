@@ -20,12 +20,13 @@ from typing import Any
 from ..rfi.aggregate import recency, similarity, to_date
 from ..search import neural
 from ..search.engine import Doc, HybridIndex
+from ..search.lexical import query_vector
 from ..search.text import snippet
 from .audit import audit
 from .levels import SCOPE_LABELS, THEME_LABELS, FundNames, Level, classify, fund_folders, query_level
 from .snapshot import Snapshot
 
-POPULARITY, RECENCY = 0.18, 0.08
+POPULARITY, RECENCY, CHOSEN = 0.18, 0.08, 0.35  # CHOSEN : choisi dans d'anciens RFI (le signal le plus fort)
 READY: dict[str, "LibrarySearch"] = {}  # moteur prêt par instantané (chemin) : lu par suggest.py sans jamais rien construire
 FAMILY_SIMILARITY = 0.55
 SORTS = {"pertinence", "utilisations", "recent", "modifie"}
@@ -67,8 +68,10 @@ def _expired(c: dict[str, Any], today: date) -> bool:
 class LibrarySearch:
     def __init__(self, snapshot: Snapshot, models_root: Path | None = None, extra_funds: list[str] | None = None,
                  encoder: neural.Encoder | None = None, reranker: neural.Reranker | None = None,
-                 today: date | None = None, half_life: int = 365, progress=None):
+                 today: date | None = None, half_life: int = 365, progress=None, history: dict[int, dict[str, Any]] | None = None):
         started = time.time()
+        self.history = history or {}
+        self.max_files = max((h["files"] for h in self.history.values()), default=0)
         self.today = today or date.today()
         self.half_life = half_life
         self.rows = [c for c in snapshot.all()]
@@ -81,11 +84,13 @@ class LibrarySearch:
         self.issues = {it["id"]: it["issues"] for it in report["items"]}
         self.max_uses = max((c.get("times_used") or 0 for c in self.rows), default=0)
         docs = [Doc(c["id"], c["title"] or "", c.get("question") or "", c.get("text") or "",
-                    f"{c.get('learned_terms') or ''} {c.get('assigned_terms') or ''}", c.get("folder_path") or "") for c in self.rows]
+                    f"{c.get('learned_terms') or ''} {c.get('assigned_terms') or ''}", c.get("folder_path") or "",
+                    list(self.history.get(c["id"], {}).get("questions", []))[:40]) for c in self.rows]
         vectors = neural.VectorCache(snapshot.path.with_name(f"{snapshot.path.stem}.{encoder.id}.vectors.npz")) if encoder is not None else None
         self.index = HybridIndex(docs, encoder, reranker, vectors, progress)
         self.engine = {"lexical": True, "encoder": encoder.id if encoder else None, "reranker": reranker.id if reranker else None,
-                       "documents": len(self.rows), "build_seconds": round(time.time() - started, 2), "funds": self.funds.names}
+                       "documents": len(self.rows), "history_contents": len(self.history),
+                       "history_questions": sum(len(h["questions"]) for h in self.history.values()), "build_seconds": round(time.time() - started, 2), "funds": self.funds.names}
 
     # ------------------------------------------------------------------ filtres
     def _allowed(self, f: Filters):
@@ -113,7 +118,7 @@ class LibrarySearch:
         return ok
 
     # ------------------------------------------------------------------ score métier
-    def _business(self, i: int, ql: Level, qlang: str) -> tuple[float, float, list[str]]:
+    def _business(self, i: int, ql: Level, qlang: str, asked_hit: bool = False) -> tuple[float, float, list[str]]:
         """(multiplicateur, ajustement, raisons)."""
         c, lv = self.rows[i], self.levels[i]
         uses = c.get("times_used") or 0
@@ -121,6 +126,13 @@ class LibrarySearch:
         when = to_date(c.get("last_used")) or to_date(c.get("modified"))
         rec = recency(when, self.today, self.half_life)
         why: list[str] = []
+        past = self.history.get(c["id"])
+        chosen = 0.0
+        if past and past["files"] and asked_hit:  # choisi pour CETTE question (pas pour une autre) dans d'anciens RFI
+            chosen = math.log1p(past["files"]) / math.log1p(self.max_files) if self.max_files else 0.0
+            last = past["examples"][0] if past["examples"] else {}
+            why.append(f"choisi dans {past['files']} ancien{'s' if past['files'] > 1 else ''} RFI"
+                       + (f" (dernier : {last.get('file')}, {last.get('date')})" if last.get("file") else ""))
         if uses:
             why.append(f"utilisé {uses} fois" + (f", dernièrement le {when.strftime('%d/%m/%Y')}" if to_date(c.get("last_used")) else ""))
         adj = 0.0
@@ -160,7 +172,7 @@ class LibrarySearch:
             why.append(f"à corriger : {serious[0]['label'].lower()}")
         if not (c.get("text") or "").strip():
             adj -= 0.6
-        return 1 + POPULARITY * pop + RECENCY * rec, adj, why
+        return 1 + POPULARITY * pop + RECENCY * rec + CHOSEN * chosen, adj, why
 
     # ------------------------------------------------------------------ recherche
     def search(self, query: str, filters: dict[str, Any] | None = None, sort: str = "pertinence", k: int = 20,
@@ -174,7 +186,7 @@ class LibrarySearch:
         ql = query_level(q.pivot, self.funds)
         scored = []
         for c in cands:
-            mult, adj, why = self._business(c.index, ql, q.language)
+            mult, adj, why = self._business(c.index, ql, q.language, "history" in c.ranks)
             final = c.relevance * mult + adj
             scored.append((final, c, why))
         scored.sort(key=lambda t: -t[0])
@@ -229,6 +241,7 @@ class LibrarySearch:
                 "last_used": c.get("last_used"), "modified": c.get("modified"), "enabled": c.get("enabled", True),
                 "expired": _expired(c, self.today), "language": _lang(c), "type": c.get("type") or "",
                 "level": self.levels[i].public(), "issues": self.issues.get(c["id"], []), "why": why, "variants": [],
+                "history": self._history_public(c["id"]),
             }
             if cand is not None:
                 item["signals"] = {
@@ -240,6 +253,8 @@ class LibrarySearch:
                     item["why"] = ["expression exacte de la question"] + item["why"]
                 if cand.rerank is not None and cand.rerank >= 0.5:
                     item["why"] = [f"lecture fine : répond à la question ({round(cand.rerank * 100)} %)"] + item["why"]
+                elif "history" in cand.ranks and cand.ranks["history"] <= 2 and cand.coverage >= 0.5:
+                    item["why"] = ["question déjà posée dans d'anciens RFI"] + item["why"]
                 elif "dense" in cand.ranks and cand.ranks["dense"] <= 3 and "bm25" not in cand.ranks:
                     item["why"] = ["même sens, d'autres mots"] + item["why"]
             heads.append((i, item))
@@ -263,6 +278,30 @@ class LibrarySearch:
                 "folder": count(((self.rows[i].get("folder_path") or "(racine)").split(" / ")[0]) for i in idx)[:12],
                 "language": count(_lang(self.rows[i]) for i in idx)}
 
+    def _history_public(self, content_id: int) -> dict[str, Any] | None:
+        h = self.history.get(content_id)
+        if not h:
+            return None
+        return {"files": h["files"], "last": h["last"], "questions": h["questions"][:8], "examples": h["examples"][:5]}
+
+    def history_matches(self, question: str, min_similarity: float = 0.5, k: int = 8) -> list[tuple[int, float, int, str]]:
+        """Contenus choisis pour une question voisine dans d'anciens RFI : (id, similarité, nb de RFI, question passée)."""
+        from .suggest import question_similarity
+
+        if self.index.asked is None:
+            return []
+        q, _ = query_vector(question)
+        best: dict[int, tuple[float, str]] = {}
+        for h in self.index.asked.score(q, 40):
+            i = self.index.asked_owner[h.index]
+            asked = self.index.docs[i].asked
+            past = max(asked, key=lambda a: question_similarity(question, a))
+            sim = question_similarity(question, past)
+            if sim >= min_similarity and sim > best.get(i, (0.0, ""))[0]:
+                best[i] = (sim, past)
+        out = [(self.rows[i]["id"], sim, self.history.get(self.rows[i]["id"], {}).get("files", 0), past) for i, (sim, past) in best.items()]
+        return sorted(out, key=lambda t: (-t[1], -t[2]))[:k]
+
     # ------------------------------------------------------------------ contenu
     def describe(self, content_id: int, k: int = 6) -> dict[str, Any] | None:
         i = self.by_id.get(content_id)
@@ -275,6 +314,7 @@ class LibrarySearch:
                             "times_used": c.get("times_used") or 0, "level": self.levels[j].public(),
                             "same_text": similarity(self.rows[i].get("text") or "", c.get("text") or "") >= FAMILY_SIMILARITY})
         return {"level": self.levels[i].public(), "issues": self.issues.get(content_id, []), "similar": similar,
+                "history": self._history_public(content_id),
                 "popularity": round(math.log1p(self.rows[i].get("times_used") or 0) / math.log1p(self.max_uses), 3) if self.max_uses else 0.0}
 
     def overview(self) -> dict[str, Any]:
@@ -301,6 +341,8 @@ class SearchManager:
         self._lock = threading.Lock()
         self.downloads = neural.Downloads(models_root)
         self.extra_funds: list[str] = []
+        self.history_for = lambda snapshot: {}  # fourni par le service : liens anciens RFI ↔ contenus de cet instantané
+        self.history_signature = lambda snapshot: None
 
     # ------------------------------------------------------------------ modèles
     def _encoder(self):
@@ -344,9 +386,12 @@ class SearchManager:
         meta = snapshot.meta()
         return (str(snapshot.path), meta.get("synced_at"), meta.get("count"), meta.get("updated_at"))
 
+    def full_signature(self, snapshot: Snapshot) -> tuple:
+        return self.signature(snapshot) + (self.history_signature(snapshot),)
+
     def get(self, snapshot: Snapshot, wait: bool = True) -> LibrarySearch:
         key = str(snapshot.path)
-        sig = self.signature(snapshot) + (self._model_signature(),)
+        sig = self.full_signature(snapshot) + (self._model_signature(),)
         current = self._engines.get(key)
         if current and current[0] == sig:
             return current[1]
@@ -363,8 +408,8 @@ class SearchManager:
                 current = self._engines.get(key)
                 if current:
                     return current[1]
-                engine = LibrarySearch(snapshot, extra_funds=self.extra_funds, half_life=self.half_life)
-                lexical_sig = self.signature(snapshot) + (("lexical",),)
+                engine = LibrarySearch(snapshot, extra_funds=self.extra_funds, half_life=self.half_life, history=self.history_for(snapshot))
+                lexical_sig = self.full_signature(snapshot) + (("lexical",),)
                 self._engines[key] = (lexical_sig, engine)
                 READY[key] = engine
             if neural.available() and any(neural.installed(self.models_root, m) for m in neural.MODELS):
@@ -399,7 +444,8 @@ class SearchManager:
         def run() -> None:
             try:
                 engine = LibrarySearch(snapshot, extra_funds=self.extra_funds, half_life=self.half_life,
-                                       encoder=self._encoder(), reranker=self._reranker(), progress=progress)
+                                       encoder=self._encoder(), reranker=self._reranker(), progress=progress,
+                                       history=self.history_for(snapshot))
                 self._engines[key] = (sig, engine)
                 READY[key] = engine
                 self._building[key].update(running=False, message="Prêt", seconds=round(time.time() - self._building[key]["started"], 1))

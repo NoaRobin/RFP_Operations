@@ -75,9 +75,11 @@ class Hit:
 class PrecedentIndex:
     """Index en mémoire reconstruit quand le stockage change."""
 
-    def __init__(self, store: PrecedentStore, embedder: Embedder | None = None):
+    def __init__(self, store: PrecedentStore, embedder: Embedder | None = None, encoder=None):
         self.store = store
         self.embedder = embedder
+        self.encoder = encoder  # encodeur ONNX local (merlin.search.neural) : rappel multilingue, toujours vérifié par le concept
+        self._dense: tuple[int, list[str], np.ndarray] | None = None
         self._version = -1
         self._idf: dict[str, float] = {}
         self._vecs: dict[str, tuple[dict[str, float], float]] = {}
@@ -141,6 +143,41 @@ class PrecedentIndex:
                     ids.extend(pids)
             self._members[key] = ids
         return self.store.get(self._members[key])
+
+    def dense_candidates(self, question: str, k: int = 12, min_cos: float = 0.86) -> list[tuple[Precedent, float]]:
+        """Questions passées proches par le SENS, y compris dans une autre langue (« Fund inception date » ↔
+        « Date de création du fonds »). Mesuré : le sens seul confond aussi des voisines (« … de la stratégie ») — ces
+        candidats ne servent donc qu'après vérification du concept par l'appelant (advisor)."""
+        if self.encoder is None:
+            return []
+        if self._dense is None or self._dense[0] != self.store.version:
+            from ...search.neural import VectorCache, text_hash
+
+            pairs = self.store.questions()
+            uniq = list(dict.fromkeys(q for _, q in pairs if q))
+            cache = VectorCache(self.store.path.with_name(f"precedents.{self.encoder.id}.vectors.npz"))
+            keys = [f"{self.encoder.id}:q:{text_hash(q)}" for q in uniq]
+            todo = [i for i, key in enumerate(keys) if key not in cache.vectors]
+            for start in range(0, len(todo), 64):
+                part = todo[start:start + 64]
+                cache.put([keys[i] for i in part], self.encoder.encode([uniq[i] for i in part], "query"))
+            if todo:
+                cache.save(set(keys))
+            matrix = cache.matrix(keys) if keys else np.zeros((0, 1), np.float32)
+            by_q: dict[str, list[str]] = {}
+            for pid, q in pairs:
+                by_q.setdefault(q, []).append(pid)
+            self._dense = (self.store.version, uniq, matrix)
+            self._dense_ids = by_q
+        version, uniq, matrix = self._dense
+        if not uniq:
+            return []
+        qv = self.encoder.encode([norm(question)], "query")[0]
+        sims = matrix @ qv
+        order = np.argsort(-sims)[:k]
+        ids = [(pid, float(sims[i])) for i in order if sims[i] >= min_cos for pid in self._dense_ids.get(uniq[i], [])[:3]]
+        found = {p.id: p for p in self.store.get([pid for pid, _ in ids])}
+        return [(found[pid], s) for pid, s in ids if pid in found]
 
     def search(self, question: str, k: int = 8, min_similarity: float = 0.72) -> list[Hit]:
         self._refresh()

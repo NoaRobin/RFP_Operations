@@ -35,6 +35,16 @@ def demo_snapshot(folder: Path) -> Snapshot:
     return snap
 
 
+def demo_history(snap: Snapshot) -> dict:
+    """Liens anciens RFI ↔ contenus de la démonstration (anciens questionnaires fictifs)."""
+    from .history import History, build_links, demo_precedents
+
+    links = build_links(snap.all(), demo_precedents({c["id"]: c for c in snap.all()}))
+    h = History(snap.path.with_name("eval.history.json"))
+    h.save(links, len(links), "eval")
+    return h.by_content()
+
+
 def run(engine: LibrarySearch, queries: list[dict[str, Any]], rerank: bool = True) -> dict[str, Any]:
     rows, started = [], time.time()
     for item in queries:
@@ -61,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     queries = yaml.safe_load(args.eval.read_text(encoding="utf-8"))["queries"]
     with tempfile.TemporaryDirectory() as tmp:
         snap = demo_snapshot(Path(tmp))
+        history = demo_history(snap)
         configs: list[tuple[str, Any, Any]] = [("lexical (BM25F + RM3 + thésaurus + n-grammes)", None, None)]
         if args.models and neural.available():
             for mid in ("e5-small", "e5-base"):
@@ -70,13 +81,15 @@ def main(argv: list[str] | None = None) -> int:
                     if neural.installed(args.models, neural.DEFAULT_RERANKER):
                         configs.append((f"hybride + {mid} + reranker", enc, neural.Reranker(args.models)))
         for name, enc, rr in configs:
-            engine = LibrarySearch(snap, encoder=enc, reranker=rr, today=TODAY)
-            report = run(engine, queries)
-            print(f"{name:55s} nDCG@10 {report['ndcg@10']:.3f}  MRR@10 {report['mrr@10']:.3f}  "
-                  f"rappel@20 {report['recall@20']:.3f}  {report['ms_per_query']:.0f} ms/question")
-            if args.details:
-                for r in sorted(report["rows"], key=lambda r: r["ndcg"])[:12]:
-                    print(f"    {r['ndcg']:.2f}  {r['q']}  → {r['top']}")
+            for with_history in (False, True):
+                engine = LibrarySearch(snap, encoder=enc, reranker=rr, today=TODAY, history=history if with_history else None)
+                report = run(engine, queries)
+                label = name + (" + historique" if with_history else "")
+                print(f"{label:68s} nDCG@10 {report['ndcg@10']:.3f}  MRR@10 {report['mrr@10']:.3f}  "
+                      f"rappel@20 {report['recall@20']:.3f}  {report['ms_per_query']:.0f} ms/question")
+                if args.details:
+                    for r in sorted(report["rows"], key=lambda r: r["ndcg"])[:12]:
+                        print(f"    {r['ndcg']:.2f}  {r['q']}  → {r['top']}")
     return 0
 
 

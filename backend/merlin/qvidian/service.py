@@ -20,6 +20,7 @@ from .audit import audit
 from .bulk import Journal, Plan, WriteGuard, apply, make_plan, undo_plan
 from .client import QvidianClient, QvidianError
 from .demo import DemoQvidian
+from .history import History, build_links, demo_precedents
 from .library_search import SearchManager
 from .snapshot import Snapshot, sync
 
@@ -34,6 +35,11 @@ class QvidianService:
         self.ai = FindingStore(self.root / "ai_findings.json")
         self.demo = DemoQvidian()
         self.search = SearchManager(data_dir / "models", settings.search_encoder, settings.search_reranker, settings.half_life_days)
+        self.data_dir = data_dir
+        self._history_cache: dict[str, tuple[float, dict]] = {}
+        self.history_state: dict[str, Any] = {"running": False, "error": None}
+        self.search.history_for = self.history_for
+        self.search.history_signature = self._history_mtime
         self.real: QvidianClient | None = None
         self.plans: dict[str, Plan] = {}
         self.sync_state: dict[str, Any] = {"running": False, "message": "", "done": 0, "error": None, "result": None}
@@ -41,6 +47,9 @@ class QvidianService:
         self._snapshots: dict[str, Snapshot] = {}
         self._keepalive: threading.Thread | None = None
         self.last_sso_error = ""
+        self.connect_error = ""
+        self.connected_by = ""
+        self._audit_cache: dict[tuple, dict[str, Any]] = {}
 
     def _start_keepalive(self) -> None:
         """La session Qvidian expire après 20 minutes sans appel (réglage par défaut du serveur) : tant que l'app tourne,
@@ -80,17 +89,41 @@ class QvidianService:
         return self.real
 
     def _connect_from_settings(self) -> None:
+        """Clé d'API (ou mot de passe) du .env : prioritaire sur le SSO, et reconnexion automatique quand la session
+        expire — on ne se reconnecte jamais à la main tant que l'app tourne."""
         s = self.settings
         client = self.real or self._new_client()
         if s.api_key:
-            client.connect_api_key(s.user, s.api_key)
+            login = lambda: client.connect_api_key(s.user, s.api_key)  # noqa: E731
         elif s.password:
-            client.connect(s.user, s.password)
+            login = lambda: client.connect(s.user, s.password)  # noqa: E731
         else:
             raise QvidianError("config", "Pas de connexion Qvidian (ou session expirée)",
-                               "Connectez-vous depuis la fenêtre Qvidian (bouton SSO).")
+                               "Connectez-vous depuis la fenêtre Qvidian (bouton SSO), ou mettez QVIDIAN_USER et QVIDIAN_API_KEY dans .env.")
+        login()
+        client.reauth = login
         self.real = client
+        self.connect_error = ""
+        self.connected_by = "api_key" if s.api_key else "password"
         self._start_keepalive()
+
+    def warmup(self) -> None:
+        """Au démarrage de l'app : connexion par la clé d'API du .env, instantané, liens anciens RFI et index de recherche."""
+        def run() -> None:
+            try:
+                if self.mode == "qvidian" and self.settings.credentials and (self.real is None or not self.real.connected):
+                    self._connect_from_settings()
+            except QvidianError as error:
+                self.connect_error = error.message
+            try:
+                snap = self.snapshot()
+                self.history_for(snap)
+                self.search.get(snap, wait=False)
+                self.audit()
+            except Exception:  # noqa: BLE001 - préparation facultative
+                pass
+
+        threading.Thread(target=run, name="qvidian-warmup", daemon=True).start()
 
     def _new_client(self) -> QvidianClient:
         client = QvidianClient(self.settings.auth_url)
@@ -101,7 +134,9 @@ class QvidianService:
     def connect(self, user: str, password: str = "", api_key: str = "") -> dict[str, Any]:
         client = self._new_client()
         binding = client.connect_api_key(user, api_key) if api_key else client.connect(user, password)
+        client.reauth = (lambda: client.connect_api_key(user, api_key)) if api_key else (lambda: client.connect(user, password))
         self.real = client
+        self.connected_by = "api_key" if api_key else "password"
         self._start_keepalive()
         return {"user": binding.user}
 
@@ -127,6 +162,7 @@ class QvidianService:
             raise
         self.real = client
         self.last_sso_error = ""
+        self.connected_by = "sso"
         self._start_keepalive()
         return {"user": binding.user}
 
@@ -181,7 +217,7 @@ class QvidianService:
                 snap = self.snapshot(mode)
                 wanted = "delta" if kind == "auto" and snap.meta().get("synced_at") and not snap.empty else ("full" if kind == "auto" else kind)
                 result = sync(client, snap, mode, progress, workers=self.settings.concurrency, mode=wanted)
-                self.search.get(snap, wait=False)  # index de recherche reconstruit en arrière-plan
+                self.rebuild_history(snap, background=True)  # liens anciens RFI ↔ textes, puis index de recherche
                 self.sync_state.update(running=False, result=result, message="Synchronisation terminée")
             except QvidianError as error:
                 self.sync_state.update(running=False, error={"code": error.code, "message": error.message, "hint": error.hint})
@@ -190,6 +226,71 @@ class QvidianService:
 
         threading.Thread(target=run, name="qvidian-sync", daemon=True).start()
         return self.sync_state
+
+    # ------------------------------------------------------------------ historique : anciens RFI ↔ textes Qvidian
+    def _history_path(self, snap: Snapshot) -> Path:
+        return snap.path.with_name(f"{snap.path.stem}.history.json")
+
+    def _history_mtime(self, snap: Snapshot) -> float | None:
+        path = self._history_path(snap)
+        return path.stat().st_mtime if path.exists() else None
+
+    def _precedents(self, snap: Snapshot) -> list[Any]:
+        try:
+            from ..rfi.precedents import get_index
+
+            stored = get_index(self.data_dir / "rfi").store.all()
+        except Exception:  # noqa: BLE001 - pas d'anciens RFI : seulement la démo
+            stored = []
+        if snap.path.name == "demo.sqlite":
+            return demo_precedents({c["id"]: c for c in snap.all()}) + stored
+        return [p for p in stored if "demo" not in (p.origin or "")]  # vraie bibliothèque : jamais de précédents de démonstration
+
+    def _history_key(self, snap: Snapshot, precedents: int) -> str:
+        meta = snap.meta()
+        return f"{meta.get('synced_at')}|{meta.get('count')}|{precedents}"
+
+    def history_for(self, snap: Snapshot) -> dict[int, dict[str, Any]]:
+        """Liens enregistrés ; reconstruits en arrière-plan quand l'instantané ou les anciens RFI ont changé."""
+        path = self._history_path(snap)
+        mtime = path.stat().st_mtime if path.exists() else 0.0
+        cached = self._history_cache.get(str(path))
+        if cached is None or cached[0] != mtime:
+            cached = (mtime, History(path).by_content() if mtime else {})
+            self._history_cache[str(path)] = cached
+        if not mtime and not self.history_state.get("running"):
+            self.rebuild_history(snap, background=True)
+        return cached[1]
+
+    def rebuild_history(self, snap: Snapshot | None = None, background: bool = False) -> dict[str, Any]:
+        snap = snap or self.snapshot()
+
+        def run() -> None:
+            self.history_state.update(running=True, error=None)
+            try:
+                precedents = self._precedents(snap)
+                links = build_links(snap.all(), precedents)
+                History(self._history_path(snap)).save(links, len(precedents), self._history_key(snap, len(precedents)))
+                self.history_state.update(running=False, finished=time.strftime("%Y-%m-%dT%H:%M:%S"))
+                self.search.get(snap, wait=False)  # l'index de recherche intègre les questions passées
+            except Exception as error:  # noqa: BLE001 - l'historique ne doit jamais bloquer la recherche
+                self.history_state.update(running=False, error=str(error)[:300])
+
+        if background:
+            threading.Thread(target=run, name="qvidian-history", daemon=True).start()
+        else:
+            run()
+        return self.history_summary(snap)
+
+    def history_summary(self, snap: Snapshot | None = None) -> dict[str, Any]:
+        snap = snap or self.snapshot()
+        h = History(self._history_path(snap))
+        by_content = h.by_content()
+        titles = {c["id"]: c["title"] for c in snap.many(list(by_content))}
+        top = sorted(by_content.items(), key=lambda kv: -kv[1]["files"])[:20]
+        return {**h.summary(), "state": self.history_state,
+                "top": [{"id": cid, "title": titles.get(cid, ""), "files": e["files"], "last": e["last"], "questions": e["questions"][:5]}
+                        for cid, e in top]}
 
     # ------------------------------------------------------------------ recherche sémantique
     def library_search(self, query: str, filters: dict[str, Any] | None = None, sort: str = "pertinence", k: int = 20,
@@ -244,15 +345,26 @@ class QvidianService:
 
     # ------------------------------------------------------------------ contrôles
     def audit(self, today: date | None = None, depth: int = 2) -> dict[str, Any]:
+        """Carte des erreurs, gardée en mémoire tant que l'instantané et l'analyse IA n'ont pas changé (retour instantané)."""
         snap = self.snapshot()
-        return audit(snap.all(), today=today, ai=self.ai.load(), depth=depth)
+        meta = snap.meta()
+        ai_mtime = self.ai.path.stat().st_mtime if self.ai.path.exists() else 0.0
+        key = (str(snap.path), meta.get("synced_at"), meta.get("count"), meta.get("updated_at"), ai_mtime, depth,
+               (today or date.today()).isoformat())
+        cached = self._audit_cache.get(key)
+        if cached is None:
+            cached = audit(snap.all(), today=today, ai=self.ai.load(), depth=depth)
+            self._audit_cache = {k: v for k, v in self._audit_cache.items() if k[0] != key[0] or k[5] != depth}
+            self._audit_cache[key] = cached
+        return cached
 
     def status(self) -> dict[str, Any]:
         mode = self.mode
         meta = self.snapshot(mode).meta() if mode != "off" else {}
         return {"mode": mode, "connected": mode == "demo" or (self.real is not None and self.real.connected),
                 "user": (self.real.binding.user if self.real and self.real.binding else ("démo" if mode == "demo" else "")),
-                "auth_url": self.settings.auth_url, "sso": True, "last_sso_error": self.last_sso_error, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
+                "auth_url": self.settings.auth_url, "sso": not self.settings.api_key, "connected_by": self.connected_by,
+                "api_key_configured": bool(self.settings.api_key and self.settings.user), "connect_error": self.connect_error, "last_sso_error": self.last_sso_error, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
                 "write_enabled": self.guard.configured, "locked": self.guard.locked, "snapshot": meta, "sync": self.sync_state,
                 "half_life_days": self.settings.half_life_days, "extended_fields": getattr(self.real, "extended_fields", True)}
 

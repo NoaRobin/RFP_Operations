@@ -84,6 +84,16 @@ export function ContentView() {
               </div>
             )}
           </section>
+          {insight?.history && (
+            <section className="rounded-[var(--radius-card)] border-2 border-fg bg-sun-400/20 p-5">
+              <h2 className="text-lg">{Q.historyChosen(insight.history.files)}</h2>
+              <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+                {insight.history.examples.map((e, i) => (
+                  <li key={i}><span className="font-semibold">« {e.question} »</span><span className="block text-xs font-semibold text-fg-3">{e.file} · {e.date || '—'}{e.fund ? ` · ${e.fund}` : ''} · {e.mode}</span></li>
+                ))}
+              </ul>
+            </section>
+          )}
           {insight && (
             <section className="rounded-[var(--radius-card)] border-2 border-fg bg-card p-5">
               <h2 className="text-lg">{Q.clues}</h2>

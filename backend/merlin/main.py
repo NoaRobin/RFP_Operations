@@ -45,11 +45,27 @@ def create_state() -> AppState:
     return state
 
 
+def _warm_qvidian(state) -> None:
+    """Qvidian prêt avant le premier clic : connexion par la clé d'API du .env (sans SSO), instantané, index de recherche
+    et liens avec les anciens RFI préparés en arrière-plan. Jamais bloquant, jamais en test (MERLIN_WARMUP=0)."""
+    import os
+
+    if os.environ.get("MERLIN_WARMUP", "1") == "0" or os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+    try:
+        from .qvidian.service import get_service
+
+        get_service(state.settings.qvidian, state.settings.data_dir).warmup()
+    except Exception as error:  # noqa: BLE001
+        log.warning("Préparation Qvidian ignorée : %s", error)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     state = create_state()
     set_state(state)
     state.scheduler.start()
+    _warm_qvidian(state)
     log.info("RFP pas envie de travailler : prêt — mode données : %s — %d automatisation(s)", state.data.mode, len(state.registry.plugins))
     yield
     state.scheduler.shutdown()

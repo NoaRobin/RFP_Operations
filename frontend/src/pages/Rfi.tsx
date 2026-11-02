@@ -114,6 +114,8 @@ export default function Rfi() {
   const [accepted, setAccepted] = useState<Set<string>>(new Set())
   const [reusable, setReusable] = useState<Set<string>>(new Set())
   const [overwrite, setOverwrite] = useState(false)
+  const [useQvidian, setUseQvidian] = useState(true)
+  const [highlight, setHighlight] = useState(true)
   const [analysis, setAnalysis] = useState<RfiAnalysis | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [generating, setGenerating] = useState(false)
@@ -129,7 +131,8 @@ export default function Rfi() {
   }, { scope: root, dependencies: [doc?.id, !!result] })
 
   const request = (extra: Partial<RfiRequest> = {}): RfiRequest => ({
-    pid, isin, as_of: asOf, language, overrides, overwrite, accept: [...accepted], reusable: [...reusable], ...extra,
+    pid, isin, as_of: asOf, language, overrides, overwrite, accept: [...accepted], reusable: [...reusable], use_qvidian: useQvidian,
+    highlight_missing: highlight, ...extra,
   })
 
   const open = async (loader: Promise<RfiDocument>) => {
@@ -322,6 +325,18 @@ export default function Rfi() {
                     </Select>
                   )}
                 </Field>
+                {doc.qvidian_available ? (
+                  <Switch checked={useQvidian} onChange={(v) => { setUseQvidian(v); if (analysis) void analyze(doc, { use_qvidian: v, fresh: true }) }}
+                    label={texts.rfi.useQvidian} hint={texts.rfi.useQvidianHint(doc.qvidian_count ?? 0)} />
+                ) : <p className="text-xs font-semibold text-fg-3">{texts.rfi.noQvidian}</p>}
+                <Switch checked={highlight} onChange={setHighlight} label={texts.rfi.highlight} hint={texts.rfi.highlightHint} />
+                {doc.form_sources && doc.form_sources.length > 0 && (
+                  <div className="rounded-2xl border-2 border-fg bg-magic-400/15 p-3 text-xs font-semibold">
+                    <p className="font-display text-sm font-bold">{texts.rfi.formTitle(doc.form_sources.length)}</p>
+                    <p className="mt-0.5 text-fg-2">{texts.rfi.formLead}</p>
+                    <ul className="mt-1">{doc.form_sources.slice(0, 4).map((f) => <li key={f.file}>{f.file}{f.date ? ` · ${f.date}` : ''} · {f.shared} questions communes</li>)}</ul>
+                  </div>
+                )}
                 <Button variant="primary" onClick={() => analyze()} loading={analyzing} disabled={!pid} icon={<Wand2 size={18} />}>
                   {analyzing ? texts.rfi.analyzing : texts.rfi.analyze}
                 </Button>
@@ -374,6 +389,7 @@ export default function Rfi() {
                     <p className="font-display text-2xl font-semibold">{texts.rfi.done(result.written)}</p>
                     <p className="font-semibold text-fg-2">{result.file} · {texts.rfi.minutes(result.written * 2)}</p>
                     <p className="text-sm font-semibold text-fg-2">{texts.rfi.learned}</p>
+                    {!!result.highlighted && <p className="mt-1 inline-block rounded-md bg-[#ffff00] px-2 text-sm font-bold">{texts.rfi.highlighted(result.highlighted)}</p>}
                   </div>
                   <a href={result.download} className="inline-flex h-14 items-center gap-2 rounded-full border-[2.5px] border-fg bg-card px-7 font-display text-lg font-semibold shadow-[3px_3px_0_0_var(--color-fg)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[5px_5px_0_0_var(--color-fg)]">
                     <Download size={20} aria-hidden="true" />{texts.rfi.download}

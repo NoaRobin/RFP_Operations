@@ -262,6 +262,9 @@ export interface RfiDocument {
   suggestions?: FundSuggestion[]
   shares?: DocumentShare[]
   multi_share?: boolean
+  form_sources?: FormSource[]
+  qvidian_available?: boolean
+  qvidian_count?: number
 }
 
 export type RfiLanguage = 'fr' | 'en' | 'es' | 'it'
@@ -400,6 +403,8 @@ export interface RfiAnalysis {
   notes: string[]
   decisions?: Partial<Record<RfiDecisionKind, number>>
   precedents?: number
+  form_sources?: FormSource[]
+  qvidian_used?: boolean
 }
 
 export interface PrecedentStats {
@@ -435,7 +440,9 @@ export interface DueDiligenceList { year: number | null; folders: RemoteItem[]; 
 export interface FinalListing { final_path: string | null; documents: (RemoteItem & { fund?: string })[]; funds: { fund: string; final_path: string }[]; hint: string }
 export interface SharePointImport { final_path: string | null; imported: number; hint: string; documents: { file: string; imported: number; identity_problem?: string; error?: string }[] }
 
-export interface RfiGenerated extends RfiAnalysis { version: number; written: number; file: string; download: string }
+export interface RfiGenerated extends RfiAnalysis {
+  version: number; written: number; file: string; download: string; highlighted?: number; to_ask?: { question: string; location: string }[]
+}
 
 export interface RfiFact { id: string; label: string; label_en?: string; scope: string; type: string; source: string; healthy: boolean }
 
@@ -451,7 +458,13 @@ export interface RfiRequest {
   remember?: boolean
   /** true : recalcul complet (bouton « Analyser ») ; sinon seules les cases modifiées sont recalculées */
   fresh?: boolean
+  /** bibliothèque Qvidian comme source (option de l'écran) */
+  use_qvidian?: boolean
+  /** au téléchargement : cases sans réponse surlignées en jaune (à demander) */
+  highlight_missing?: boolean
 }
+
+export interface FormSource { file: string; shared: number; overlap: number; date: string }
 
 /* ---------------------------------------------------------------- Merge codes */
 export interface MergeProposition {
@@ -578,6 +591,9 @@ export interface QvidianStatus {
   sync: { running: boolean; message: string; done: number; kind?: string; error: { code: string; message: string; hint: string } | null; result: QvidianSyncResult | null }
   half_life_days: number
   extended_fields: boolean
+  connected_by?: string
+  api_key_configured?: boolean
+  connect_error?: string
 }
 
 export interface QvidianIssue { category: string; label: string; severity: 'haute' | 'moyenne' | 'basse'; message: string; excerpt: string; fix?: string; others?: number[] }
@@ -626,6 +642,7 @@ export interface QvidianHit {
   id: number; title: string; question: string; folder_path: string; snippet: string; highlights: [number, number][]; text: string
   score: number | null; relative: number | null; times_used: number; last_used: string | null; modified: string | null; enabled: boolean
   expired: boolean; language: string; type: string; level: QvidianLevel; issues: QvidianIssue[]; why: string[]; variants: QvidianVariant[]
+  history?: QvidianHistoryInfo | null
   signals?: { lexical: number; semantic: number | null; rerank: number | null; coverage: number; ranks: Record<string, number>; phrase: boolean; matched: string[] }
 }
 export interface QvidianFacet { value: string; count: number; label?: string }
@@ -639,7 +656,16 @@ export interface QvidianSearchResult {
   timings: Record<string, number>; engine: QvidianEngineInfo; facets: Record<'scope' | 'theme' | 'fund' | 'folder' | 'language', QvidianFacet[]>
   sort: string; index?: { running: boolean; message: string; done: number; total: number; error?: string } | null
 }
+export interface QvidianHistoryInfo {
+  files: number; last: string; questions: string[]; examples: { file: string; date: string; question: string; mode: string; fund: string }[]
+}
+export interface QvidianHistorySummary {
+  built_at: string | null; precedents: number; links: number; contents: number; files: number; questions: number
+  by_mode: Record<string, number>; state: { running: boolean; error: string | null }
+  top: { id: number; title: string; files: number; last: string; questions: string[] }[]
+}
 export interface QvidianInsight {
+  history?: QvidianHistoryInfo | null
   level: QvidianLevel; issues: QvidianIssue[]; popularity: number
   similar: { id: number; title: string; folder_path: string; score: number; times_used: number; level: QvidianLevel; same_text: boolean }[]
 }

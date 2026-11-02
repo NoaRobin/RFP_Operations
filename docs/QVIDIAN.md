@@ -335,3 +335,18 @@ annulable) : réécrire le texte d'un contenu (un seul à la fois, `ContentText`
 
 **Mot de passe d'équipe** : il se règle uniquement dans le `.env` du poste (`QVIDIAN_WRITE_PASSWORD=…`), jamais dans le
 code ; l'écran « Modifier » le demande au moment d'écrire (5 erreurs ⇒ verrou de 5 minutes).
+
+
+## 14. Appris des anciens RFI, connexion par clé d'API sans SSO (novembre 2026)
+
+- **Historique** (`merlin/qvidian/history.py`) : chaque réponse rédigée des anciens RFI (SharePoint « final », projets
+  Qvidian importés, lot 02) est rapprochée du contenu Qvidian correspondant — identique, autre version (≥ 0,55) ou
+  reprise dans une réponse plus longue (≥ 85 % de ses mots). Les questions de ces RFI deviennent un champ et une voie de
+  recherche à part (« questions déjà posées »), et « choisi dans N anciens RFI » renforce le classement — seulement
+  quand la question passée couvre vraiment la question posée. Mesuré (jeu jamais vu, lexical) : nDCG@10 0,901 → 0,938.
+  Écrans Cockpit et API & moteur : « Appris des anciens RFI » (relecture à la demande, automatique après une
+  synchronisation). Fichier local `data/qvidian/<instantané>.history.json`, jamais committé.
+- **Clé d'API** : `QVIDIAN_USER` + `QVIDIAN_API_KEY` dans `.env` ⇒ connexion au démarrage de l'app, sans SSO ; quand la
+  session expire (20 min), elle est rouverte d'office avec la clé. Le bouton SSO n'apparaît plus. Au démarrage,
+  instantané, liens historiques, index de recherche et carte des erreurs sont préparés en arrière-plan ; la carte des
+  erreurs est gardée en mémoire et l'écran garde son dernier état : revenir sur la section est immédiat.

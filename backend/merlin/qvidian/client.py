@@ -168,6 +168,7 @@ class QvidianClient:
         self.cache = TtlCache(300)
         self.limiter = RateLimiter(8.0, 16)
         self.delta_supported: bool | None = None  # filtre DateLastModified accepté par le serveur ? (découvert au premier essai)
+        self.reauth = None  # reconnexion complète (clé d'API ou mot de passe du .env) quand la session a expiré
 
     def configure(self, cache_seconds: int = 300, calls_per_second: float = 8.0) -> "QvidianClient":
         self.cache.ttl = max(0, cache_seconds)
@@ -256,6 +257,8 @@ class QvidianClient:
     def call(self, operation: str, **params: Any) -> Any:
         """Appel authentifié. Le jeton vit tant que la session est active : 1200 s sans appel par défaut
         (guide « Authentication Tokens », réglage ConnectionTimeout du serveur)."""
+        if self.binding is None and self.reauth is not None:
+            self.reauth()
         if self.binding is None:
             raise QvidianError("config", "Pas de connexion Qvidian", HINTS["config"])
         cache_key = None
@@ -275,9 +278,11 @@ class QvidianClient:
                 try:
                     self.connect_token(self.binding.user, self.binding.token)
                 except QvidianError as again:
-                    self.binding = None  # session expirée côté Qvidian : il faut se reconnecter (SSO ou identifiant)
-                    raise QvidianError("session", "Session Qvidian expirée (20 minutes sans activité par défaut).",
-                                       "Reconnectez-vous depuis la fenêtre Qvidian (bouton SSO).") from again
+                    if self.reauth is None:
+                        self.binding = None  # session expirée côté Qvidian : il faut se reconnecter (SSO ou identifiant)
+                        raise QvidianError("session", "Session Qvidian expirée (20 minutes sans activité par défaut).",
+                                           "Reconnectez-vous depuis la fenêtre Qvidian (bouton SSO).") from again
+                    self.reauth()  # clé d'API du .env : nouvelle session, sans rien demander
             res = self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
         self.last_call = time.time()
         if cache_key is not None:

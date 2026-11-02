@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { CheckCircle2, Cpu, Download, Gauge, RefreshCw, RotateCcw, Zap } from 'lucide-react'
 import { Bar, Kpi } from '../../../components/qvidian/Bits'
+import { HistoryPanel } from '../../../components/qvidian/HistoryPanel'
 import { Button } from '../../../components/ui/Button'
 import { texts } from '../../../content/texts'
 import { api } from '../../../lib/api'
@@ -123,6 +124,8 @@ export function ApiView() {
           </section>
         </div>
       </div>
+
+      <div data-enter><HistoryPanel /></div>
 
       <section data-enter className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5">
         <div className="flex flex-wrap items-center gap-2">

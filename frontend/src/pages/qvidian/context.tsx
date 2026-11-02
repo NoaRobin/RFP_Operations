@@ -25,6 +25,8 @@ interface QvidianState {
 }
 
 const Ctx = createContext<QvidianState | null>(null)
+// Dernier état connu, gardé hors du composant : revenir sur la section affiche tout de suite, puis rafraîchit en fond
+const memo: { status: QvidianStatus | null; audit: QvidianAudit | null; journal: QvidianJournalEntry[] } = { status: null, audit: null, journal: [] }
 const KEY = 'qvidian.selection'
 
 function initialSelection(): Set<number> {
@@ -37,9 +39,9 @@ function initialSelection(): Set<number> {
 
 export function QvidianProvider({ children }: { children: ReactNode }) {
   const toast = useToast()
-  const [status, setStatus] = useState<QvidianStatus | null>(null)
-  const [audit, setAudit] = useState<QvidianAudit | null>(null)
-  const [journal, setJournal] = useState<QvidianJournalEntry[]>([])
+  const [status, setStatus] = useState<QvidianStatus | null>(memo.status)
+  const [audit, setAudit] = useState<QvidianAudit | null>(memo.audit)
+  const [journal, setJournal] = useState<QvidianJournalEntry[]>(memo.journal)
   const [error, setError] = useState<ApiError | null>(null)
   const [depth, setDepth] = useState(2)
   const [selected, setSelected] = useState<Set<number>>(initialSelection)
@@ -55,6 +57,7 @@ export function QvidianProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     try {
       const [s, a, j] = await Promise.all([api.qvidian.status(), api.qvidian.audit(depth), api.qvidian.journal()])
+      Object.assign(memo, { status: s, audit: a, journal: j })
       setStatus(s); setAudit(a); setJournal(j); setError(null)
     } catch (e) {
       setError(e instanceof ApiError ? e : new ApiError(String(e)))

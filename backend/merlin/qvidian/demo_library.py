@@ -165,3 +165,31 @@ CONTENTS_EXTRA = [
 ]
 
 __all__ = ["FOLDERS_EXTRA", "CONTENTS_EXTRA"]
+
+
+# ------------------------------------------------------------------ anciens RFI de démonstration (fictifs)
+# Questions posées dans d'anciens questionnaires (formulées à la manière de chaque client) et texte Qvidian retenu.
+# Montrent l'apprentissage par l'historique : « cette question a reçu ce texte dans N anciens RFI ».
+DEMO_HISTORY = [
+    ("DDQ_Caisse_Imaginaire_2024.xlsx", "2024-03-12", "Fonds Imaginaire Horizon", [
+        ("Main shareholders of the management company", 1021), ("Total headcount and breakdown", 1023),
+        ("Business continuity arrangements", 1031), ("Describe your ESG integration process", 1046),
+        ("Which entity acts as custodian?", 1016), ("Order cut-off and settlement cycle", 1047),
+        ("Policy on controversial weapons and coal", 1041)]),
+    ("RFI_Mutuelle_Imaginaire_2025.xlsx", "2025-02-20", "Fonds Imaginaire Aurore", [
+        ("Répartition du capital de la SGP", 1021), ("Effectif total de la société", 1023),
+        ("Dispositif de continuité et site de secours", 1031), ("Qui assure la conservation des actifs ?", 1016),
+        ("Approche de gestion du fonds obligataire Aurore", 1054), ("Politique d'exclusion sectorielle", 1041),
+        ("Rémunération variable des équipes de gestion", 1030)]),
+    ("Questionnaire_Assureur_Imaginaire_2025.docx", "2025-09-03", "Fonds Imaginaire Horizon", [
+        ("Shareholding structure", 1021), ("How do you integrate ESG factors?", 1046), ("Key man clause", 1036),
+        ("Investment approach of Horizon", 1050), ("Engagement and escalation process", 1043)]),
+    ("DDQ_Caisse_Imaginaire_2026.xlsx", "2026-04-15", "Fonds Imaginaire Horizon", [
+        ("Main shareholders of the management company", 1021), ("Total headcount and breakdown", 1023),
+        ("Business continuity arrangements", 1031), ("Describe your ESG integration process", 1046),
+        ("Which entity acts as custodian?", 1016), ("Policy on controversial weapons and coal", 1041),
+        ("Rules applied when a manager leaves", 1036)]),
+    ("RFI_Fondation_Imaginaire_2026.xlsx", "2026-07-01", "Fonds Imaginaire Boréal", [
+        ("Actionnaires de la société de gestion", 1021), ("Plan de reprise d'activité", 1031),
+        ("Comité d'allocation de Boréal", 1058), ("Sélection et évaluation des brokers", 1029)]),
+]

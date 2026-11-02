@@ -361,3 +361,30 @@ def test_folder_filter_is_sent_in_wsdl_order():
     assert "<filtersAND><FilterCriteria><classType>Standard</classType><propType>Property</propType>" in sent
     assert "<fieldName>LibraryFolderID</fieldName>" in sent and "<values><string>51</string></values>" in sent
     assert sent.index("<pageIndex>") < sent.index("<filtersAND>") < sent.index("<searchFields>")
+
+
+def test_api_key_in_env_reconnects_without_sso():
+    """Clé d'API du .env : une session expirée est rouverte d'office (aucun SSO, aucune saisie)."""
+    from merlin.qvidian.client import Binding, QvidianClient, QvidianError
+
+    c = QvidianClient("https://login.example.invalid/QvidianAuthentication.asmx", FakeTransport({}))
+    logins = []
+
+    def login():
+        logins.append(1)
+        c.binding = Binding(f"TOKEN-{len(logins)}", "user", "https://qpa.example.invalid/Qvidian.asmx", {})
+
+    c.reauth = login
+    calls = []
+
+    def fake_post(url, operation, params, header):
+        calls.append(header.get("AuthenticationToken"))
+        if operation == "ConnectByAuthToken" or header.get("AuthenticationToken") == "OLD":
+            raise QvidianError("auth", "Authentication token expired")
+        return {"ok": True}
+
+    c._post = fake_post
+    c.binding = Binding("OLD", "user", "https://qpa.example.invalid/Qvidian.asmx", {})
+    assert c.call("HasPermissions", Permission="x") == {"ok": True} and logins == [1] and calls[-1] == "TOKEN-1"
+    c.binding = None
+    assert c.call("HasPermissions", Permission="x") == {"ok": True} and len(logins) == 2

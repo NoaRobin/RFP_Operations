@@ -205,8 +205,10 @@ class PrecedentAdvisor:
         if firm is not None and str(firm.source).startswith("precedent:"):
             return self._firm(slot, firm)
         hits = self.index.search(question, k=8)
-        usable = self._usable(hits)
         concept = self.ontology.concepts.get(row.get("concept") or "")
+        if concept is not None and len(hits) < 8:
+            hits = hits + self._same_concept_elsewhere(question, concept, u, {h.precedent.id for h in hits})
+        usable = self._usable(hits)
         has_answer = row.get("answer") is not None and row.get("status") in {"auto", "review"}
         if not hits:
             if has_answer:
@@ -219,6 +221,22 @@ class PrecedentAdvisor:
                 checks[h.precedent.id] = self._check(concept, u, h)
             return self._with_ontology(row, concept, u, hits, checks)
         return self._without_ontology(slot, u, hits, usable, checks)
+
+    def _same_concept_elsewhere(self, question: str, concept: Concept, u: Understanding, seen: set[str]) -> list[Hit]:
+        """Même question dans une autre langue ou une autre formulation : proche par le sens (encodeur E5) ET lue par
+        l'ontologie comme le même concept, avec les mêmes facettes (« ex ante » ≠ « ex post »). Jamais l'un sans l'autre."""
+        out: list[Hit] = []
+        for p, cos in self.index.dense_candidates(question):
+            if p.id in seen:
+                continue
+            other = understand(self.ontology, p.question)
+            cands = match(self.ontology, other, limit=1)
+            if not cands or cands[0].concept.id != concept.id or cands[0].score < 0.6:
+                continue
+            if any(other.facets.get(f) and u.facets.get(f) and other.facets[f] != u.facets[f] for f in set(other.facets) | set(u.facets)):
+                continue
+            out.append(Hit(p, round(0.72 + 0.2 * (cos - 0.86) / 0.14, 3)))  # au seuil des précédents lexicaux, jamais au-dessus de 0,92
+        return out[:6]
 
     def _with_ontology(self, row: dict[str, Any], concept: Concept, u: Understanding, hits: list[Hit], checks: dict[str, Check]) -> Decision:
         ok = [c for c in checks.values() if c.result == "match"]

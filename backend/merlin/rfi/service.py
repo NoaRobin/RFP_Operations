@@ -217,6 +217,8 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
     decisions: dict[str, int] = {}
     rows: list[dict[str, Any]] = []
     stats = {"auto": 0, "review": 0, "no_value": 0, "unmatched": 0, "skipped": 0, "existing": 0}
+    form = _form_model(precedents, layout)
+
     def compute(slot: Slot, override: Any) -> dict[str, Any]:
         # Grille par part : la case vise la part de sa ligne / colonne. Section d'une part dans une liste : l'ISIN désigne
         # quelle part lire, sans imposer la portée (« Nom du fonds » reste une question sur le fonds).
@@ -232,6 +234,8 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
         row = _analyze_slot(ontology, library, slot, u, vals, lang, as_of_d, override, binding)
         if row["status"] not in {"skipped", "existing"} and row["source"] in {"ontologie", "bibliothèque"} and advisor() is not None:
             row = _apply_decision(row, advisor().advise(slot, u, row))
+        if form is not None and override == "__none__":
+            row = _apply_form(row, slot, form)
         if qvidian is not None and override == "__none__":
             row = _apply_qvidian(row, slot, qvidian, as_of_d, half_life)
         return row
@@ -268,10 +272,62 @@ def analyze(data: DataAccess, store: RfiStore, path: Path, layout: Layout, pid: 
             "coverage": {"total": total, "auto": stats["auto"], "review": stats["review"],
                          "rate": round(answerable / total, 3) if total else 0.0},
             "notes": layout.notes, "library": library.stats(), "decisions": decisions,
+            "form_sources": form.public() if form is not None else [], "qvidian_used": qvidian is not None,
             "precedents": precedents.store.count() if precedents is not None else 0}
 
 
 QVIDIAN_SOURCES = 6  # contenus Qvidian montrés comme sources d'une case (les plus pertinents)
+
+
+_FORMS: dict[tuple, Any] = {}
+NO_FORM_SOURCES = {"Qvidian", "Copilot", "réponse saisie", "précédent"}
+
+
+def _form_model(precedents: PrecedentIndex | None, layout: Layout):
+    """Anciens RFI du même questionnaire (consensus de forme) ; gardé en mémoire tant que les précédents ne changent pas."""
+    if precedents is None:
+        return None
+    from .form import FormModel
+
+    questions = [s.question for s in layout.slots]
+    key = (str(precedents.store.path), precedents.store.version, precedents.store.count(), hash(tuple(questions)))
+    if key not in _FORMS:
+        try:
+            model = FormModel(precedents.store.all(), questions)
+        except Exception:  # noqa: BLE001 - la forme est un plus : jamais bloquante
+            model = None
+        if len(_FORMS) > 8:
+            _FORMS.clear()
+        _FORMS[key] = model
+    model = _FORMS[key]
+    return model if model is not None and model.sources else None
+
+
+def _apply_form(row: dict[str, Any], slot: Slot, form) -> dict[str, Any]:
+    """Fond = la donnée ; forme = celle des anciens RFI de ce questionnaire. Réponse rédigée standard proposée si rien d'autre."""
+    from .form import apply as apply_form
+
+    question = f"{slot.parent} {slot.question}".strip() if slot.parent else slot.question
+    if row["status"] in {"auto", "review"} and row.get("answer") is not None and row.get("source") not in NO_FORM_SOURCES and not slot.options:
+        spec = form.spec(slot.question)
+        if spec is not None and spec.kind != "text":
+            done = apply_form(spec, row["answer"], row.get("_value"))
+            if done is not None:
+                row = {**row, "answer": done[0], "_value": done[1], "value": done[0], "reasons": row.get("reasons", []) + [spec.reason()],
+                       "form": {"kind": spec.kind, "support": spec.support, "total": spec.total, "examples": spec.examples}}
+        elif spec is not None:
+            row = {**row, "form": {"kind": "text", "words": spec.style["words"], "support": spec.support, "total": spec.total}}
+    elif row["status"] in {"unmatched", "no_value"}:
+        standard = form.standard_text(question) or form.standard_text(slot.question)
+        if standard is not None:
+            text, where = standard
+            files = ", ".join(f"{f} ({d})" if d else f for f, d in where[:3])
+            row = {**row, "status": "review", "answer": text, "value": text, "_value": text, "confidence": 0.55, "source": "précédent",
+                   "evidence": f"même questionnaire · {files}",
+                   "reasons": [f"réponse identique dans {len(where)} anciens RFI de ce questionnaire : {files}"],
+                   "sources": row.get("sources", []) + [{"kind": "precedent", "label": f"même questionnaire · {f}", "value": text, "date": d,
+                                                         "weight": 2.0, "same_format": True} for f, d in where[:4]]}
+    return row
 
 
 def _apply_qvidian(row: dict[str, Any], slot: Slot, snapshot, as_of: date, half_life: int) -> dict[str, Any]:
@@ -328,8 +384,8 @@ def _with_choices(row: dict[str, Any], as_of: date, half_life: int) -> dict[str,
     """Toutes les réponses possibles de la case, regroupées par texte et classées (voir merlin.rfi.aggregate)."""
     votes: list[Vote] = []
     for x in row.get("sources") or []:
-        if x.get("kind") == "precedent" or not x.get("value"):
-            continue
+        if (x.get("kind") == "precedent" and not x.get("same_format")) or not x.get("value"):
+            continue  # précédents : lus depuis row["precedent"] (sauf ceux du même questionnaire, ajoutés ici avec un poids double)
         votes.append(Vote(str(x["value"]), x.get("kind") or "document", x.get("label") or "", weight=float(x.get("weight") or 1.0),
                           when=vote_date(x.get("date")), uses=int(x.get("uses") or 1), url=x.get("url") or "",
                           check=x.get("check") if x.get("check") in {"match", "mismatch"} else None, ref=str(x.get("ref") or "")))
@@ -615,8 +671,10 @@ def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, is
              lang: str | None, overrides: dict[str, Any], overwrite: bool, accept: list[str] | None, user: str,
              remember: bool = True, reusable: list[str] | None = None, precedents: PrecedentIndex | None = None,
              documents: "DocumentService | None" = None, bindings: "BindingIndex | None" = None, qvidian=None,
-             half_life: int = HALF_LIFE_DAYS, cache: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
-    """Écrit les réponses « auto » + celles acceptées par l'utilisateur dans une nouvelle version du fichier."""
+             half_life: int = HALF_LIFE_DAYS, cache: dict[str, dict[str, Any]] | None = None,
+             highlight_missing: bool = False) -> dict[str, Any]:
+    """Écrit les réponses « auto » + celles acceptées par l'utilisateur dans une nouvelle version du fichier.
+    highlight_missing : les cases sans réponse écrite (à demander aux équipes) sont surlignées en jaune."""
     path = store.original(doc_id)
     layout = detect(path)
     result = analyze(data, store, path, layout, pid, isin, as_of, lang, overrides, precedents, documents=documents, bindings=bindings,
@@ -635,6 +693,10 @@ def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, is
         value = row.pop("_value", None)
         answers.append((slots[row["id"]].target, value if value is not None else row["answer"], slots[row["id"]].options))
         written_rows.append(row)
+    written_ids = {r["id"] for r in written_rows}
+    missing = [r for r in result["questions"] if r["id"] not in written_ids and r["status"] in {"no_value", "unmatched", "review"}
+               and not slots[r["id"]].target.get("unresolved_list")]
+    highlight = [slots[r["id"]].target for r in missing] if highlight_missing else []
     for row in result["questions"]:
         row.pop("_value", None)
     meta = store.meta(doc_id)
@@ -642,7 +704,7 @@ def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, is
     number = len(meta["versions"]) + 1
     stem = re.sub(r"[^\w\-]+", "_", Path(meta["filename"]).stem).strip("_") or "rfi"
     target = folder / "versions" / f"{stem}_rempli_v{number}{meta['suffix']}"
-    written = write(path, target, answers)
+    written = write(path, target, answers, highlight)
 
     # Apprentissage : ce qu'un humain a validé devient une connaissance réutilisable
     if remember:
@@ -667,7 +729,8 @@ def generate(data: DataAccess, store: RfiStore, doc_id: str, pid: str | None, is
         gold = [{"question": r["question"], "location": r["location"], "concept": r["concept"], "answer": r["answer"]} for r in written_rows]
         target.with_suffix(".gold.json").write_text(json.dumps({"as_of": result["as_of"], "pid": pid, "isin": isin, "answers": gold},
                                                                ensure_ascii=False, indent=1), encoding="utf-8")
-    info = {"version": number, "written": written, "pid": pid, "isin": isin, "as_of": result["as_of"], "by": user,
+    info = {"version": number, "written": written, "highlighted": len(highlight), "to_ask": [{"question": r["question"], "location": r["location"]} for r in missing][:300],
+            "pid": pid, "isin": isin, "as_of": result["as_of"], "by": user,
             "created_at": datetime.now().isoformat(timespec="seconds"), "stats": result["stats"], "coverage": result["coverage"]}
     target.with_suffix(".json").write_text(json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8")
     return {**info, "file": target.name, "questions": result["questions"]}

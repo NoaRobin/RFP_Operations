@@ -238,6 +238,31 @@ Le classeur Excel reste disponible pour les très longs questionnaires. Détail 
 - ISIN inconnu : « introuvable » avec la raison dans le journal ; valeur différente déjà présente : « différence », jamais
   écrasée sans « Remplacer » ; l'original n'est jamais modifié.
 
+## 7 quinquies. Les anciens choix d'abord : forme, même questionnaire, Qvidian appris, réponses à demander
+
+État de l'art (outils de RFP 2026 : Loopio, Responsive, Inventive, AutoRFP, Tribble) : bibliothèque de réponses
+approuvées d'abord (texte repris à l'identique), recherche sémantique, citation de la source et score de confiance qui
+renvoie vers un expert quand il est bas. Le compléteur suit ce modèle **sans IA générative locale** : chaque réponse
+cite sa source, la confiance pilote « auto » / « à vérifier », et ce qui manque est listé et surligné.
+
+- **Questionnaires de même format** (`rfi/form.py`) : anciens RFI dont au moins 3 questions (et 30 % du document) sont
+  identiques. Leurs réponses donnent la **forme** attendue (Oui / YES / Y, « 1.35% » / « 1,35 % », décimales, format de
+  date, majuscules), appliquée au rendu de la donnée Fabric quand au moins 2 anciens RFI sont d'accord (60 %) ; une
+  réponse rédigée **identique dans au moins deux** de ces RFI est proposée en premier quand rien d'autre ne répond
+  (« à vérifier », poids double dans le carrousel). Le fond vient toujours de la donnée : seule la forme est reprise.
+  Une réponse saisie, Copilot ou Qvidian ne change jamais de forme ; une liste déroulante ou une cellule au format
+  nombre / date garde la forme du client.
+- **Qvidian appris des anciens RFI** : la proposition Qvidian tient compte des questions des anciens RFI qui ont reçu ce
+  texte (`qvidian/history.py`) : « choisi dans N anciens RFI » pèse davantage et la question passée est citée.
+  **Option** « Utiliser la bibliothèque Qvidian » dans l'écran (désactivable ; jamais automatique).
+- **Réponses à demander** : option « Surligner en jaune » — au téléchargement, les cases sans réponse écrite (non
+  trouvées ou non validées) sont surlignées en jaune (Excel : copie jaune du style de la case ; Word : cellule ombrée ou
+  « [à compléter] » surligné) et listées (`to_ask`). Avec l'option, seul `xl/styles.xml` change en plus des feuilles.
+- **Technologies** : rappel des précédents par le sens avec l'encodeur E5 local (même modèle que Qvidian, si installé),
+  **toujours vérifié par le concept de l'ontologie et ses facettes**. Mesuré : le sens seul confond des voisines
+  (« Date de création du fonds » est plus proche de « … de la stratégie », 0,929, que de « Fund inception date », 0,915) ;
+  avec la vérification, la traduction est retrouvée et la voisine écartée (test `test_form_history.py`).
+
 ## 8. Mesurer et faire progresser
 
 - `python -m merlin.rfi.replay <bibliothèque>` : couverture et concordance sur de vrais questionnaires (voir plus haut).

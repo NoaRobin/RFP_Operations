@@ -59,6 +59,12 @@ function Hit({ hit, active, selected, onSelect, onCopy, query }: {
           <p className="mt-0.5 truncate text-xs font-semibold text-fg-3">{hit.folder_path || '—'}</p>
           <div className="mt-2"><LevelBadge level={hit.level} /></div>
           <p className="mt-2 text-sm font-medium leading-relaxed text-fg-2"><Highlight text={hit.snippet} spans={hit.highlights} /></p>
+          {hit.history && (
+            <p className="mt-2 rounded-xl border-l-4 border-sun-400 bg-sun-400/15 px-3 py-1.5 text-xs font-semibold">
+              <b>{Q.historyChosen(hit.history.files)}</b> · « {hit.history.questions.slice(0, 2).join(' » · « ')} »
+              {hit.history.examples[0] ? <span className="text-fg-3"> · {hit.history.examples[0].file}, {hit.history.examples[0].date}</span> : null}
+            </p>
+          )}
           {hit.why.length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Pourquoi ce résultat">
               {hit.why.slice(0, 5).map((w) => (

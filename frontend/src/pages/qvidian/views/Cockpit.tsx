@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Cpu, HeartPulse, Search, Sparkles } from 'lucide-react'
 import { Bar, Kpi, LevelBadge } from '../../../components/qvidian/Bits'
+import { HistoryPanel } from '../../../components/qvidian/HistoryPanel'
 import { Button } from '../../../components/ui/Button'
 import { texts } from '../../../content/texts'
 import { api } from '../../../lib/api'
@@ -99,6 +100,7 @@ export function Cockpit() {
               ))}
             </div>
           </div>
+          <HistoryPanel compact />
           <div className="rounded-[var(--radius-card)] border-2 border-fg bg-card p-5">
             <h2 className="text-lg">{Q.topUsed}</h2>
             <ol className="mt-3 flex flex-col gap-2">
