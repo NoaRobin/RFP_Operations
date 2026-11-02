@@ -83,8 +83,75 @@ def sso_callback(request: Request, s: AppState = Depends(state)):
 
 
 @router.post("/sync")
-def start_sync(s: AppState = Depends(state)) -> dict[str, Any]:
-    return _guard(service(s).start_sync)
+def start_sync(kind: str = "auto", s: AppState = Depends(state)) -> dict[str, Any]:
+    """kind : auto (incrémentale dès qu'une synchronisation complète existe) | full | delta."""
+    return _guard(service(s).start_sync, kind if kind in {"auto", "full", "delta"} else "auto")
+
+
+def _funds(s: AppState) -> None:
+    """Noms de fonds Product Info (répertoire Fabric) : aident à reconnaître un texte propre à un fonds. Jamais bloquant."""
+    svc = service(s)
+    if svc.search.extra_funds:
+        return
+    try:
+        from ..rfi.service import fund_directory
+
+        svc.search.extra_funds = [f["name"] for f in fund_directory(s.data)][:2000]
+    except Exception:  # noqa: BLE001 - Fabric indisponible : les dossiers de fonds Qvidian suffisent
+        svc.search.extra_funds = []
+
+
+class SearchRequest(BaseModel):
+    q: str = Field("", max_length=2000)
+    filters: dict[str, Any] = Field(default_factory=dict)
+    sort: str = "pertinence"
+    k: int = Field(20, ge=1, le=100)
+    rerank: bool = True
+
+
+@router.post("/search")
+def search(body: SearchRequest, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Recherche sémantique hybride dans l'instantané (portée, fonds, utilisations, versions regroupées, explications)."""
+    _funds(s)
+    return _guard(service(s).library_search, body.q, body.filters, body.sort, body.k, body.rerank)
+
+
+@router.get("/overview")
+def overview(s: AppState = Depends(state)) -> dict[str, Any]:
+    return _guard(service(s).overview)
+
+
+@router.get("/engine")
+def engine(s: AppState = Depends(state)) -> dict[str, Any]:
+    return service(s).engine_status()
+
+
+@router.post("/engine/models/{model_id}")
+def download_model(model_id: str, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Téléchargement explicite d'un modèle ONNX (data/models/) ; l'index sémantique se construit ensuite en arrière-plan."""
+    return _guard(service(s).download_model, model_id)
+
+
+@router.post("/engine/rebuild")
+def rebuild(s: AppState = Depends(state)) -> dict[str, Any]:
+    return service(s).rebuild_index()
+
+
+@router.get("/api-stats")
+def api_stats(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Appels Qvidian mesurés : latence p50 / p95, erreurs, cache, relances, débit, dernière synchronisation."""
+    return service(s).api_stats()
+
+
+@router.post("/api-stats/reset")
+def api_stats_reset(s: AppState = Depends(state)) -> dict[str, Any]:
+    service(s).reset_stats()
+    return service(s).api_stats()
+
+
+@router.get("/folders")
+def folders(s: AppState = Depends(state)) -> list[dict[str, Any]]:
+    return service(s).snapshot().folders()
 
 
 @router.get("/audit")
@@ -98,7 +165,11 @@ def content(content_id: int, s: AppState = Depends(state)) -> dict[str, Any]:
     c = snap.get(content_id)
     if c is None:
         raise not_found("Contenu absent de l'instantané : relancez la synchronisation.")
-    return {**c, "versions": snap.versions(content_id)}
+    try:
+        insight = service(s).insight(content_id)
+    except Exception:  # noqa: BLE001 - le détail reste lisible même si le moteur ne l'est pas
+        insight = None
+    return {**c, "versions": snap.versions(content_id), "insight": insight}
 
 
 @router.get("/suggest")

@@ -38,9 +38,12 @@ ACTIONS = {
     "comment": "Remplacer le commentaire",
     "replace_title": "Rechercher / remplacer dans le titre",
     "replace_text": "Rechercher / remplacer dans le texte",
+    "set_text": "Réécrire le texte d'un contenu",
+    "move": "Déplacer vers un dossier",
+    "add_terms": "Ajouter des termes de recherche",
     "undo": "Annulation d'un lot",  # interne : construit par undo_plan
 }
-UNIFORM = {"disable", "enable", "expire", "alert", "clear_alert", "comment"}  # même changement pour tous : un seul appel par paquet
+UNIFORM = {"disable", "enable", "expire", "alert", "clear_alert", "comment", "move"}  # même changement pour tous : un seul appel par paquet
 
 
 class WriteGuard:
@@ -151,6 +154,32 @@ def make_plan(contents: list[dict[str, Any]], action: str, params: dict[str, Any
         elif action == "replace_title":
             after = _replace(c["title"], find, repl, case)
             item = Item(c["id"], c["title"], "Title", c["title"], after, rev) if after != c["title"] else None
+        elif action == "move":
+            target = int(params.get("folder_id") or 0)
+            if target <= 0:
+                raise QvidianError("qvidian", "Choisissez le dossier de destination.")
+            label = str(params.get("folder_label") or target)
+            item = Item(c["id"], c["title"], "LibraryFolderID", c.get("folder_id"), target, rev,
+                        shown_before=c.get("folder_path") or str(c.get("folder_id") or "—"), shown_after=label) if c.get("folder_id") != target else None
+        elif action == "add_terms":
+            new = [t.strip() for t in re.split(r"[,;\n]", str(params.get("text") or "")) if t.strip()]
+            if not new:
+                raise QvidianError("qvidian", "Indiquez au moins un terme (séparés par des virgules).")
+            current = [t.strip() for t in re.split(r"[,;\n]", c.get("learned_terms") or "") if t.strip()]
+            merged = current + [t for t in new if t.lower() not in {x.lower() for x in current}]
+            item = Item(c["id"], c["title"], "LearnedTerms", ", ".join(current), ", ".join(merged), rev) if merged != current else None
+        elif action == "set_text":
+            if len(contents) != 1:
+                raise QvidianError("qvidian", "La réécriture d'un texte se fait contenu par contenu.", "Sélectionnez un seul contenu.")
+            text = str(params.get("text") or "")
+            if not text.strip():
+                raise QvidianError("qvidian", "Le nouveau texte est vide.")
+            raw = c.get("raw_text") or c.get("text") or ""
+            item = Item(c["id"], c["title"], "ContentText", raw, text, rev, shown_before=html_to_text(raw)[:4000],
+                        shown_after=html_to_text(text)[:4000]) if text != raw else None
+            if item is not None and not c.get("inline_edit"):
+                item.warnings.append("contenu fichier (Word…) : la mise à jour du texte par l'API n'est pas confirmée par la "
+                                     "documentation — à tester d'abord sur un contenu")
         else:  # replace_text : sur le texte brut (mise en forme conservée), montré en texte visible
             raw = c.get("raw_text") or c.get("text") or ""
             after = _replace(raw, find, repl, case)
@@ -183,6 +212,8 @@ def _changes(item: Item, value: Any) -> dict[str, Any]:
         return {"AlertText": value or "", "AlertEnabled": bool(value)}
     if item.field == "DateToExpire":
         return {"DateToExpire": date.fromisoformat(value) if value else None}
+    if item.field == "LibraryFolderID":
+        return {"LibraryFolderID": int(value or 0)}
     return {item.field: value}
 
 

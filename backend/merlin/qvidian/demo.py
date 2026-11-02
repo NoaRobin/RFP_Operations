@@ -12,6 +12,8 @@ from datetime import date
 from typing import Any
 
 from .client import Binding, normalize_content
+from .demo_library import CONTENTS_EXTRA, FOLDERS_EXTRA
+from .telemetry import Telemetry, TtlCache
 
 FOLDERS = [
     (1, 0, "Bibliothèque"),
@@ -20,7 +22,7 @@ FOLDERS = [
     (30, 1, "ESG"), (31, 30, "Politique ESG"), (32, 30, "Vote et engagement"),
     (40, 1, "Opérations"), (41, 40, "Valorisation"), (42, 40, "Dépositaire"),
     (50, 1, "Fonds"), (51, 50, "Fonds Imaginaire Horizon"), (52, 50, "Fonds Imaginaire Aurore"),
-]
+] + FOLDERS_EXTRA
 
 # (id, dossier, question, texte, révision, utilisations, dernière utilisation, modifié, créé, extras)
 _C = [
@@ -127,9 +129,26 @@ class DemoQvidian:
     extended_fields = True
 
     def __init__(self):
-        self.contents = {int(r[0]): _content(r) for r in _C}
+        self.contents = {int(r[0]): _content(r) for r in _C + CONTENTS_EXTRA}
         self.binding = Binding("demo-token", "demo", "demo://qvidian", {})
         self.writes: list[tuple[list[int], dict]] = []
+        self.telemetry = Telemetry()  # mêmes mesures que le vrai client (appels locaux, sans réseau)
+        self.cache = TtlCache(0)
+        self.delta_supported = True
+
+    def configure(self, cache_seconds: int = 300, calls_per_second: float = 8.0) -> "DemoQvidian":
+        return self
+
+    def _seen(self, op: str, n: int = 0) -> None:
+        self.telemetry.record(op, 0.2 + n * 0.01, bytes_in=n * 600)
+
+    def changed_since(self, day: str, size: int = 200, limit: int = 50000) -> list[dict[str, Any]]:
+        self._seen("librarySearch")
+        return [normalize_content(copy.deepcopy(c)) for c in self.contents.values() if (c.get("DateLastModified") or "")[:10] >= day]
+
+    def existing_ids(self, ids: list[int], batch: int = 200) -> set[int]:
+        self._seen("librarySearch", len(ids))
+        return {i for i in ids if i in self.contents}
 
     connected = True
 
@@ -148,7 +167,7 @@ class DemoQvidian:
         return True
 
     def top_folder(self) -> dict[str, Any]:
-        return {"id": 1, "parent_id": 0, "title": "Bibliothèque", "children": 5, "contents": 0, "enabled": True}
+        return {"id": 1, "parent_id": 0, "title": "Bibliothèque", "children": sum(1 for f in FOLDERS if f[1] == 1), "contents": 0, "enabled": True}
 
     def folders(self, parent_id: int) -> list[dict[str, Any]]:
         out = []
@@ -159,9 +178,11 @@ class DemoQvidian:
         return out
 
     def folder_contents(self, folder_id: int) -> list[dict[str, Any]]:
+        self._seen("libraryFolderContentGetList", 5)
         return [normalize_content(copy.deepcopy(c)) for c in self.contents.values() if int(c["LibraryFolderID"]) == folder_id]
 
     def content(self, content_id: int) -> dict[str, Any]:
+        self._seen("libraryContentDetailsGet", 1)
         return normalize_content(copy.deepcopy(self.contents[content_id]))
 
     def preview_html(self, content_id: int, revision: int) -> str:
@@ -200,6 +221,7 @@ class DemoQvidian:
         return 0, []
 
     def update_details(self, content_ids: list[int], changes: dict[str, Any]) -> list[dict[str, Any]]:
+        self._seen("libraryContentDetailsUpdate", len(content_ids))
         self.writes.append((list(content_ids), dict(changes)))
         for cid in content_ids:
             c = self.contents.get(cid)
@@ -209,6 +231,10 @@ class DemoQvidian:
                 if key == "ContentText":
                     c["ContentText"] = value
                     c["Revision"] = str(int(c["Revision"]) + 1)
+                elif key == "LibraryFolderID":
+                    c["LibraryFolderID"] = str(value)
+                    c["LibraryFolderPath"] = _path(int(value))
+                    c["LibraryFolderTitle"] = c["LibraryFolderPath"].split(" / ")[-1]
                 elif key == "Enabled":
                     c["Enabled"] = "true" if value else "false"
                 elif key == "AlertEnabled":

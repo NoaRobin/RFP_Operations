@@ -160,7 +160,10 @@ export function CommandPalette({ open, onClose, onSuggest, onUser, onFabric }: {
     const pages: [string, string, ReactNode, string][] = [
       ['/', texts.nav.home, <Home size={18} />, 'accueil rfpasenviedetravailler'],
       ['/rfi', texts.nav.rfi, <FileQuestion size={18} />, 'rfi rfp questionnaire word excel remplir due diligence'],
-      ['/qvidian', texts.nav.qvidian, <Library size={18} />, 'qvidian bibliotheque contenus erreurs carte reponses types modifier masse'],
+      ['/qvidian', texts.nav.qvidian, <Library size={18} />, 'qvidian bibliotheque contenus erreurs carte reponses types modifier masse cockpit'],
+      ['/qvidian/recherche', `${texts.nav.qvidian} · ${texts.qvidian.nav.recherche}`, <Library size={18} />, 'qvidian recherche semantique sens question reponse'],
+      ['/qvidian/modifier', `${texts.nav.qvidian} · ${texts.qvidian.nav.modifier}`, <Library size={18} />, 'qvidian modifier masse ecrire mot de passe'],
+      ['/qvidian/api', `${texts.nav.qvidian} · ${texts.qvidian.nav.api}`, <Library size={18} />, 'qvidian api moteur modeles telemetrie synchronisation'],
       ['/merge-codes', texts.nav.merge, <Tags size={18} />, 'qvidian merge codes annees experience bot'],
       ['/suivi-activite', texts.nav.suivi, <Activity size={18} />, 'suivi activite appels offres pilotage tryv2'],
       ['/documents', texts.nav.fundshop, <FileDown size={18} />, 'documents dic prospectus reporting sfdr telecharger'],

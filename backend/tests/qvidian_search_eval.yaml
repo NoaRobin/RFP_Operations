@@ -1,0 +1,66 @@
+# Banc d'évaluation de la recherche dans la bibliothèque Qvidian de démonstration (contenus fictifs, demo.py + demo_library.py).
+# Chaque question : contenus pertinents et leur gain (2 = la bonne réponse, 1 = réponse acceptable / voisine).
+# Les questions sont volontairement reformulées : autres mots, autre langue, fonds précis à ne pas confondre.
+# Mesures : nDCG@10, MRR@10, rappel@20 (merlin.search.engine). Le test exige des seuils minimaux en mode lexical seul.
+queries:
+  # ------------------------------------------------------------- société
+  - {q: "Qui détient le capital de votre maison ?", rel: {1021: 2, 1060: 1}}
+  - {q: "Who owns the company?", rel: {1060: 2, 1021: 2}}
+  - {q: "Combien de salariés travaillent chez vous ?", rel: {1023: 2}}
+  - {q: "How many employees does the firm have?", rel: {1023: 2}}
+  - {q: "Présentez votre société de gestion", rel: {1001: 2, 1002: 2, 1022: 1, 1060: 1}}
+  - {q: "Retracez l'histoire de la société", rel: {1022: 2, 1001: 1, 1002: 1}}
+  - {q: "Dans quelles villes êtes-vous implantés ?", rel: {1024: 2}}
+  - {q: "Quel est le montant total des actifs gérés ?", rel: {1026: 2, 1061: 2, 1003: 1}}
+  - {q: "What are your total assets under management?", rel: {1061: 2, 1026: 2, 1003: 1}}
+  - {q: "Qui sont vos clients ?", rel: {1025: 2}}
+  - {q: "Décrivez la gouvernance de la société de gestion", rel: {1004: 2, 1005: 1}}
+  - {q: "Qui certifie vos comptes ?", rel: {1034: 2}}
+  # ------------------------------------------------------------- conformité, continuité
+  - {q: "Quelles procédures anti-blanchiment et KYC appliquez-vous ?", rel: {1027: 2}}
+  - {q: "Anti-money laundering procedures", rel: {1027: 2}}
+  - {q: "Comment gérez-vous les conflits d'intérêts ?", rel: {1028: 2}}
+  - {q: "Best execution policy", rel: {1029: 2}}
+  - {q: "Comment sont rémunérés les gérants ?", rel: {1030: 2}}
+  - {q: "Avez-vous un PCA ?", rel: {1031: 2, 1062: 2}}
+  - {q: "Business continuity", rel: {1062: 2, 1031: 2}}
+  - {q: "Quelles mesures de cybersécurité avez-vous mises en place ?", rel: {1032: 2}}
+  - {q: "Êtes-vous assurés en responsabilité civile ?", rel: {1033: 2}}
+  # ------------------------------------------------------------- équipe et gestion
+  - {q: "Présentez les gérants actions", rel: {1035: 2}}
+  - {q: "Key person risk", rel: {1036: 2}}
+  - {q: "Turnover de l'équipe d'investissement", rel: {1037: 2}}
+  - {q: "Quelle est votre philosophie de gestion ?", rel: {1065: 2, 1066: 1, 1006: 1}}
+  - {q: "Comment sélectionnez-vous les titres ?", rel: {1006: 2, 1038: 1, 1065: 1, 1046: 1}}
+  - {q: "Portfolio construction", rel: {1038: 2, 1006: 1}}
+  - {q: "Quelles sont vos limites de risque ?", rel: {1039: 2, 1008: 1}}
+  - {q: "Comment suivez-vous les risques ?", rel: {1008: 2, 1039: 1}}
+  - {q: "Liquidity management and swing pricing", rel: {1040: 2}}
+  # ------------------------------------------------------------- ESG
+  - {q: "Excluez-vous le charbon ?", rel: {1041: 2, 1042: 1, 1064: 2}}
+  - {q: "Exclusion policy", rel: {1064: 2, 1041: 2}}
+  - {q: "Quelle est votre stratégie net zéro ?", rel: {1042: 2}}
+  - {q: "Comment exercez-vous les droits de vote ?", rel: {1013: 2, 1012: 2}}
+  - {q: "Stewardship and engagement with companies", rel: {1043: 2, 1013: 1}}
+  - {q: "Are you a PRI signatory?", rel: {1044: 2}}
+  - {q: "Combien de fonds article 8 ?", rel: {1045: 2, 1010: 1}}
+  - {q: "Votre politique d'investissement responsable", rel: {1010: 2, 1011: 1, 1046: 1}}
+  - {q: "Vos fonds sont-ils labellisés ISR ?", rel: {1067: 2}}
+  # ------------------------------------------------------------- opérations
+  - {q: "Heure de cut-off des ordres", rel: {1047: 2}}
+  - {q: "Qui tient le registre des porteurs ?", rel: {1048: 2}}
+  - {q: "Quel est le dépositaire ?", rel: {1016: 2, 1017: 2}}
+  - {q: "NAV calculation frequency", rel: {1014: 2}}
+  - {q: "Valorisation des titres illiquides", rel: {1049: 2}}
+  # ------------------------------------------------------------- fonds : ne pas confondre
+  - {q: "Stratégie d'investissement du Fonds Imaginaire Horizon", rel: {1050: 2, 1063: 2, 1018: 1}}
+  - {q: "Benchmark of Horizon", rel: {1051: 2}}
+  - {q: "Indicateur de référence du fonds Aurore", rel: {1055: 2}}
+  - {q: "Processus de gestion de Aurore", rel: {1054: 2}}
+  - {q: "Aurore utilise-t-il des produits dérivés ?", rel: {1056: 2}}
+  - {q: "Minimum d'investissement de la part institutionnelle Horizon", rel: {1052: 2}}
+  - {q: "Frais de gestion du fonds Horizon", rel: {1053: 2}}
+  - {q: "Frais de Boréal", rel: {1059: 2}}
+  - {q: "Objectif de performance du fonds Boréal", rel: {1057: 2}}
+  - {q: "Allocation d'actifs de Boréal", rel: {1058: 2}}
+  - {q: "Le fonds Aurore est-il éligible au PEA ?", rel: {1020: 2}}

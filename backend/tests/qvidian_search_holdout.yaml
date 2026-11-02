@@ -1,0 +1,43 @@
+# Jeu de contrôle « jamais vu » : écrit après le réglage du moteur, il n'a servi à aucun ajustement (thésaurus, poids).
+# C'est lui qui donne la mesure honnête ; qvidian_search_eval.yaml a servi au réglage.
+queries:
+  - {q: "Structure de l'actionnariat", rel: {1021: 2, 1060: 2}}
+  - {q: "Describe the shareholding of the asset manager", rel: {1060: 2, 1021: 2}}
+  - {q: "Nombre de personnes employées par la société de gestion", rel: {1023: 2}}
+  - {q: "Staff numbers and breakdown by function", rel: {1023: 2}}
+  - {q: "Date de fondation de votre société", rel: {1022: 2, 1001: 1, 1002: 1, 1060: 1}}
+  - {q: "Where is your head office?", rel: {1024: 2}}
+  - {q: "Encours sous gestion au 30 juin", rel: {1026: 2, 1061: 2, 1003: 1}}
+  - {q: "Typologie de la clientèle institutionnelle", rel: {1025: 2}}
+  - {q: "Qui contrôle la société ? conseil de surveillance", rel: {1004: 2, 1005: 1}}
+  - {q: "Statutory auditor of the management company", rel: {1034: 2}}
+  - {q: "Lutte contre le blanchiment des capitaux", rel: {1027: 2}}
+  - {q: "Registre des conflits d'intérêts et transactions personnelles", rel: {1028: 2}}
+  - {q: "Comment choisissez-vous vos brokers ?", rel: {1029: 2}}
+  - {q: "Rémunération variable différée", rel: {1030: 2}}
+  - {q: "Disaster recovery site", rel: {1031: 2, 1062: 2}}
+  - {q: "Tests d'intrusion et sécurité informatique", rel: {1032: 2}}
+  - {q: "Assurance fraude", rel: {1033: 2}}
+  - {q: "Expérience moyenne de l'équipe actions", rel: {1035: 2}}
+  - {q: "Que faites-vous si un gérant quitte la société ?", rel: {1036: 2}}
+  - {q: "Nombre de lignes et poids maximum par émetteur", rel: {1038: 2}}
+  - {q: "Contrôle des limites avant négociation", rel: {1039: 2, 1008: 1}}
+  - {q: "Stress tests de liquidité", rel: {1040: 2}}
+  - {q: "Tobacco and controversial weapons exclusions", rel: {1064: 2, 1041: 2}}
+  - {q: "Objectifs de réduction de l'intensité carbone", rel: {1042: 2}}
+  - {q: "Escalade de l'engagement actionnarial", rel: {1043: 2}}
+  - {q: "Principes pour l'investissement responsable", rel: {1044: 2}}
+  - {q: "Part de l'encours classé SFDR article 9", rel: {1045: 2}}
+  - {q: "Notation ESG interne des émetteurs", rel: {1046: 2}}
+  - {q: "Order cut-off time and settlement", rel: {1047: 2}}
+  - {q: "Transfer agent", rel: {1048: 2}}
+  - {q: "Comité de valorisation indépendant", rel: {1049: 2}}
+  - {q: "Horizon : quelles capitalisations ?", rel: {1050: 2, 1063: 2}}
+  - {q: "Horizon fund performance fee", rel: {1053: 2}}
+  - {q: "Part I Horizon ISIN", rel: {1052: 2}}
+  - {q: "Sensibilité du fonds obligataire Aurore", rel: {1054: 2}}
+  - {q: "Aurore benchmark", rel: {1055: 2}}
+  - {q: "Swaps de défaut dans Aurore", rel: {1056: 2}}
+  - {q: "Volatilité cible de Boréal", rel: {1057: 2}}
+  - {q: "Comité d'allocation mensuel", rel: {1058: 2}}
+  - {q: "Boréal management fee", rel: {1059: 2}}

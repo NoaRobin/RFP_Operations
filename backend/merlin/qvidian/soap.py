@@ -212,6 +212,13 @@ def set_records(parent: ET.Element, name: str, tag: str, records: list[dict[str,
                 field.text = _raw(value)
 
 
+def property_filter(field: str, data_type: str, op: str, values: list[str]) -> dict[str, Any]:
+    """Filtre sur une colonne de contenu (FilterCriteria) : opérateurs et types de l'énumération du WSDL
+    (FilterCriteriaOperators : EqualTo, GreaterThanOrEqual, MatchesAny… ; FilterCriteriaDataTypes : DateType, IntegerType…)."""
+    return {"classType": "Standard", "propType": "Property", "propID": "Property", "fieldName": field, "dataType": data_type,
+            "op": op, "values": Items("string", [str(v) for v in values]), "enabled": True}
+
+
 def folder_filter(folder_id: int) -> dict[str, Any]:
     """Filtre « contenus du dossier N » (FilterCriteria, champs dans l'ordre du WSDL). Le guide recommande librarySearch
     filtré par LibraryFolderID pour les gros dossiers ; la forme exacte du filtre n'a pas d'exemple dans le paquet (à confirmer)."""
@@ -264,4 +271,4 @@ def content_updates(changes: dict[str, Any]) -> dict[str, Any]:
 
 
 __all__ = ["Items", "Typed", "RawXml", "SoapFault", "envelope", "parse", "result", "to_py", "as_list", "element_xml", "set_child", "set_value",
-           "ORDER", "content_updates", "NS", "local"]
+           "ORDER", "content_updates", "property_filter", "folder_filter", "NS", "local"]

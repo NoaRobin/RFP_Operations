@@ -575,7 +575,7 @@ export interface QvidianStatus {
   write_enabled: boolean
   locked: number
   snapshot: { source?: string; synced_at?: string; count?: string }
-  sync: { running: boolean; message: string; done: number; error: { code: string; message: string; hint: string } | null; result: { contents: number; folders: number; previews: number; problems: string[] } | null }
+  sync: { running: boolean; message: string; done: number; kind?: string; error: { code: string; message: string; hint: string } | null; result: QvidianSyncResult | null }
   half_life_days: number
   extended_fields: boolean
 }
@@ -597,6 +597,8 @@ export interface QvidianContent {
   id: number; revision: number; title: string; text: string; folder_path: string; language: string; enabled: boolean; expired: boolean
   created: string | null; modified: string | null; last_used: string | null; expires: string | null; times_used: number; owners: string
   inline_edit: boolean; checked_out: boolean; checked_out_by: string; alert_text: string; comments: string
+  question?: string; learned_terms?: string; folder_id?: number; type?: string; modified_by?: string; revision_label?: string
+  insight?: QvidianInsight | null
   versions: { revision: number; title: string; text: string; modified: string | null; seen_at: string }[]
 }
 export interface QvidianSuggest { question: string; half_life_days: number; choices: (RfiChoice & { contents: string[] })[] }
@@ -609,4 +611,58 @@ export interface QvidianJournalEntry {
   batch: string; at: string; user: string; source: string; action: string; label: string; force: boolean; undo_of: string | null
   items: { id: number; title: string; field: string; before: unknown; after: unknown; ok: boolean }[]
 }
+export interface QvidianSyncResult {
+  mode?: 'full' | 'delta'; contents: number; folders?: number; previews: number; problems: string[]; seconds?: number; workers?: number
+  since?: string; changed?: number; removed?: number
+}
+
+/* ---------------------------------------------------------------- Qvidian : recherche sémantique */
+export type QvidianScope = 'societe' | 'strategie' | 'fonds' | 'part' | 'generique'
+export interface QvidianLevel {
+  scope: QvidianScope; scope_label: string; confidence: number; funds: string[]; isins: string[]; themes: string[]; theme_labels: string[]; clues: string[]
+}
+export interface QvidianVariant { id: number; title: string; times_used: number; last_used: string | null; modified: string | null; expired: boolean }
+export interface QvidianHit {
+  id: number; title: string; question: string; folder_path: string; snippet: string; highlights: [number, number][]; text: string
+  score: number | null; relative: number | null; times_used: number; last_used: string | null; modified: string | null; enabled: boolean
+  expired: boolean; language: string; type: string; level: QvidianLevel; issues: QvidianIssue[]; why: string[]; variants: QvidianVariant[]
+  signals?: { lexical: number; semantic: number | null; rerank: number | null; coverage: number; ranks: Record<string, number>; phrase: boolean; matched: string[] }
+}
+export interface QvidianFacet { value: string; count: number; label?: string }
+export interface QvidianFilters {
+  scope?: string[]; theme?: string[]; fund?: string[]; folder?: string; language?: string; min_uses?: number
+  include_disabled?: boolean; include_expired?: boolean; only_issues?: boolean
+}
+export interface QvidianEngineInfo { lexical: boolean; encoder: string | null; reranker: string | null; documents: number; build_seconds: number; funds: string[] }
+export interface QvidianSearchResult {
+  query: string; language: string | null; pivot: string | null; expansions: string[]; level: QvidianLevel; results: QvidianHit[]; total: number
+  timings: Record<string, number>; engine: QvidianEngineInfo; facets: Record<'scope' | 'theme' | 'fund' | 'folder' | 'language', QvidianFacet[]>
+  sort: string; index?: { running: boolean; message: string; done: number; total: number; error?: string } | null
+}
+export interface QvidianInsight {
+  level: QvidianLevel; issues: QvidianIssue[]; popularity: number
+  similar: { id: number; title: string; folder_path: string; score: number; times_used: number; level: QvidianLevel; same_text: boolean }[]
+}
+export interface QvidianOverview {
+  facets: QvidianSearchResult['facets']; engine: QvidianEngineInfo; never_used: number; uses_total: number
+  top_used: { id: number; title: string; times_used: number; level: QvidianLevel }[]
+}
+export interface QvidianModel {
+  id: string; kind: 'encoder' | 'reranker'; label: string; size_mb: number; license: string; note: string; installed: boolean; active: boolean
+  error?: string | null; download: { running: boolean; done: number; total: number; error: string | null; file: string } | null
+}
+export interface QvidianEngineStatus {
+  ready: boolean; engine: QvidianEngineInfo | null; neural_runtime: boolean; models: QvidianModel[]
+  building: { running: boolean; message: string; done: number; total: number; error?: string; seconds?: number } | null
+}
+export interface QvidianOpStat { op: string; calls: number; errors: number; cached: number; retries: number; kb_in: number; p50_ms: number; p95_ms: number; avg_ms: number }
+export interface QvidianApiStats {
+  mode: string; cache_entries: number; limiter_wait_s: number; delta_supported: boolean | null
+  telemetry: { since: string; calls: number; errors: number; cached: number; cache_rate: number; error_rate: number; p50_ms: number; p95_ms: number; kb_in: number
+    operations: QvidianOpStat[]; recent: { at: string; op: string; ms: number; ok: boolean; code: string | null; cached: boolean; bytes: number; retries: number }[] } | null
+  settings: { concurrency: number; max_calls_per_second: number; cache_seconds: number; keepalive_minutes: number; search_encoder: string; search_reranker: boolean }
+  snapshot: Record<string, string>; last_sync: QvidianSyncResult | null
+}
+export interface QvidianFolder { id: number; parent_id: number; title: string; path: string; contents: number }
+
 export interface QvidianImport { projects: number; total: number; imported: number; documents: { project: string; file?: string; imported?: number; error?: string }[] }

@@ -21,3 +21,5 @@ numpy>=1.23
 mssql-python>=0.13 ; sys_platform == "win32"   # connecteur Fabric officiel Microsoft (aucun pilote ODBC requis)
 msal>=1.28             # SharePoint via Microsoft Graph (facultatif : sinon dossier synchronisé OneDrive)
 pypdf>=4.0              # lecture des DIC PRIIPs et prospectus (PDF)
+onnxruntime>=1.18      # recherche sémantique Qvidian (modèles ONNX locaux, facultatifs : sans eux, recherche lexicale)
+tokenizers>=0.19       # découpage des textes pour ces modèles

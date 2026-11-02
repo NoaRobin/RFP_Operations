@@ -238,7 +238,7 @@ def test_api_window_flow(client):
     status = client.get("/api/qvidian/status").json()
     assert status["mode"] == "demo" and status["write_enabled"] is False
     a = client.get("/api/qvidian/audit").json()
-    assert a["contents"] == 20 and any(c["key"] == "code" and c["count"] >= 3 for c in a["categories"])
+    assert a["contents"] == len(DemoQvidian().contents) and any(c["key"] == "code" and c["count"] >= 3 for c in a["categories"])
     s = client.get("/api/qvidian/suggest", params={"q": "Quelle est votre politique de vote ?"}).json()
     assert s["choices"][0]["value"].startswith("Nous votons à toutes")
     plan = client.post("/api/qvidian/bulk/plan", json={"ids": [1009], "action": "disable"}).json()

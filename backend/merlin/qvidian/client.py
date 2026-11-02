@@ -21,6 +21,7 @@ from typing import Any
 
 from . import soap
 from .soap import Items, RawXml, SoapFault, as_list
+from .telemetry import READ_CACHE_TTL, RETRY_CODES, WRITE_OPS, RateLimiter, Telemetry, TtlCache, backoff
 from .transport import NetError, SoapTransport
 
 DEFAULT_AUTH_URL = "https://qpalogin.qvidian.eu/QvidianAuthentication.asmx"  # adresse de l'exemple WSManual (à confirmer)
@@ -163,18 +164,49 @@ class QvidianClient:
         self.extended_fields = True
         self.last_call = 0.0
         self._lock = threading.Lock()
+        self.telemetry = Telemetry()
+        self.cache = TtlCache(300)
+        self.limiter = RateLimiter(8.0, 16)
+        self.delta_supported: bool | None = None  # filtre DateLastModified accepté par le serveur ? (découvert au premier essai)
+
+    def configure(self, cache_seconds: int = 300, calls_per_second: float = 8.0) -> "QvidianClient":
+        self.cache.ttl = max(0, cache_seconds)
+        self.limiter = RateLimiter(calls_per_second, max(2, int(calls_per_second * 2)))
+        return self
 
     # ------------------------------------------------------------------ appels
+    def _send(self, url: str, operation: str, body: bytes) -> bytes:
+        """Envoi mesuré, limité en débit ; lectures relancées (2 fois au plus) sur délai dépassé ou coupure réseau."""
+        attempts = 0 if operation in WRITE_OPS else 2
+        retries = 0
+        while True:
+            self.limiter.acquire()
+            started = time.perf_counter()
+            try:
+                reply = self.transport.post(url, body, f"{soap.NS}{operation}")
+            except NetError as error:
+                ms = (time.perf_counter() - started) * 1000
+                if error.code in RETRY_CODES and retries < attempts:
+                    retries += 1
+                    time.sleep(backoff(retries))
+                    continue
+                self.telemetry.record(operation, ms, ok=False, code=error.code, retries=retries)
+                raise QvidianError(error.code, f"Qvidian injoignable ({error.code})", HINTS.get(error.code, "")) from error
+            ms = (time.perf_counter() - started) * 1000
+            if reply.status >= 500 and b"Fault" not in reply.content and retries < attempts:
+                retries += 1
+                time.sleep(backoff(retries))
+                continue
+            ok = reply.status < 400 and b"Fault" not in reply.content[:4000]
+            self.telemetry.record(operation, ms, ok=ok, code=None if ok else str(reply.status), bytes_in=len(reply.content), retries=retries)
+            if reply.status >= 400 and b"Fault" not in reply.content:
+                raise QvidianError("reseau" if reply.status >= 500 else "qvidian", f"Qvidian a répondu {reply.status}", HINTS["reseau"])
+            return reply.content
+
     def _post(self, url: str, operation: str, params: dict[str, Any], header: dict[str, Any] | None) -> Any:
-        body = soap.envelope(operation, params, header)
+        content = self._send(url, operation, soap.envelope(operation, params, header))
         try:
-            reply = self.transport.post(url, body, f"{soap.NS}{operation}")
-        except NetError as error:
-            raise QvidianError(error.code, f"Qvidian injoignable ({error.code})", HINTS.get(error.code, "")) from error
-        if reply.status >= 400 and b"Fault" not in reply.content:
-            raise QvidianError("reseau" if reply.status >= 500 else "qvidian", f"Qvidian a répondu {reply.status}", HINTS["reseau"])
-        try:
-            return soap.result(reply.content, operation)
+            return soap.result(content, operation)
         except SoapFault as fault:
             raise self._fault(fault) from fault
 
@@ -226,20 +258,30 @@ class QvidianClient:
         (guide « Authentication Tokens », réglage ConnectionTimeout du serveur)."""
         if self.binding is None:
             raise QvidianError("config", "Pas de connexion Qvidian", HINTS["config"])
+        cache_key = None
+        if operation in READ_CACHE_TTL and self.cache.ttl > 0 and not any(isinstance(v, RawXml) for v in params.values()):
+            cache_key = (operation, tuple(sorted((k, str(v)) for k, v in params.items())))
+            hit, value = self.cache.get(cache_key)
+            if hit:
+                self.telemetry.record(operation, 0.0, cached=True)
+                return value
         try:
             res = self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
         except QvidianError as error:
             if error.code != "auth":
                 raise
             # Jeton refusé : une reconnexion avec le jeton courant (« Reconnect » du test UI), puis un seul nouvel essai
-            try:
-                self.connect_token(self.binding.user, self.binding.token)
-            except QvidianError as again:
-                self.binding = None  # session expirée côté Qvidian : il faut se reconnecter (SSO ou identifiant)
-                raise QvidianError("session", "Session Qvidian expirée (20 minutes sans activité par défaut).",
-                                   "Reconnectez-vous depuis la fenêtre Qvidian (bouton SSO).") from again
+            with self._lock:
+                try:
+                    self.connect_token(self.binding.user, self.binding.token)
+                except QvidianError as again:
+                    self.binding = None  # session expirée côté Qvidian : il faut se reconnecter (SSO ou identifiant)
+                    raise QvidianError("session", "Session Qvidian expirée (20 minutes sans activité par défaut).",
+                                       "Reconnectez-vous depuis la fenêtre Qvidian (bouton SSO).") from again
             res = self._post(self.binding.qvidian_url, operation, params, {"AuthenticationToken": self.binding.token})
         self.last_call = time.time()
+        if cache_key is not None:
+            self.cache.put(cache_key, res, READ_CACHE_TTL[operation])
         return res
 
     def keepalive(self) -> bool:
@@ -300,16 +342,46 @@ class QvidianClient:
             page += 1
         return out
 
+    def changed_since(self, day: str, size: int = 200, limit: int = 50000) -> list[dict[str, Any]]:
+        """Contenus modifiés depuis une date (AAAA-MM-JJ) : synchronisation incrémentale. Filtre DateLastModified
+        (colonne de recherche, opérateur GreaterThanOrEqual et type DateType de l'énumération du WSDL ; format de date
+        de l'exemple EventDateUTC). Si le serveur le refuse, delta_supported passe à False et l'app refait une synchronisation complète."""
+        out: list[dict[str, Any]] = []
+        page = 0
+        try:
+            while len(out) < limit:
+                total, items = self.search(page=page, size=size, filters=[soap.property_filter("DateLastModified", "DateType", "GreaterThanOrEqual", [day])])
+                out.extend(items)
+                if not items or len(out) >= total:
+                    break
+                page += 1
+        except QvidianError:
+            self.delta_supported = False
+            raise
+        self.delta_supported = True
+        return out
+
+    def existing_ids(self, ids: list[int], batch: int = 200) -> set[int]:
+        """Identifiants encore présents (et visibles) dans Qvidian : filtre ContentID MatchesAny, comme l'exemple du test UI."""
+        found: set[int] = set()
+        for start in range(0, len(ids), batch):
+            part = [str(i) for i in ids[start:start + batch]]
+            page = 0
+            while True:
+                total, items = self.search(page=page, size=batch, filters=[soap.property_filter("ContentID", "IntegerType", "MatchesAny", part)])
+                found.update(c["id"] for c in items)
+                if not items or (page + 1) * batch >= total:
+                    break
+                page += 1
+        return found
+
     def _search(self, terms: str, page: int, size: int, behavior: str, found_in: tuple[str, ...], extended: bool,
                 filters: list[dict[str, Any]] | None = None) -> tuple[int, list]:
         if self.binding is None:
             raise QvidianError("config", "Pas de connexion Qvidian", HINTS["config"])
         body = soap.envelope("librarySearchRequestInit", {}, {"AuthenticationToken": self.binding.token})
         try:
-            reply = self.transport.post(self.binding.qvidian_url, body, f"{soap.NS}librarySearchRequestInit")
-            resp = soap.parse(reply.content, "librarySearchRequestInit")
-        except NetError as error:
-            raise QvidianError(error.code, f"Qvidian injoignable ({error.code})", HINTS.get(error.code, "")) from error
+            resp = soap.parse(self._send(self.binding.qvidian_url, "librarySearchRequestInit", body), "librarySearchRequestInit")
         except SoapFault as fault:
             raise self._fault(fault) from fault
         req = next(iter(resp), None)
@@ -372,6 +444,8 @@ class QvidianClient:
     def update_details(self, content_ids: list[int], changes: dict[str, Any]) -> list[dict[str, Any]]:
         """libraryContentDetailsUpdate : même changement pour tous les contenus. Liste vide = succès (exemple du test UI)."""
         res = self.call("libraryContentDetailsUpdate", contentIDs=Items("int", content_ids), contentChanges=soap.content_updates(changes))
+        wanted = {str(i) for i in content_ids}  # les lectures en cache de ces contenus ne sont plus à jour
+        self.cache.invalidate(lambda k: k[0] == "libraryContentDetailsGet" and any(p[0] == "contentID" and p[1] in wanted for p in k[1]))
         problems = []
         for c in as_list(res, "Content"):
             if _bool(c.get("HasErrors")):

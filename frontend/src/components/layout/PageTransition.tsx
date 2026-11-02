@@ -11,17 +11,27 @@ import { d, dist, ease } from '../../motion/tokens'
 import { captureShared, playShared } from '../../motion/transitions'
 import { scrollToTop } from '../fx/SmoothScroll'
 
+const SECTIONS = new Set(['qvidian'])
+
 export function PageTransition({ children }: { children: (location: Location) => ReactNode }) {
   const location = useLocation()
   const [display, setDisplay] = useState(location)
   const container = useRef<HTMLDivElement>(null)
   const veil = useRef<HTMLDivElement>(null)
   const first = useRef(true)
+  const quiet = useRef(false)
 
   // Sortie
   useLayoutEffect(() => {
     if (location.pathname === display.pathname && location.search === display.search) {
       if (location.key !== display.key) setDisplay(location)
+      return
+    }
+    // Navigation interne d'une section à part entière (barre latérale propre) : pas de voile, la section s'anime elle-même
+    const section = (p: string) => p.split('/')[1] ?? ''
+    if (SECTIONS.has(section(location.pathname)) && section(location.pathname) === section(display.pathname)) {
+      quiet.current = true
+      setDisplay(location)
       return
     }
     captureShared()
@@ -44,6 +54,10 @@ export function PageTransition({ children }: { children: (location: Location) =>
     if (first.current) {
       first.current = false
       gsap.fromTo(container.current, { opacity: 0 }, { opacity: 1, duration: d('slow') })
+      return
+    }
+    if (quiet.current) {
+      quiet.current = false
       return
     }
     const tl = gsap.timeline()

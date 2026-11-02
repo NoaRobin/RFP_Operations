@@ -301,3 +301,37 @@ Le vrai client de l'app (`QvidianClient`) a été appelé sur `https://qpalogin.
 - le retour vers l'app avec le jeton SSO ;
 - tous les appels de lecture qui suivent la connexion : dossiers, recherche filtrée par dossier, contenus ;
 - les droits réels du compte.
+
+## 13. Section Qvidian repensée, recherche sémantique et optimisation des appels (novembre 2026)
+
+**Interface** : Qvidian est une partie de l'app à part entière (`/qvidian/*`, `frontend/src/pages/qvidian/`) avec sa
+barre latérale : Cockpit · Recherche · Bibliothèque (explorateur de dossiers, tri par usage) · Réponses types · Santé ·
+Analyse IA · Modifier · Journal · API & moteur · Connexion. Recherche globale par la touche « / », sélection gardée d'une
+vue à l'autre, fiche détaillée par contenu (`/qvidian/contenu/:id` : niveau et indices, popularité, défauts, versions,
+contenus proches). Les anciens liens `?onglet=` redirigent vers la nouvelle vue.
+
+**Recherche** : moteur hybride décrit dans `docs/RECHERCHE_SEMANTIQUE.md` (niveau société / stratégie / fonds / part,
+utilisations, récence, familles de versions ; nDCG@10 = 0,95 mesuré sur des questions jamais vues). Le compléteur RFI
+en profite aussi : les réponses types formulées autrement sont désormais rappelées (`suggest.py`), le filtre de
+similarité restant inchangé.
+
+**Optimisation des appels** (`merlin/qvidian/telemetry.py`, écran « API & moteur ») :
+
+| Mécanisme | Détail | Statut |
+|---|---|---|
+| Télémétrie | Par opération SOAP : appels, erreurs, p50 / p95, Ko reçus, cache, relances ; 200 derniers appels (jamais le contenu ni le jeton) | ✅ |
+| Cache des lectures | `libraryContentDetailsGet` (`QVIDIAN_CACHE_SECONDS`, 300 s), dossiers et permissions (10 min), aperçu HTML d'une révision (1 h) ; invalidé contenu par contenu après une écriture | ✅ |
+| Limiteur de débit | Seau à jetons partagé par tous les fils (`QVIDIAN_MAX_CALLS_PER_SECOND`, 8/s, rafales ×2) | ✅ |
+| Relances | Lectures seulement, délai dépassé / coupure / HTTP 5xx, 2 au plus, attente exponentielle avec gigue ; **une écriture n'est jamais relancée** | ✅ |
+| Synchronisation parallèle | Arbre des dossiers d'abord, contenus des dossiers en parallèle (`QVIDIAN_CONCURRENCY`, 4), aperçus HTML aussi ; doublons de dossiers fusionnés | ✅ |
+| Synchronisation incrémentale | `librarySearch` filtré `DateLastModified` `GreaterThanOrEqual` `DateType` (valeur AAAA-MM-JJ, veille de la dernière synchronisation) | 🟡 opérateurs et type confirmés par l'énumération du WSDL, format de date par l'exemple `EventDateUTC` ; acceptation par le serveur à confirmer au premier essai — refus ⇒ repli automatique sur la synchronisation complète, mémorisé |
+| Suppressions | Contrôle par lots de 200 identifiants (`ContentID` `MatchesAny`, forme de l'exemple du test UI) ; aucun identifiant reconnu ⇒ contrôle ignoré plutôt que tout effacer | ✅ forme confirmée par l'exemple |
+
+**Nouvelles écritures** (mêmes garde-fous : prévisualisation, mot de passe d'équipe, relecture avant écriture, journal
+annulable) : réécrire le texte d'un contenu (un seul à la fois, `ContentText`), déplacer vers un dossier
+(`LibraryFolderID`), ajouter des termes de recherche (`LearnedTerms`, fusionnés sans doublon). Ces champs figurent dans
+`ContentUpdates` du WSDL ; comme pour `ContentText` déjà en place, l'écriture d'un contenu fichier (Word) reste signalée
+« à tester d'abord sur un contenu ».
+
+**Mot de passe d'équipe** : il se règle uniquement dans le `.env` du poste (`QVIDIAN_WRITE_PASSWORD=…`), jamais dans le
+code ; l'écran « Modifier » le demande au moment d'écrire (5 erreurs ⇒ verrou de 5 minutes).

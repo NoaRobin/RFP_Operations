@@ -65,7 +65,18 @@ def votes(snapshot: Snapshot, question: str, k: int = 40, min_similarity: float 
     """Contenus qui répondent à la même question : la similarité sert de filtre (proche de la meilleure), puis de poids."""
     idf = idf_of(snapshot)
     scored = []
-    for c in snapshot.search(question, k=k):
+    candidates = snapshot.search(question, k=k)
+    from .library_search import READY
+
+    engine = READY.get(str(snapshot.path))
+    if engine is not None:  # rappel sémantique : questions types formulées autrement (le filtre de similarité reste le même)
+        seen = {c["id"] for c in candidates}
+        try:
+            extra = [r["id"] for r in engine.search(question, k=15, rerank=False)["results"] if r["id"] not in seen]
+        except Exception:  # noqa: BLE001 - le moteur ne doit jamais empêcher une suggestion
+            extra = []
+        candidates += snapshot.many(extra)
+    for c in candidates:
         if not c["enabled"] or not (c["text"] or "").strip():
             continue
         sim = max(question_similarity(question, c["title"], idf), question_similarity(question, c["question"] or "", idf))

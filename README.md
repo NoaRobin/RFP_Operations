@@ -6,11 +6,12 @@
 
 > *My RFP will go on… mais sans nous.*
 
-**RFP pas envie de travailler** est l'application de l'équipe RFP. Elle fait quatre choses :
+**RFP pas envie de travailler** est l'application de l'équipe RFP. Elle fait cinq choses :
 
 | Module | Ce qu'il fait |
 |---|---|
 | **Remplir un RFI** (`/rfi`) | Vous déposez un questionnaire **Excel ou Word**. L'app repère les questions quantitatives, cherche les réponses dans Fabric (≈ 90 % Product Info, le reste JUMP) et vous rend **exactement le même fichier**, avec les cases remplies. L'original n'est jamais modifié. |
+| **Qvidian** (`/qvidian`) | Une section complète sur la bibliothèque de réponses : **recherche par le sens** (FR / EN / ES / IT, niveau société / fonds / part, utilisations), explorateur, santé, réponses types, analyse IA, **modifications protégées par le mot de passe d'équipe** (`QVIDIAN_WRITE_PASSWORD` dans `.env`), appels API mesurés et synchronisation incrémentale. Méthode : `docs/RECHERCHE_SEMANTIQUE.md`, `docs/QVIDIAN.md`. |
 | **Merge codes Qvidian** (`/merge-codes`) | Le bot *mergecode* (repris tel quel depuis la branche `claude/merge-code`) repère les années d'expérience dans l'export Word de Qvidian et propose le bon `<<merge code>>`. Vous validez d'un clic, il insère et produit le compte rendu Excel. |
 | **Suivi d'activité** (`/suivi-activite`) | Le module *tryv2* (appels d'offres ouverts, gagnés, perdus, tarification), intégré sans modification sous `/suivi`. |
 | **RFPascontente** (`/rfpascontente`) | Le défouloir 3D : on déguise la tête sur mesure (perruques, moustaches, chapeaux, lunettes…) puis on lui lance peinture, tartes, tomates, œufs, verres et classeurs (taches « decals » three.js, physique cannon-es, sons synthétisés). Tête : scan Lee Perry-Smith, CC BY 3.0. Aussi : l'Atelier Excel, le tableau de bord, l'historique, la palette **Ctrl+K**. |

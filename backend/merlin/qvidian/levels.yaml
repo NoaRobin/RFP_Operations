@@ -1,0 +1,96 @@
+# Portée et thème d'un contenu Qvidian (et d'une question), lus sur le dossier, le titre / la question type et le texte.
+#
+# Portée : à quel niveau la réponse est vraie.
+#   societe   : la société de gestion (historique, actionnariat, effectifs, encours total, gouvernance, conformité…)
+#   strategie : une expertise ou une gamme (« nos fonds actions », « notre gestion obligataire »)
+#   fonds     : un fonds précis (cité par son nom)
+#   part      : une part précise (ISIN, part I / R / C / D, minimum, frais de la part)
+# Thème : de quoi parle la réponse. Expressions en texte normalisé (minuscules, sans accents) ; poids : dossier 3,
+# titre 2, texte 1. Les noms de fonds ne sont jamais devinés : dossiers de fonds de Qvidian et répertoire Fabric.
+scopes:
+  societe:
+    - societe de gestion
+    - notre societe
+    - la societe
+    - votre societe
+    - societe
+    - the firm
+    - the company
+    - your firm
+    - your company
+    - asset manager
+    - management company
+    - groupe
+    - group
+    - actionnariat
+    - actionnaires
+    - shareholders
+    - effectifs
+    - collaborateurs
+    - salaries
+    - employees
+    - headcount
+    - encours total
+    - encours sous gestion de la societe
+    - siege
+    - bureaux
+    - offices
+    - agrement
+    - gouvernance
+    - governance
+    - conformite
+    - compliance
+    - remuneration
+    - continuite d'activite
+    - cybersecurite
+    - assurance
+    - clients
+  strategie:
+    - strategie
+    - strategies
+    - strategy
+    - gamme
+    - range
+    - expertise
+    - nos fonds
+    - our funds
+    - classe d'actifs
+    - asset class
+    - gestion actions
+    - gestion obligataire
+    - equity team
+    - fixed income team
+  part:
+    - part i
+    - part r
+    - part c
+    - part d
+    - part institutionnelle
+    - part retail
+    - share class
+    - classe de parts
+    - categorie de parts
+    - minimum de souscription
+    - souscription minimale
+    - minimum investment
+    - frais de la part
+    - code isin
+    - isin
+folders:
+  societe: [societe, company, firm, corporate, groupe, gouvernance, conformite, compliance, rh, ressources humaines, informatique, it]
+  strategie: [gestion, strategies, expertises, investment, process]
+  fonds: [fonds, funds, opc, opcvm, produits, products, sicav, fcp]
+themes:
+  presentation: [presentation, presentez, historique, history, creation, fondee, founded, actionnariat, ownership, shareholders, effectifs, headcount, bureaux, offices, encours, aum, clients]
+  gouvernance: [gouvernance, governance, directoire, conseil de surveillance, board, comite, dirigeants, management team]
+  equipe: [equipe, team, gerant, gerants, portfolio manager, fund manager, cio, analyste, analysts, personne cle, key person, turnover, rotation]
+  gestion: [processus d'investissement, processus de gestion, processus, strategie, strategy, approche de gestion, investment process, philosophie, philosophy, construction de portefeuille, portfolio construction, selection, univers, universe, allocation, objectif de gestion, investment objective, benchmark, indice de reference]
+  risques: [risque, risques, risk, risks, limites, limits, var, stress test, derives, derivatives, levier, leverage, liquidite, liquidity]
+  esg: [esg, isr, durable, sustainable, sustainability, climat, climate, carbone, carbon, exclusion, exclusions, charbon, coal, vote, voting, engagement, sfdr, pri, label, controverses, taxonomie]
+  operations: [valorisation, valuation, valeur liquidative, nav, depositaire, depositary, custodian, agent de transfert, transfer agent, cut-off, heure limite, reglement, settlement, centralisation, tresorerie]
+  conformite: [conformite, compliance, deontologie, blanchiment, aml, kyc, conflits d'interets, conflicts of interest, meilleure execution, best execution, remuneration, rgpd, gdpr, sanctions, controle interne]
+  continuite: [continuite d'activite, business continuity, pca, bcp, cybersecurite, cybersecurity, securite informatique, sauvegarde, backup, disaster recovery]
+  performance: [performance, performances, rendement, return, returns, track record, volatilite, volatility, ratio de sharpe, sharpe]
+  frais: [frais, fees, commission, commissions, ongoing charges, frais courants, ter, surperformance, performance fee, retrocession]
+  juridique: [prospectus, dic, kid, juridique, legal, forme juridique, legal form, domicile, agrement amf, pea, eligibilite]
+  reporting: [reporting, rapport, report, reports, transparence, transparency, inventaire, holdings]

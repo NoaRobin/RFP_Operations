@@ -106,6 +106,11 @@ class QvidianSettings:
     write_password: str = ""  # mot de passe des modifications en masse (QVIDIAN_WRITE_PASSWORD)
     keepalive_minutes: int = 10  # la session Qvidian expire après 20 min sans appel : petit appel de maintien (0 = jamais)
     half_life_days: int = 365  # agrégation : une réponse choisie il y a un an pèse moitié moins qu'aujourd'hui
+    concurrency: int = 4  # synchronisation : dossiers lus en parallèle (1 = un à la fois)
+    max_calls_per_second: float = 8.0  # limiteur de débit : ne jamais saturer le serveur Qvidian
+    cache_seconds: int = 300  # lectures de détail mises en cache (0 = aucun cache)
+    search_encoder: str = "e5-small"  # moteur sémantique : encodeur installé dans data/models/
+    search_reranker: bool = True  # reranker cross-encoder s'il est installé
 
     @property
     def credentials(self) -> bool:
@@ -192,6 +197,11 @@ def get_settings() -> Settings:
             write_password=os.environ.get("QVIDIAN_WRITE_PASSWORD", ""),
             half_life_days=int(_env("QVIDIAN_HALF_LIFE_DAYS", "365") or 365),
             keepalive_minutes=int(_env("QVIDIAN_KEEPALIVE_MINUTES", "10") or "10"),
+            concurrency=max(1, min(16, int(_env("QVIDIAN_CONCURRENCY", "4") or "4"))),
+            max_calls_per_second=float(_env("QVIDIAN_MAX_CALLS_PER_SECOND", "8") or "8"),
+            cache_seconds=int(_env("QVIDIAN_CACHE_SECONDS", "300") or "300"),
+            search_encoder=_env("MERLIN_SEARCH_ENCODER", "e5-small") or "e5-small",
+            search_reranker=(_env("MERLIN_SEARCH_RERANKER", "on") or "on").lower() not in {"off", "0", "false", "non"},
         ),
         omni=OmniSettings(
             root=_env("OMNI_ROOT"),

@@ -20,6 +20,7 @@ from .audit import audit
 from .bulk import Journal, Plan, WriteGuard, apply, make_plan, undo_plan
 from .client import QvidianClient, QvidianError
 from .demo import DemoQvidian
+from .library_search import SearchManager
 from .snapshot import Snapshot, sync
 
 
@@ -32,6 +33,7 @@ class QvidianService:
         self.journal = Journal(self.root / "journal.jsonl")
         self.ai = FindingStore(self.root / "ai_findings.json")
         self.demo = DemoQvidian()
+        self.search = SearchManager(data_dir / "models", settings.search_encoder, settings.search_reranker, settings.half_life_days)
         self.real: QvidianClient | None = None
         self.plans: dict[str, Plan] = {}
         self.sync_state: dict[str, Any] = {"running": False, "message": "", "done": 0, "error": None, "result": None}
@@ -79,7 +81,7 @@ class QvidianService:
 
     def _connect_from_settings(self) -> None:
         s = self.settings
-        client = self.real or QvidianClient(s.auth_url)
+        client = self.real or self._new_client()
         if s.api_key:
             client.connect_api_key(s.user, s.api_key)
         elif s.password:
@@ -90,8 +92,14 @@ class QvidianService:
         self.real = client
         self._start_keepalive()
 
-    def connect(self, user: str, password: str = "", api_key: str = "") -> dict[str, Any]:
+    def _new_client(self) -> QvidianClient:
         client = QvidianClient(self.settings.auth_url)
+        if hasattr(client, "configure"):
+            client.configure(self.settings.cache_seconds, self.settings.max_calls_per_second)
+        return client
+
+    def connect(self, user: str, password: str = "", api_key: str = "") -> dict[str, Any]:
+        client = self._new_client()
         binding = client.connect_api_key(user, api_key) if api_key else client.connect(user, password)
         self.real = client
         self._start_keepalive()
@@ -110,7 +118,7 @@ class QvidianService:
         """Paramètres renvoyés par le portail QPA (Base64). Tolérant : « + » devenu espace dans l'adresse, Base64 « URL »,
         remplissage manquant, ou valeur déjà en clair. Chaque échec est noté (sans le jeton) dans data/qvidian/sso.log."""
         token, login = _from_b64(token_b64), _from_b64(login_b64)
-        client = QvidianClient(self.settings.auth_url)
+        client = self._new_client()
         try:
             binding = client.connect_token(login, token.strip("{} "))
         except QvidianError as error:
@@ -141,8 +149,8 @@ class QvidianService:
         snap = self._snapshots.get(name)
         if snap is None:
             snap = self._snapshots[name] = Snapshot(self.root / name)
-        if name == "demo.sqlite" and snap.empty:
-            sync(self.demo, snap, "demo")  # la démo se construit en un instant, avec le même code que le vrai
+        if name == "demo.sqlite" and (snap.empty or snap.meta().get("count") != str(len(self.demo.contents))):
+            sync(self.demo, snap, "demo")  # la démo se construit en un instant, avec le même code que le vrai (et suit ses évolutions)
         return snap
 
     def rfi_snapshot(self, data_mode: str) -> Snapshot | None:
@@ -156,19 +164,24 @@ class QvidianService:
                 return snap
         return self.snapshot("demo") if data_mode == "mock" else None
 
-    def start_sync(self) -> dict[str, Any]:
+    def start_sync(self, kind: str = "auto") -> dict[str, Any]:
+        """kind : full | delta | auto (incrémentale si une synchronisation complète existe déjà)."""
         with self._lock:
             if self.sync_state["running"]:
                 return self.sync_state
             client, mode = self.client(), self.mode
-            self.sync_state = {"running": True, "message": "Démarrage…", "done": 0, "error": None, "result": None, "mode": mode}
+            self.sync_state = {"running": True, "message": "Démarrage…", "done": 0, "error": None, "result": None, "mode": mode,
+                               "kind": kind, "started": time.strftime("%Y-%m-%dT%H:%M:%S")}
 
         def progress(message: str, done: int, _total: int) -> None:
             self.sync_state.update(message=message, done=done)
 
         def run() -> None:
             try:
-                result = sync(client, self.snapshot(mode), mode, progress)
+                snap = self.snapshot(mode)
+                wanted = "delta" if kind == "auto" and snap.meta().get("synced_at") and not snap.empty else ("full" if kind == "auto" else kind)
+                result = sync(client, snap, mode, progress, workers=self.settings.concurrency, mode=wanted)
+                self.search.get(snap, wait=False)  # index de recherche reconstruit en arrière-plan
                 self.sync_state.update(running=False, result=result, message="Synchronisation terminée")
             except QvidianError as error:
                 self.sync_state.update(running=False, error={"code": error.code, "message": error.message, "hint": error.hint})
@@ -177,6 +190,57 @@ class QvidianService:
 
         threading.Thread(target=run, name="qvidian-sync", daemon=True).start()
         return self.sync_state
+
+    # ------------------------------------------------------------------ recherche sémantique
+    def library_search(self, query: str, filters: dict[str, Any] | None = None, sort: str = "pertinence", k: int = 20,
+                       rerank: bool = True) -> dict[str, Any]:
+        snap = self.snapshot()
+        engine = self.search.get(snap, wait=False)
+        out = engine.search(query, filters, sort, k, rerank)
+        out["index"] = self.search.status(snap)["building"]
+        return out
+
+    def insight(self, content_id: int) -> dict[str, Any] | None:
+        return self.search.get(self.snapshot(), wait=False).describe(content_id)
+
+    def overview(self) -> dict[str, Any]:
+        return self.search.get(self.snapshot(), wait=False).overview()
+
+    def engine_status(self) -> dict[str, Any]:
+        snap = self.snapshot()
+        self.search.get(snap, wait=False)
+        return self.search.status(snap)
+
+    def download_model(self, model_id: str) -> dict[str, Any]:
+        from ..search.neural import MODELS
+
+        if model_id not in MODELS:
+            raise QvidianError("config", f"Modèle inconnu : {model_id}")
+        state = self.search.downloads.start(model_id)
+        return {**state, "id": model_id}
+
+    def rebuild_index(self) -> dict[str, Any]:
+        self.search.reset_models()
+        snap = self.snapshot()
+        self.search._engines.pop(str(snap.path), None)
+        self.search.get(snap, wait=False)
+        return self.search.status(snap)
+
+    def api_stats(self) -> dict[str, Any]:
+        client = self.demo if self.mode == "demo" else self.real
+        tel = client.telemetry.summary() if client is not None and hasattr(client, "telemetry") else None
+        s = self.settings
+        return {"mode": self.mode, "telemetry": tel, "cache_entries": len(client.cache) if client is not None and hasattr(client, "cache") else 0,
+                "limiter_wait_s": round(getattr(getattr(client, "limiter", None), "waited", 0.0), 2),
+                "delta_supported": getattr(client, "delta_supported", None),
+                "settings": {"concurrency": s.concurrency, "max_calls_per_second": s.max_calls_per_second, "cache_seconds": s.cache_seconds,
+                             "keepalive_minutes": s.keepalive_minutes, "search_encoder": s.search_encoder, "search_reranker": s.search_reranker},
+                "snapshot": self.snapshot().meta() if self.mode != "off" else {}, "last_sync": self.sync_state.get("result")}
+
+    def reset_stats(self) -> None:
+        client = self.demo if self.mode == "demo" else self.real
+        if client is not None and hasattr(client, "telemetry"):
+            client.telemetry.reset()
 
     # ------------------------------------------------------------------ contrôles
     def audit(self, today: date | None = None, depth: int = 2) -> dict[str, Any]:

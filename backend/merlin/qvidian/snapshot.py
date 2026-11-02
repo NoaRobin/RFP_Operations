@@ -1,7 +1,8 @@
 """Instantané local de la bibliothèque Qvidian (SQLite + recherche plein texte FTS5), sous data/qvidian/ (jamais committé).
 
-Synchronisation = parcours des dossiers (libraryFolderGetTop → libraryFoldersGetList → libraryFolderContentGetList),
-les opérations utilisées par l'exemple WSManual. Chaque texte déjà vu est gardé dans `versions` : les réponses
+Synchronisation complète = parcours des dossiers (libraryFolderGetTop → libraryFoldersGetList), puis contenus de chaque
+dossier par recherche filtrée (en parallèle, débit plafonné) ; incrémentale = contenus modifiés depuis la dernière fois
+(filtre DateLastModified) et contrôle des suppressions par lots d'identifiants (filtre ContentID MatchesAny). Chaque texte déjà vu est gardé dans `versions` : les réponses
 évoluent (mises à jour), l'agrégation les regroupe en familles et propose la rédaction la plus récente.
 Un instantané de démonstration et un instantané réel ne partagent jamais le même fichier.
 """
@@ -11,7 +12,9 @@ import hashlib
 import re
 import sqlite3
 import threading
-from datetime import datetime
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
@@ -62,6 +65,24 @@ class Snapshot:
                 digest = hashlib.sha1(f"{c.get('title', '')}\n{c.get('text', '')}".encode("utf-8")).hexdigest()[:16]
                 db.execute("INSERT OR IGNORE INTO versions VALUES (?, ?, ?, ?, ?, ?, ?)",
                            (c["id"], c.get("revision", 0), digest, c.get("title", ""), c.get("text", ""), c.get("modified"), now))
+            db.execute("INSERT OR REPLACE INTO meta VALUES ('updated_at', ?)", (datetime.now().isoformat(timespec="microseconds"),))
+
+    def remove(self, ids: list[int]) -> None:
+        """Contenus supprimés de Qvidian (synchronisation incrémentale) : retirés de l'instantané, leurs versions restent."""
+        with self._lock, self._conn() as db:
+            for cid in ids:
+                db.execute("DELETE FROM contents WHERE id = ?", (cid,))
+                db.execute("DELETE FROM search WHERE rowid = ?", (cid,))
+            db.execute("INSERT OR REPLACE INTO meta VALUES ('count', ?)", (str(db.execute("SELECT COUNT(*) FROM contents").fetchone()[0]),))
+
+    def set_meta(self, values: dict[str, Any]) -> None:
+        with self._lock, self._conn() as db:
+            for key, value in values.items():
+                db.execute("INSERT OR REPLACE INTO meta VALUES (?, ?)", (key, str(value)))
+
+    def ids(self) -> list[int]:
+        with self._conn() as db:
+            return [r[0] for r in db.execute("SELECT id FROM contents")]
 
     def replace(self, folders: list[dict[str, Any]], contents: list[dict[str, Any]], source: str) -> None:
         """Fin de synchronisation complète : les contenus disparus de Qvidian sont retirés (leurs versions restent)."""
@@ -135,48 +156,81 @@ class Snapshot:
             return db.execute("SELECT COUNT(*) FROM contents").fetchone()[0] == 0
 
 
+def _folder_items(client, folder: dict[str, Any], here: str, problems: list[str]) -> list[dict[str, Any]]:
+    """Contenus d'un dossier : recherche filtrée sur le dossier (texte, utilisations, dates), sinon liste simple."""
+    try:
+        # Guide (libraryFolderContentGetList) : 500 éléments au plus et champs réduits (ni texte, ni compteurs
+        # d'utilisation) ; la voie recommandée est librarySearch filtré sur la colonne LibraryFolderID.
+        items = []
+        if hasattr(client, "folder_contents_paged"):
+            try:
+                items = client.folder_contents_paged(folder["id"])
+            except Exception as error:  # noqa: BLE001 - repli sur la liste du dossier, avec l'alerte
+                problems.append(f"{here or folder['title']} : recherche par dossier refusée, liste simple utilisée "
+                                f"({getattr(error, 'message', type(error).__name__)})")
+        if not items:
+            items = client.folder_contents(folder["id"])
+            if len(items) >= FOLDER_LIST_MAX:
+                problems.append(f"{here or folder['title']} : liste limitée à {FOLDER_LIST_MAX} contenus")
+    except Exception as error:  # noqa: BLE001 - un dossier refusé n'arrête pas la synchronisation
+        problems.append(f"{here or folder['title']} : {getattr(error, 'message', type(error).__name__)}")
+        items = []
+    for c in items:
+        c["folder_path"] = c.get("folder_path") or here
+    return items
+
+
+def _previews(client, contents: list[dict[str, Any]], limit: int, workers: int) -> int:
+    """Texte vide → aperçu HTML (libraryContentPreviewHTMLGet), en parallèle ; droit absent : le texte reste vide."""
+    todo = [c for c in contents if not c.get("text") and (c.get("type") or "").lower() not in {"slide", "file"}][:limit]
+
+    def one(c: dict[str, Any]) -> None:
+        try:
+            c["text"] = html_to_text(client.preview_html(c["id"], c["revision"]))
+        except Exception:  # noqa: BLE001
+            pass
+
+    if workers > 1 and len(todo) > 1:
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="qvidian-preview") as pool:
+            list(pool.map(one, todo))
+    else:
+        for c in todo:
+            one(c)
+    return len(todo)
+
+
 def sync(client, snapshot: Snapshot, source: str, progress: Callable[[str, int, int], None] | None = None,
-         preview_limit: int = 3000) -> dict[str, Any]:
-    """Parcourt toute la bibliothèque et remplace l'instantané. Texte vide → aperçu HTML (libraryContentPreviewHTMLGet)."""
+         preview_limit: int = 3000, workers: int = 1, mode: str = "full") -> dict[str, Any]:
+    """Synchronisation de l'instantané.
+
+    full  : parcours de tous les dossiers ; contenus lus en parallèle (`workers` fils, débit plafonné par le client).
+    delta : seulement les contenus modifiés depuis la dernière synchronisation (moins un jour de marge), puis contrôle des
+            suppressions par lots d'identifiants. Repli automatique sur « full » si le serveur refuse le filtre de date."""
     say = progress or (lambda *_: None)
+    started = time.time()
+    meta = snapshot.meta()
+    if mode == "delta" and meta.get("synced_at") and not snapshot.empty and getattr(client, "delta_supported", None) is not False \
+            and hasattr(client, "changed_since"):
+        try:
+            return _delta(client, snapshot, source, say, preview_limit, workers, meta, started)
+        except Exception as error:  # noqa: BLE001 - filtre de date refusé : synchronisation complète
+            note = f"incrémental indisponible ({getattr(error, 'message', type(error).__name__)}) : synchronisation complète"
+            result = _full(client, snapshot, source, say, preview_limit, workers, started)
+            result["problems"] = [note] + result["problems"]
+            return result
+    return _full(client, snapshot, source, say, preview_limit, workers, started)
+
+
+def _full(client, snapshot: Snapshot, source: str, say, preview_limit: int, workers: int, started: float) -> dict[str, Any]:
     top = client.top_folder()
     folders: list[dict[str, Any]] = []
     queue = [(top, "")]
-    contents: list[dict[str, Any]] = []
-    previews = 0
     problems: list[str] = []
-    while queue:
+    while queue:  # l'arbre des dossiers d'abord (léger), les contenus ensuite en parallèle
         folder, path = queue.pop(0)
         here = f"{path} / {folder['title']}".strip(" /") if folder["id"] != top["id"] else ""
         folders.append({**folder, "path": here})
-        say(f"Dossier « {here or folder['title']} »", len(contents), 0)
-        if folder.get("contents", 1):
-            try:
-                # Guide (libraryFolderContentGetList) : 500 éléments au plus et champs réduits (ni texte, ni compteurs
-                # d'utilisation) ; la voie recommandée est librarySearch filtré sur la colonne LibraryFolderID.
-                items = []
-                if hasattr(client, "folder_contents_paged"):
-                    try:
-                        items = client.folder_contents_paged(folder["id"])
-                    except Exception as error:  # noqa: BLE001 - repli sur la liste du dossier, avec l'alerte
-                        problems.append(f"{here or folder['title']} : recherche par dossier refusée, liste simple utilisée "
-                                        f"({getattr(error, 'message', type(error).__name__)})")
-                if not items:
-                    items = client.folder_contents(folder["id"])
-                    if len(items) >= FOLDER_LIST_MAX:
-                        problems.append(f"{here or folder['title']} : liste limitée à {FOLDER_LIST_MAX} contenus")
-            except Exception as error:  # noqa: BLE001 - un dossier refusé n'arrête pas la synchronisation
-                problems.append(f"{here or folder['title']} : {getattr(error, 'message', type(error).__name__)}")
-                items = []
-            for c in items:
-                c["folder_path"] = c.get("folder_path") or here
-                if not c.get("text") and previews < preview_limit and c.get("type", "").lower() not in {"slide", "file"}:
-                    previews += 1
-                    try:
-                        c["text"] = html_to_text(client.preview_html(c["id"], c["revision"]))
-                    except Exception:  # noqa: BLE001 - droit AllowPreviewHTML absent : le texte reste vide
-                        pass
-                contents.append(c)
+        say(f"Dossiers : {len(folders)}", 0, 0)
         if folder.get("children", 1):
             try:
                 children = client.folders(folder["id"])
@@ -184,10 +238,64 @@ def sync(client, snapshot: Snapshot, source: str, progress: Callable[[str, int, 
                 problems.append(f"{here or folder['title']} (sous-dossiers) : {getattr(error, 'message', type(error).__name__)}")
                 children = []
             queue.extend((child, here) for child in children)
+    with_contents = [f for f in folders if f.get("contents", 1)]
+    contents: list[dict[str, Any]] = []
+    done = 0
+    if workers > 1 and len(with_contents) > 1:
+        with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="qvidian-sync") as pool:
+            futures = {pool.submit(_folder_items, client, f, f["path"], problems): f for f in with_contents}
+            for fut in as_completed(futures):
+                contents.extend(fut.result())
+                done += 1
+                say(f"Dossier « {futures[fut]['path'] or futures[fut]['title']} » ({done}/{len(with_contents)})", len(contents), 0)
+    else:
+        for f in with_contents:
+            contents.extend(_folder_items(client, f, f["path"], problems))
+            done += 1
+            say(f"Dossier « {f['path'] or f['title']} » ({done}/{len(with_contents)})", len(contents), 0)
+    unique = {c["id"]: c for c in contents}  # un contenu vu dans deux dossiers (raccourci) n'est gardé qu'une fois
+    contents = list(unique.values())
+    say("Aperçus des textes vides", len(contents), 0)
+    previews = _previews(client, contents, preview_limit, workers)
     snapshot.replace(folders, contents, source)
+    seconds = round(time.time() - started, 1)
+    snapshot.set_meta({"sync_mode": "full", "sync_seconds": seconds})
     say("Terminé", len(contents), len(contents))
-    return {"contents": len(contents), "folders": len(folders), "previews": previews, "problems": problems[:20]}
+    return {"mode": "full", "contents": len(contents), "folders": len(folders), "previews": previews, "problems": problems[:20],
+            "seconds": seconds, "workers": workers}
 
+
+def _delta(client, snapshot: Snapshot, source: str, say, preview_limit: int, workers: int, meta: dict[str, str],
+           started: float) -> dict[str, Any]:
+    since = (datetime.fromisoformat(meta["synced_at"]).date() - timedelta(days=1)).isoformat()
+    say(f"Modifications depuis le {since}", 0, 0)
+    changed = client.changed_since(since)
+    known = {c["id"]: c for c in snapshot.many([c["id"] for c in changed])}
+    folder_paths = {f["id"]: f["path"] for f in snapshot.folders()}
+    for c in changed:
+        c["folder_path"] = c.get("folder_path") or folder_paths.get(c.get("folder_id")) or known.get(c["id"], {}).get("folder_path", "")
+    previews = _previews(client, changed, preview_limit, workers)
+    if changed:
+        snapshot.upsert(changed)
+    say("Contrôle des suppressions", len(changed), 0)
+    ids = snapshot.ids()
+    removed: list[int] = []
+    problems: list[str] = []
+    if ids and hasattr(client, "existing_ids"):
+        alive = client.existing_ids(ids)
+        if alive or len(ids) < 5:
+            removed = [i for i in ids if i not in alive]
+            if removed:
+                snapshot.remove(removed)
+        else:
+            problems.append("contrôle des suppressions ignoré : aucun identifiant reconnu (droits ?)")
+    now = datetime.now().isoformat(timespec="seconds")
+    seconds = round(time.time() - started, 1)
+    snapshot.set_meta({"synced_at": now, "source": source, "sync_mode": "delta", "sync_seconds": seconds,
+                       "count": len(snapshot.ids())})
+    say("Terminé", len(changed), len(changed))
+    return {"mode": "delta", "since": since, "contents": len(snapshot.ids()), "changed": len(changed), "removed": len(removed),
+            "previews": previews, "problems": problems, "seconds": seconds, "workers": workers}
 
 
 __all__ = ["Snapshot", "sync"]
