@@ -683,10 +683,31 @@ export interface QvidianOverview {
 }
 export interface QvidianModel {
   id: string; kind: 'encoder' | 'reranker'; label: string; size_mb: number; license: string; note: string; installed: boolean; active: boolean
-  error?: string | null; download: { running: boolean; done: number; total: number; error: string | null; file: string } | null
+  error?: string | null
+  download: { running: boolean; queued?: boolean; done: number; total: number; error: string | null; hint?: string; host?: string; via?: string; file: string
+    attempts?: { via: string; host: string; error: string }[] } | null
+  links?: { name: string; url: string; size: number; sha256: string }[]
+  packs?: string[]
+}
+export interface QvidianPack { id: string; label: string; note: string; models: string[]; size_mb: number; installed: boolean }
+export interface MatchReport {
+  pairs: number; positives: number; auc: number; brier: number; ece: number; threshold: number; target: number
+  precision_at_threshold: number | null; recall_at_threshold: number; calibration: string; groups: number
+  reliability: { from: number; n: number; predicted: number; observed: number }[]
+}
+export interface MatchStatus {
+  state: { running: boolean; message: string; error: string | null; built_at: string | null; seconds?: number; trained?: boolean; reason?: string }
+  stats: { questions: number; distinct: number; files: number; dense: boolean; reranker: boolean; precise: boolean; calibrated: boolean
+    report: MatchReport | null; precise_report: MatchReport | null } | null
+}
+export interface MatchResult {
+  ready: boolean; calibrated?: boolean; threshold?: number | null; ms?: number
+  matches: { question: string; p: number; files: number; last: string; contents: number[]; precise: boolean; why: string[]
+    examples: { file: string; date: string; fund: string; answer: string; content_id: number | null }[] }[]
+  answers: { id: number; p: number; files: number; asked: string; title: string; text: string }[]
 }
 export interface QvidianEngineStatus {
-  ready: boolean; engine: QvidianEngineInfo | null; neural_runtime: boolean; models: QvidianModel[]
+  ready: boolean; engine: QvidianEngineInfo | null; neural_runtime: boolean; models: QvidianModel[]; packs?: QvidianPack[]
   building: { running: boolean; message: string; done: number; total: number; error?: string; seconds?: number } | null
 }
 export interface QvidianOpStat { op: string; calls: number; errors: number; cached: number; retries: number; kb_in: number; p50_ms: number; p95_ms: number; avg_ms: number }

@@ -11,7 +11,7 @@ import type {
   QvidianStatus, QvidianSuggest, QvidianApiStats, QvidianEngineStatus, QvidianFilters, QvidianFolder, QvidianOverview, QvidianSearchResult, QvidianHistorySummary,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
-  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, MatchResult, MatchStatus, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -127,6 +127,17 @@ export const api = {
     engine: () => request<QvidianEngineStatus>('/qvidian/engine'),
     downloadModel: (id: string) => request<unknown>(`/qvidian/engine/models/${id}`, { method: 'POST' }),
     rebuild: () => request<QvidianEngineStatus>('/qvidian/engine/rebuild', { method: 'POST' }),
+    downloadPack: (pack: string) => request<QvidianEngineStatus>(`/qvidian/engine/packs/${pack}`, { method: 'POST' }),
+    stopDownloads: () => request<QvidianEngineStatus>('/qvidian/engine/downloads/stop', { method: 'POST' }),
+    uploadModels: (files: File[]) => {
+      const form = new FormData()
+      files.forEach((f) => form.append('files', f))
+      return request<{ installed: { model: string; file: string }[]; ignored: string[]; ready: string[]; engine: QvidianEngineStatus }>('/qvidian/engine/models/upload', { method: 'POST', body: form })
+    },
+    scanModels: (folder = '') => request<{ installed: { model: string; file: string }[]; ignored: string[]; ready: string[]; folder: string; looked_at: number; engine: QvidianEngineStatus }>('/qvidian/engine/models/scan', json({ folder })),
+    match: (q: string, k = 8) => request<MatchResult>('/qvidian/match', json({ q, k })),
+    matchStatus: () => request<MatchStatus>('/qvidian/match/status'),
+    matchRebuild: () => request<MatchStatus>('/qvidian/match/rebuild', { method: 'POST' }),
     apiStats: () => request<QvidianApiStats>('/qvidian/api-stats'),
     resetStats: () => request<QvidianApiStats>('/qvidian/api-stats/reset', { method: 'POST' }),
     folders: () => request<QvidianFolder[]>('/qvidian/folders'),

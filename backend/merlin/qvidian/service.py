@@ -42,6 +42,7 @@ class QvidianService:
         self.ai = FindingStore(self.root / "ai_findings.json")
         self.demo = DemoQvidian()
         self.search = SearchManager(data_dir / "models", settings.search_encoder, settings.search_reranker, settings.half_life_days)
+        self.search.downloads.on_done = lambda _mid: (self.rebuild_index(), self.build_matcher())
         self.data_dir = data_dir
         self._history_cache: dict[str, tuple[float, dict]] = {}
         self.history_state: dict[str, Any] = {"running": False, "error": None}

@@ -3,9 +3,11 @@
  * synchronisation complète ou incrémentale, modèles du moteur sémantique (installation explicite, 100 % local).
  */
 import { useCallback, useEffect, useState } from 'react'
-import { CheckCircle2, Cpu, Download, Gauge, RefreshCw, RotateCcw, Zap } from 'lucide-react'
+import { Cpu, Gauge, GitCompare, RefreshCw, RotateCcw, Zap } from 'lucide-react'
 import { Bar, Kpi } from '../../../components/qvidian/Bits'
 import { HistoryPanel } from '../../../components/qvidian/HistoryPanel'
+import { MatchPanel } from '../../../components/qvidian/MatchPanel'
+import { ModelsPanel } from '../../../components/qvidian/ModelsPanel'
 import { Button } from '../../../components/ui/Button'
 import { texts } from '../../../content/texts'
 import { api } from '../../../lib/api'
@@ -34,9 +36,6 @@ export function ApiView() {
   }, [busy, load])
   const tel = stats?.telemetry
   const maxCalls = Math.max(1, ...(tel?.operations ?? []).map((o) => o.calls))
-  const install = async (id: string) => {
-    try { await api.qvidian.downloadModel(id); void load() } catch (e) { fail(e) }
-  }
   return (
     <div className="flex flex-col gap-5">
       <header data-enter>
@@ -128,6 +127,11 @@ export function ApiView() {
       <div data-enter><HistoryPanel /></div>
 
       <section data-enter className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5">
+        <h2 className="flex items-center gap-2 text-xl"><GitCompare size={18} aria-hidden="true" />{Q.matchTitle}</h2>
+        <div className="mt-2"><MatchPanel fail={fail} /></div>
+      </section>
+
+      <section data-enter className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="flex items-center gap-2 text-xl"><Cpu size={18} aria-hidden="true" />{Q.engineTitle}</h2>
           <Button size="sm" className="ml-auto" onClick={async () => { try { setEngine(await api.qvidian.rebuild()) } catch (e) { fail(e) } }} icon={<RefreshCw size={14} />}>{Q.rebuild}</Button>
@@ -141,31 +145,7 @@ export function ApiView() {
           {engine?.building?.running ? ` · ${Q.indexing} ${engine.building.message} ${engine.building.done}/${engine.building.total}` : ''}
           {engine?.building?.error ? ` · ${engine.building.error}` : ''}
         </p>
-        <ul className="mt-4 grid gap-3 md:grid-cols-3">
-          {(engine?.models ?? []).map((m) => {
-            const dl = m.download
-            const pct = dl?.total ? dl.done / dl.total : 0
-            const recommended = m.id === 'e5-small' || m.id === 'rerank-mminilm'
-            return (
-              <li key={m.id} className={`flex flex-col gap-2 rounded-2xl border-2 p-4 ${m.installed ? 'border-fg bg-mint-400/15' : 'border-fg/30'}`}>
-                <p className="flex flex-wrap items-center gap-2 font-display font-semibold">
-                  {m.label}{recommended && <span className="rounded-full bg-sun-400 px-2 text-[0.65rem] font-bold">{Q.recommended}</span>}
-                </p>
-                <p className="text-xs font-semibold text-fg-2">{m.kind === 'encoder' ? 'Encodeur (sens)' : 'Reranker (lecture fine)'} · {m.size_mb} Mo · {m.license}</p>
-                <p className="text-xs font-semibold text-fg-3">{m.note}</p>
-                {m.error && <p className="text-xs font-bold text-danger">{m.error}</p>}
-                {dl?.error && <p className="text-xs font-bold text-danger">{dl.error}</p>}
-                {dl?.running ? (
-                  <div aria-live="polite"><p className="text-xs font-bold">{Q.downloading} {Math.round(pct * 100)} %</p><Bar value={pct} tone="bg-magic-400" /></div>
-                ) : m.installed ? (
-                  <p className="inline-flex items-center gap-1 text-sm font-bold text-mint-300"><CheckCircle2 size={15} aria-hidden="true" />{m.active ? Q.active : Q.installed}</p>
-                ) : (
-                  <Button size="sm" onClick={() => install(m.id)} disabled={!engine?.neural_runtime} icon={<Download size={14} />}>{Q.install(m.size_mb)}</Button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
+        <div className="mt-4"><ModelsPanel engine={engine} onChange={(e) => (e ? setEngine(e) : void load())} fail={fail} /></div>
       </section>
     </div>
   )

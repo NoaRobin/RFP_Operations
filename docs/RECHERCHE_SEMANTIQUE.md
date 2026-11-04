@@ -94,3 +94,40 @@ Réseau fermé : `MERLIN_MODELS_URL` = miroir interne (même arborescence que Hu
 - Le thésaurus a été enrichi sur des formulations du jeu de réglage : la mesure « jamais vu » est la référence.
 - Le classement par niveau dépend de l'organisation des dossiers Qvidian ; un dossier mal rangé brouille le niveau
   (les indices affichés permettent de le voir).
+
+## 7. Questions déjà tombées : rapprochement calibré (`merlin/match`, novembre 2026)
+
+But : une question d'une nouvelle due diligence (400 par an, 50 à 200 questions chacune) doit retrouver **la même
+question déjà posée** parmi toutes celles des anciens RFI et des 6 000 textes Qvidian, et donc la même réponse — que
+la question soit collée dans la recherche Qvidian ou posée par le compléteur RFI (un seul moteur, `MATCHERS`).
+
+| Étape | Méthode |
+|---|---|
+| Banque | toutes les questions des anciens RFI (SharePoint, lot 02, projets Qvidian) et les questions types Qvidian, avec la réponse choisie ; doublons exacts fusionnés (numérotation, ponctuation, accents) |
+| Rappel | BM25 + thésaurus FR / EN, n-grammes de caractères, E5 (produit matriciel sur toute la banque) ; fusion RRF |
+| Critères | sens E5, lecture croisée (10 premiers), mots rares dans les deux sens, n-grammes, concept de l'ontologie, nombres et périodes normalisés (« 12 mois » = « 1 an »), ISIN, négation, oui / non contre question ouverte |
+| Probabilité | gradient boosting (Newton, numpy) + calibration isotonique **par strate** (avec / sans preuve directe), validation croisée par questionnaire |
+| Apprentissage | sur vos anciens RFI : même texte Qvidian choisi (ou même réponse rédigée) = même question ; concepts différents, périodes différentes, réponses sans rapport = autre question ; même question pour deux fonds ou versions d'un même texte : jamais appris (ambigu). Moins de 100 exemples de chaque : règle prudente, affichée « pas encore appris » |
+| Décision | seuil « même question » = plus petit seuil dont la borne basse de Wilson (95 %) de la précision reste ≥ 95 % ; le compléteur ne propose un texte rapproché qu'au-delà de 50 % |
+| Cascade | pack Précis (e5-large + BGE v2 m3) seulement pour les cas entre 10 et 90 % |
+| Réponse | chaque question passée vote une fois, pour chaque texte, avec la part récente de ses réponses (« OU bruité » entre questions passées) |
+
+Mesures (`python -m merlin.match.evaluate`, 70 formulations jamais vues FR / EN / ES / IT, 60 questionnaires simulés,
+sujets voisins volontaires : 1 an / 3 ans, frais de gestion / de performance, encours société / fonds) :
+
+| Configuration | Bonne réponse en premier | Écart de calibration (ECE) | AUC | ms / question |
+|---|---|---|---|---|
+| Sans modèle | 0,81 | 0,060 | 0,86 | ~20 |
+| Pack Rapide (e5-small + mMiniLM) | 0,87 | 0,060 | 0,91 | ~145 |
+| Rapide + Précis en cascade | 0,93 | 0,068 | 0,93 | ~460 |
+
+Limite honnête : sur ce petit banc, aucun seuil n'atteint la précision garantie de 95 % sur les formulations jamais
+vues (trop peu de couples) ; sur vos vrais anciens RFI, le seuil est mesuré et affiché dans **API & moteur**.
+
+## 8. Installation des modèles derrière le proxy (`merlin/search/install.py`)
+
+« HTTP 403 » : les gros fichiers des modèles sont servis par un serveur de diffusion (`us.aws.cdn.hf.co`,
+`cas-bridge.xethub.hf.co`) souvent bloqué. L'app essaie Python (proxy et certificats de Windows, reprise Range),
+puis **BITS** (la pile de Windows Update, identifiants de la session), puis propose les liens à ouvrir dans Edge et
+reconnaît les fichiers déposés (ou trouvés dans Téléchargements) par leur **taille et SHA-256** publiées. Un fichier
+altéré n'est jamais installé. Miroir interne : `MERLIN_MODELS_URL` (plusieurs, séparés par des virgules).

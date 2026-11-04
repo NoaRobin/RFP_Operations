@@ -209,6 +209,7 @@ async def upload_models(files: list[UploadFile] = File(...), s: AppState = Depen
         shutil.rmtree(folder, ignore_errors=True)
     if result["ready"]:
         svc.rebuild_index()
+        svc.build_matcher()
     return {**result, "engine": svc.engine_status()}
 
 
@@ -227,6 +228,7 @@ def scan_models(body: ScanRequest, s: AppState = Depends(state)) -> dict[str, An
         raise bad_request(str(error), error.hint) from error
     if result["ready"]:
         svc.rebuild_index()
+        svc.build_matcher()
     return {**result, "engine": svc.engine_status()}
 
 

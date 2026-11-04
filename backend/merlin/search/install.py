@@ -174,6 +174,7 @@ class Downloads:
         self.state: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
         self._stop = threading.Event()
+        self.on_done: Callable[[str], None] | None = None  # modèle installé : index et rapprochement reconstruits
 
     def _specs(self):
         from .neural import MODELS
@@ -222,6 +223,11 @@ class Downloads:
                 state["file"] = name
                 self._fetch(spec, name, f, target, state)
             state.update(running=False, finished=time.time(), error=None, hint="")
+            if self.on_done:
+                try:
+                    self.on_done(spec.id)
+                except Exception:  # noqa: BLE001
+                    pass
         except DownloadError as error:
             state.update(running=False, error=str(error), hint=error.hint, host=error.host)
         except Exception as error:  # noqa: BLE001 - un échec n'arrête jamais l'app
