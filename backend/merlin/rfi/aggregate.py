@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import math
 import re
+from functools import lru_cache
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -89,9 +90,13 @@ KIND_LABEL = {"fabric": "Fabric", "kid": "DIC", "prospectus": "prospectus", "doc
               "alternative": "autre donnée"}
 
 
+_ACCENTS = re.compile(r"[\u0300-\u036f]")
+
+
+@lru_cache(maxsize=50_000)
 def norm(text: str) -> str:
-    text = unicodedata.normalize("NFKD", text or "")
-    text = "".join(c for c in text if not unicodedata.combining(c)).lower()
+    """Texte comparable (sans accents, minuscules, ponctuation réduite) ; mémorisé : les mêmes textes reviennent sans cesse."""
+    text = _ACCENTS.sub("", unicodedata.normalize("NFKD", text or "")).lower()
     return re.sub(r"\s+", " ", re.sub(r"[^\w%€$.,/-]+", " ", text)).strip(" .;:")
 
 
@@ -99,11 +104,16 @@ def _words(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", norm(text))
 
 
-def shingles(text: str, n: int = 3) -> set[str]:
+@lru_cache(maxsize=20_000)
+def _shingles(text: str, n: int) -> frozenset[str]:
     words = _words(text)
     if len(words) < n:
-        return {" ".join(words)} if words else set()
-    return {" ".join(words[i:i + n]) for i in range(len(words) - n + 1)}
+        return frozenset({" ".join(words)} if words else set())
+    return frozenset(" ".join(words[i:i + n]) for i in range(len(words) - n + 1))
+
+
+def shingles(text: str, n: int = 3) -> set[str]:
+    return set(_shingles(text or "", n))
 
 
 def similarity(a: str, b: str) -> float:
@@ -113,7 +123,7 @@ def similarity(a: str, b: str) -> float:
         return 1.0
     if min(len(na), len(nb)) <= SHORT:
         return 0.0
-    sa, sb = shingles(a), shingles(b)
+    sa, sb = _shingles(a, 3), _shingles(b, 3)
     if not sa or not sb:
         return 0.0
     inter = len(sa & sb)

@@ -38,14 +38,25 @@ class ConnectRequest(BaseModel):
     user: str = Field(min_length=1, max_length=200)
     password: str = ""
     api_key: str = ""
+    remember: bool = True
+    auth_url: str = Field(default="", max_length=300)
 
 
 @router.post("/connect")
 def connect(body: ConnectRequest, s: AppState = Depends(state)) -> dict[str, Any]:
-    """Identifiant + mot de passe (ou clé d'API) : gardés en mémoire le temps de la session, jamais écrits sur disque."""
-    if not body.password and not body.api_key:
+    """Identifiant + clé d'API (ou mot de passe). remember : mémorisés sur ce poste, chiffrés par Windows (DPAPI),
+    reconnexion automatique ensuite — plus besoin du .env. La clé n'est jamais renvoyée au navigateur."""
+    if not body.password.strip() and not body.api_key.strip():
         raise bad_request("Mot de passe ou clé d'API manquant.")
-    _guard(service(s).connect, body.user, body.password, body.api_key)
+    if body.auth_url and not body.auth_url.startswith("https://"):
+        raise bad_request("L'adresse du service Qvidian doit commencer par https://")
+    _guard(service(s).connect, body.user, body.password, body.api_key, body.remember, body.auth_url)
+    return service(s).status()
+
+
+@router.post("/credentials/forget")
+def forget_credentials(s: AppState = Depends(state)) -> dict[str, Any]:
+    service(s).forget()
     return service(s).status()
 
 

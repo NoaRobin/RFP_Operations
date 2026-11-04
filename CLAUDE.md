@@ -24,7 +24,7 @@
 - Documents téléchargés et fichiers OMNI : jamais écrasés sans demande explicite (écriture atomique).
 - Qvidian : lecture seule par défaut ; aucune écriture sans prévisualisation et mot de passe d'équipe (`QVIDIAN_WRITE_PASSWORD`, .env seulement) ; jamais de création ni de suppression de contenu. Les écritures ne sont jamais relancées automatiquement. La section front vit sous `/qvidian/*` (`frontend/src/pages/qvidian/`).
 - Modèles de recherche : jamais téléchargés sans clic explicite ; `data/models/` n'est jamais committé. Le sens seul (E5) ne suffit jamais à dire que deux questions de RFI sont la même : toujours vérifier par le concept de l'ontologie.
-- Qvidian : avec `QVIDIAN_USER` + `QVIDIAN_API_KEY` dans `.env`, connexion automatique au démarrage et reconnexion silencieuse (pas de SSO).
+- Qvidian : clé d'API saisie dans l'app (Connexion) et mémorisée sur le poste (`data/qvidian/credentials.json`, chiffrée DPAPI, jamais renvoyée au navigateur ni journalisée), ou `QVIDIAN_USER` + `QVIDIAN_API_KEY` dans `.env` (prioritaire) : connexion automatique au démarrage, reconnexion silencieuse, synchronisation lancée après connexion (pas de SSO).
 - Surlignage jaune des réponses à demander : option du téléchargement ; seules les cases réponse et `xl/styles.xml` changent.
 - Compléteur RFI : un choix (« Choisir », saisie, Copilot) ne recalcule que la case concernée (cache des cases dans `api/rfi.py`) ; « Analyser » repart de zéro (`fresh`).
 - Le référentiel Excel des merge codes (noms de collaborateurs) n'est **jamais** committé : il vit dans `data/mergecodes/`.

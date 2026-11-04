@@ -16,6 +16,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // React à part : sinon il est rangé dans le paquet 3D (1 Mo) et tout ce paquet est chargé au démarrage
+          if (/node_modules\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return 'react'
           if (id.includes('node_modules/three') || id.includes('@react-three')) return 'three'
           if (id.includes('node_modules/gsap') || id.includes('node_modules/lenis')) return 'motion'
         },

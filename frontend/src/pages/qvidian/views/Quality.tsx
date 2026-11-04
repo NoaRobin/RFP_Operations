@@ -1,7 +1,7 @@
 /** Vues Santé (carte des erreurs), Réponses types, Analyse IA, Journal et Connexion de la section Qvidian. */
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { LogIn, LogOut, RotateCcw, Search, ShieldCheck, Upload } from 'lucide-react'
+import { KeyRound, LogIn, LogOut, RotateCcw, Search, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { AiPanel } from '../../../components/qvidian/AiPanel'
 import { ContentList } from '../../../components/qvidian/ContentList'
 import { ErrorMap, type MapFilter } from '../../../components/qvidian/ErrorMap'
@@ -195,18 +195,36 @@ export function JournalView() {
 
 function ConnectionPanel({ status, onChange }: { status: QvidianStatus; onChange: () => void }) {
   const { fail } = useQvidian()
-  const [user, setUser] = useState('')
+  const toast = useToast()
+  const [user, setUser] = useState(status.remembered?.user ?? '')
   const [password, setPassword] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [authUrl, setAuthUrl] = useState('')
+  const [remember, setRemember] = useState(true)
   const [busy, setBusy] = useState(false)
-  const connect = async () => {
+  const [error, setError] = useState<ApiError | null>(null)
+  const connect = async (withKey: boolean) => {
     setBusy(true)
-    try { await api.qvidian.connect(user, password, apiKey); setPassword(''); setApiKey(''); onChange() } catch (e) { fail(e) } finally { setBusy(false) }
+    setError(null)
+    try {
+      const st = await api.qvidian.connect(user, withKey ? '' : password, withKey ? apiKey : '', remember, authUrl)
+      setPassword(''); setApiKey('')
+      toast('success', Q.keyOk(st.user))
+      onChange()
+    } catch (e) {
+      setError(e instanceof ApiError ? e : new ApiError(String(e)))
+    } finally { setBusy(false) }
+  }
+  const forget = async () => {
+    try { await api.qvidian.forget(); toast('success', Q.keyForgotten); onChange() } catch (e) { fail(e) }
   }
   const sso = async () => {
     try { window.location.href = (await api.qvidian.ssoStart()).url } catch (e) { fail(e) }
   }
   const connected = status.mode === 'qvidian' && status.connected
+  const remembered = status.remembered?.remembered
+  const dpapi = status.remembered?.protection === 'dpapi'
+  const fromEnv = status.credentials_from === 'env'
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -220,25 +238,55 @@ function ConnectionPanel({ status, onChange }: { status: QvidianStatus; onChange
           <Button size="sm" variant="ghost" className="ml-auto" onClick={async () => { await api.qvidian.disconnect(); onChange() }} icon={<LogOut size={15} />}>{Q.disconnect}</Button>
         )}
       </div>
-      {status.api_key_configured && (
-        <p className="rounded-2xl border-2 border-fg bg-mint-400/25 p-3 text-sm font-bold">{Q.apiKeyConnected}{status.connect_error ? ` — ${status.connect_error}` : ''}</p>
-      )}
-      {status.mode !== 'off' && !connected && !status.api_key_configured && (
-        <div className="flex flex-wrap items-center gap-3 rounded-2xl border-[2.5px] border-fg bg-sun-400/30 p-3">
-          <Button variant="primary" onClick={sso} disabled={!status.sso} icon={<LogIn size={17} />}>{Q.sso}</Button>
-          <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso_suffix ? Q.ssoHint : Q.ssoNoSuffix}</p>
-          {status.last_sso_error && <p role="alert" className="w-full text-sm font-bold text-danger">{Q.ssoLast} {status.last_sso_error}</p>}
+      {fromEnv && <p className="rounded-2xl border-2 border-fg bg-mint-400/25 p-3 text-sm font-bold">{Q.keyFromEnv}</p>}
+      {remembered && !fromEnv && (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border-2 border-fg bg-mint-400/25 p-3">
+          <KeyRound size={18} aria-hidden="true" />
+          <p className="min-w-[14rem] flex-1 text-sm font-bold">{Q.keyRemembered(status.remembered?.user ?? '', dpapi)}</p>
+          <Button size="sm" variant="ghost" onClick={forget} icon={<Trash2 size={14} />}>{Q.keyForget}</Button>
         </div>
       )}
-      {status.mode !== 'off' && !connected && !status.api_key_configured && (
-        <details className="rounded-2xl border-2 border-fg/20 bg-card p-3" open={status.mode === 'demo'}>
-          <summary className="cursor-pointer font-display font-semibold">{Q.connectOther}</summary>
-          <p className="mt-1 text-xs font-semibold text-fg-3">{Q.connectHint}</p>
-          <form className="mt-3 grid gap-3 sm:grid-cols-4" onSubmit={(e) => { e.preventDefault(); void connect() }}>
+      {status.connect_error && !connected && (
+        <p role="alert" className="rounded-2xl border-2 border-danger bg-bubble-400/20 p-3 text-sm font-bold">{Q.keyError} : {status.connect_error}</p>
+      )}
+      {status.mode !== 'off' && !connected && (
+        <form
+          className="flex flex-col gap-3 rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5 shadow-[4px_4px_0_0_var(--color-fg)]"
+          onSubmit={(e) => { e.preventDefault(); void connect(true) }}
+        >
+          <div>
+            <h2 className="flex items-center gap-2 text-lg"><KeyRound size={18} aria-hidden="true" />{Q.keyTitle}</h2>
+            <p className="text-sm font-semibold text-fg-2">{Q.keyLead}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={Q.keyUser}>{({ id }) => <TextInput id={id} autoComplete="username" value={user} onChange={(e) => setUser(e.target.value)} />}</Field>
+            <Field label={Q.keyField}>{({ id }) => <TextInput id={id} type="password" autoComplete="off" spellCheck={false} value={apiKey} onChange={(e) => setApiKey(e.target.value)} />}</Field>
+          </div>
+          <Switch checked={remember} onChange={setRemember} label={Q.keyRemember} hint={Q.keyRememberHint(true)} />
+          <details className="text-sm">
+            <summary className="cursor-pointer font-semibold text-fg-3">{Q.keyAdvanced}</summary>
+            <div className="mt-2"><Field label="QvidianAuthentication.asmx">{({ id }) => <TextInput id={id} placeholder={status.auth_url} value={authUrl} onChange={(e) => setAuthUrl(e.target.value)} />}</Field></div>
+          </details>
+          {error && (
+            <div role="alert" className="rounded-xl border-2 border-danger bg-bubble-400/20 p-3 text-sm font-bold">
+              {error.message}{error.hint ? <span className="mt-1 block font-semibold text-fg-2">{error.hint}</span> : null}
+            </div>
+          )}
+          <div><Button type="submit" variant="primary" disabled={!user.trim() || !apiKey.trim() || busy} loading={busy} icon={<LogIn size={16} />}>{Q.keyConnect}</Button></div>
+        </form>
+      )}
+      {status.mode !== 'off' && !connected && (
+        <details className="rounded-2xl border-2 border-fg/20 bg-card p-3">
+          <summary className="cursor-pointer font-display font-semibold">{Q.otherWays}</summary>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Button onClick={sso} disabled={!status.sso} icon={<LogIn size={17} />}>{Q.sso}</Button>
+            <p className="min-w-[16rem] flex-1 text-sm font-semibold text-fg-2">{status.sso_suffix ? Q.ssoHint : Q.ssoNoSuffix}</p>
+            {status.last_sso_error && <p role="alert" className="w-full text-sm font-bold text-danger">{Q.ssoLast} {status.last_sso_error}</p>}
+          </div>
+          <form className="mt-3 grid gap-3 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); void connect(false) }}>
             <Field label={Q.user}>{({ id }) => <TextInput id={id} autoComplete="username" value={user} onChange={(e) => setUser(e.target.value)} />}</Field>
             <Field label={Q.password}>{({ id }) => <TextInput id={id} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />}</Field>
-            <Field label={Q.apiKey}>{({ id }) => <TextInput id={id} type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />}</Field>
-            <div className="flex items-end"><Button type="submit" variant="primary" disabled={!user || (!password && !apiKey) || busy} loading={busy} icon={<LogIn size={16} />}>{Q.connect}</Button></div>
+            <div className="flex items-end"><Button type="submit" disabled={!user.trim() || !password || busy} loading={busy} icon={<LogIn size={16} />}>{Q.connect}</Button></div>
           </form>
         </details>
       )}

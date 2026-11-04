@@ -29,8 +29,13 @@ GENERIC_FUND_WORDS = {"fonds", "fund", "funds", "sicav", "fcp", "opcvm", "ucits"
                       "du", "la", "le", "les", "et", "and", "isr", "esg", "sri", "flexible", "patrimoine", "croissance", "income"}
 
 
+@lru_cache(maxsize=50_000)
+def _n_cached(text: str) -> str:
+    return " " + " ".join(re.findall(r"[a-z0-9']+", fold(text).replace("’", "'"))) + " "
+
+
 def _n(text: Any) -> str:
-    return " " + " ".join(re.findall(r"[a-z0-9']+", fold(str(text or "")).replace("’", "'"))) + " "
+    return _n_cached(str(text or ""))
 
 
 @lru_cache
@@ -75,8 +80,8 @@ class FundNames:
                     alias.append(t)
             self.aliases[n] = alias
 
-    def find(self, text: str) -> list[str]:
-        t = _n(text)
+    def find(self, text: str, normalized: str | None = None) -> list[str]:
+        t = normalized if normalized is not None else _n(text)
         out = []
         for name, aliases in self.aliases.items():
             if any(f" {a} " in t for a in aliases):
@@ -106,7 +111,7 @@ def classify(title: str, text: str, folder_path: str = "", funds: FundNames | No
 
     # Fonds cités (dossier d'abord, puis titre, puis texte) — jamais deviné
     if funds is not None:
-        in_folder, in_head, in_body = funds.find(folder_path), funds.find(f"{title} {question}"), funds.find((text or "")[:3000])
+        in_folder, in_head, in_body = funds.find(folder_path), funds.find("", head), funds.find("", body)
         named = list(dict.fromkeys(in_folder + in_head + in_body))
         if named:
             level.funds = named[:3]

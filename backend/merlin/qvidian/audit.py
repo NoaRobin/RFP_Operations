@@ -41,8 +41,12 @@ EN_WORDS = set("the and is are of to for in on with by our we which that this be
 def _rules(path: str, mtime: float) -> dict[str, Any]:
     raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     for group in ("code_informatique", "a_completer", "termes_depasses"):
+        flags = re.I | re.M if group != "code_informatique" else re.M
         for rule in raw.get(group) or []:
-            rule["re"] = re.compile(rule["motif"], re.I | re.M if group != "code_informatique" else re.M)
+            rule["re"] = re.compile(rule["motif"], flags)
+        motifs = [f"(?:{r['motif']})" for r in raw.get(group) or []]
+        # Une seule passe pour la plupart des textes (sains) : les règles une à une seulement si l'une d'elles peut répondre
+        raw[f"_{group}_any"] = re.compile("|".join(motifs), flags) if motifs else None
     return raw
 
 
@@ -67,6 +71,11 @@ def language_of(text: str) -> str | None:
     return None
 
 
+def _maybe(cfg: dict[str, Any], group: str, text: str) -> bool:
+    combined = cfg.get(f"_{group}_any")
+    return combined is None or bool(combined.search(text))
+
+
 def check(c: dict[str, Any], today: date, cfg: dict[str, Any]) -> list[dict[str, Any]]:
     """Constats d'un contenu (hors doublons, qui demandent de comparer les contenus entre eux)."""
     out: list[dict[str, Any]] = []
@@ -79,19 +88,19 @@ def check(c: dict[str, Any], today: date, cfg: dict[str, Any]) -> list[dict[str,
                     "excerpt": excerpt})
 
     seen: set[str] = set()
-    for rule in cfg.get("code_informatique") or []:
+    for rule in (cfg.get("code_informatique") or []) if _maybe(cfg, "code_informatique", visible) else []:
         m = rule["re"].search(visible)
         if m and rule["raison"] not in seen:
             seen.add(rule["raison"])
             add("code", rule["raison"], _excerpt(visible, m))
     if not text.strip() and (c.get("type") or "").lower() not in {"slide", "file", "fichier"}:
         add("provisoire", "texte vide (contenu Q&A sans réponse lisible)")
-    for rule in cfg.get("a_completer") or []:
+    for rule in (cfg.get("a_completer") or []) if _maybe(cfg, "a_completer", text) else []:
         m = rule["re"].search(text)
         if m:
             add("provisoire", rule["raison"], _excerpt(text, m))
             break
-    for rule in cfg.get("termes_depasses") or []:
+    for rule in (cfg.get("termes_depasses") or []) if _maybe(cfg, "termes_depasses", visible) else []:
         m = rule["re"].search(visible)
         if m:
             add("depasse", rule["raison"], _excerpt(visible, m))
@@ -133,9 +142,18 @@ def duplicates(contents: list[dict[str, Any]], threshold: float = 0.85, common: 
                 for b in ids[i + 1:]:
                     pairs[(a, b)] = pairs.get((a, b), 0) + 1
     by_id = {c["id"]: c for c in contents}
+    norms = {cid: norm(by_id[cid].get("text") or "") for cid in sh}
+
+    def sim(a: int, b: int) -> float:  # même calcul que rfi.aggregate.similarity, sur les suites de mots déjà calculées
+        if norms[a] == norms[b]:
+            return 1.0
+        sa, sb = sh[a], sh[b]
+        inter = len(sa & sb)
+        return max(inter / len(sa | sb), inter / min(len(sa), len(sb)) * 0.9) if sa and sb else 0.0
+
     out: dict[int, list[int]] = {}
     for (a, b), n in pairs.items():
-        if n >= 3 and similarity(by_id[a]["text"], by_id[b]["text"]) >= threshold:
+        if n >= 3 and sim(a, b) >= threshold:
             out.setdefault(a, []).append(b)
             out.setdefault(b, []).append(a)
     return out

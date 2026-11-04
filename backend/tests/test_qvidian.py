@@ -388,3 +388,48 @@ def test_api_key_in_env_reconnects_without_sso():
     assert c.call("HasPermissions", Permission="x") == {"ok": True} and logins == [1] and calls[-1] == "TOKEN-1"
     c.binding = None
     assert c.call("HasPermissions", Permission="x") == {"ok": True} and len(logins) == 2
+
+
+def test_api_key_typed_in_the_app_is_remembered_and_reused(tmp_path, monkeypatch):
+    """Clé saisie dans l'app (sans .env) : espaces du copier-coller retirés, mémorisée sur le poste, jamais renvoyée,
+    reconnexion automatique au lancement suivant ; « Oublier » l'efface."""
+    from merlin.config import QvidianSettings
+    from merlin.qvidian.credentials import CredentialStore
+    from merlin.qvidian.service import QvidianService
+
+    transport = FakeTransport()
+    url = "https://login.example.invalid/QvidianAuthentication.asmx"
+    monkeypatch.setattr(QvidianService, "_new_client", lambda self, auth_url=None: QvidianClient(auth_url or url, transport=transport))
+    monkeypatch.setattr(QvidianService, "start_sync", lambda self, kind="auto": {"running": False})
+    svc = QvidianService(QvidianSettings(auth_url=url), tmp_path)
+    assert svc.mode == "demo" and not svc.status()["remembered"]["remembered"]
+    svc.connect("  demo.user@example.invalid \n", api_key=" ABCD-1234\r\n-EFGH ")
+    sent = next(x for _, op, x in transport.sent if op == "ConnectByAPIKey")
+    assert "<apiKey>ABCD-1234-EFGH</apiKey>" in sent and "<userName>demo.user@example.invalid</userName>" in sent
+    st = svc.status()
+    assert st["connected"] and st["mode"] == "qvidian" and st["remembered"]["user"] == "demo.user@example.invalid"
+    assert "ABCD-1234-EFGH" not in str(st) and "ABCD-1234-EFGH" not in (tmp_path / "qvidian" / "credentials.json").read_text()
+
+    again = QvidianService(QvidianSettings(auth_url=url), tmp_path)  # relance de l'app
+    assert again.mode == "qvidian" and again.status()["credentials_from"] == "app"
+    again.warmup()
+    assert again.real is not None and again.real.connected and again.connected_by == "api_key"
+    again.forget()
+    assert not CredentialStore(tmp_path / "qvidian" / "credentials.json").public()["remembered"] and again.mode == "demo"
+
+
+def test_refused_api_key_says_what_to_check(tmp_path, monkeypatch):
+    from merlin.config import QvidianSettings
+    from merlin.qvidian.service import QvidianService
+
+    class Refusing(FakeTransport):
+        def post(self, url, body, action):
+            return SoapReply(200, envelope(f'<ConnectByAPIKeyResponse xmlns="{NS}"><ConnectByAPIKeyResult /></ConnectByAPIKeyResponse>'))
+
+    url = "https://login.example.invalid/QvidianAuthentication.asmx"
+    monkeypatch.setattr(QvidianService, "_new_client", lambda self, auth_url=None: QvidianClient(url, transport=Refusing()))
+    svc = QvidianService(QvidianSettings(auth_url=url), tmp_path)
+    with pytest.raises(QvidianError) as err:
+        svc.connect("demo.user", api_key="WRONG")
+    assert "Clé d'API refusée" in err.value.message and "identifiant" in err.value.hint
+    assert not (tmp_path / "qvidian" / "credentials.json").exists()  # une clé refusée n'est jamais mémorisée

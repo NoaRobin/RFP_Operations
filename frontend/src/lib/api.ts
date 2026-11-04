@@ -115,7 +115,9 @@ export const api = {
 
   qvidian: {
     status: () => request<QvidianStatus>('/qvidian/status'),
-    connect: (user: string, password: string, apiKey: string) => request<QvidianStatus>('/qvidian/connect', json({ user, password, api_key: apiKey })),
+    connect: (user: string, password: string, apiKey: string, remember = true, authUrl = '') =>
+      request<QvidianStatus>('/qvidian/connect', json({ user, password, api_key: apiKey, remember, auth_url: authUrl })),
+    forget: () => request<QvidianStatus>('/qvidian/credentials/forget', { method: 'POST' }),
     disconnect: () => request<QvidianStatus>('/qvidian/disconnect', { method: 'POST' }),
     ssoStart: () => request<{ url: string }>('/qvidian/sso/start'),
     sync: (kind: 'auto' | 'full' | 'delta' = 'auto') => request<QvidianStatus['sync']>(`/qvidian/sync?kind=${kind}`, { method: 'POST' }),

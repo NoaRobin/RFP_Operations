@@ -55,13 +55,12 @@ export function QvidianProvider({ children }: { children: ReactNode }) {
   }, [toast])
 
   const reload = useCallback(async () => {
-    try {
-      const [s, a, j] = await Promise.all([api.qvidian.status(), api.qvidian.audit(depth), api.qvidian.journal()])
-      Object.assign(memo, { status: s, audit: a, journal: j })
-      setStatus(s); setAudit(a); setJournal(j); setError(null)
-    } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError(String(e)))
-    }
+    // Chacun s'affiche dès qu'il arrive : l'état de connexion (instantané) n'attend jamais la carte des erreurs
+    const failed = (e: unknown) => setError(e instanceof ApiError ? e : new ApiError(String(e)))
+    const s = api.qvidian.status().then((v) => { memo.status = v; setStatus(v); setError(null) }, failed)
+    const a = api.qvidian.audit(depth).then((v) => { memo.audit = v; setAudit(v) }, failed)
+    const j = api.qvidian.journal().then((v) => { memo.journal = v; setJournal(v) }, () => undefined)
+    await Promise.all([s, a, j])
   }, [depth])
 
   useEffect(() => { void reload() }, [reload])

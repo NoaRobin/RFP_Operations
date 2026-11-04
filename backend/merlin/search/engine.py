@@ -125,6 +125,12 @@ class HybridIndex:
             self.chunk_doc = owners
         self.build_seconds = round(time.time() - started, 2)
 
+    def __getstate__(self) -> dict:
+        """Index enregistrable sur disque (rechargé en ~1 s au lieu d'être reconstruit) : sans les sessions ONNX, rattachées après."""
+        state = self.__dict__.copy()
+        state["encoder"], state["reranker"] = None, None
+        return state
+
     # ------------------------------------------------------------------ question
     def analyse(self, text: str) -> QueryInfo:
         from ..rfi.lexicon import question_language, to_pivot

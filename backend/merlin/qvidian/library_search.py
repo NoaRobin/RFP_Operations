@@ -10,6 +10,7 @@ nettement repoussé. Les versions d'un même texte sont regroupées (une famille
 from __future__ import annotations
 
 import math
+import pickle
 import threading
 import time
 from dataclasses import dataclass
@@ -26,6 +27,7 @@ from .audit import audit
 from .levels import SCOPE_LABELS, THEME_LABELS, FundNames, Level, classify, fund_folders, query_level
 from .snapshot import Snapshot
 
+ENGINE_VERSION = 1  # à incrémenter quand la structure de l'index change (les index enregistrés sont alors reconstruits)
 POPULARITY, RECENCY, CHOSEN = 0.18, 0.08, 0.35  # CHOSEN : choisi dans d'anciens RFI (le signal le plus fort)
 READY: dict[str, "LibrarySearch"] = {}  # moteur prêt par instantané (chemin) : lu par suggest.py sans jamais rien construire
 FAMILY_SIMILARITY = 0.55
@@ -68,7 +70,8 @@ def _expired(c: dict[str, Any], today: date) -> bool:
 class LibrarySearch:
     def __init__(self, snapshot: Snapshot, models_root: Path | None = None, extra_funds: list[str] | None = None,
                  encoder: neural.Encoder | None = None, reranker: neural.Reranker | None = None,
-                 today: date | None = None, half_life: int = 365, progress=None, history: dict[int, dict[str, Any]] | None = None):
+                 today: date | None = None, half_life: int = 365, progress=None, history: dict[int, dict[str, Any]] | None = None,
+                 report: dict[str, Any] | None = None):
         started = time.time()
         self.history = history or {}
         self.max_files = max((h["files"] for h in self.history.values()), default=0)
@@ -80,7 +83,7 @@ class LibrarySearch:
         self.funds = FundNames(fund_folders(paths) + list(extra_funds or []))
         self.levels: list[Level] = [classify(c["title"], c.get("text") or "", c.get("folder_path") or "", self.funds, c.get("question") or "")
                                     for c in self.rows]
-        report = audit(self.rows, today=self.today)
+        report = report if report is not None else audit(self.rows, today=self.today)  # carte des erreurs du service : jamais recalculée deux fois
         self.issues = {it["id"]: it["issues"] for it in report["items"]}
         self.max_uses = max((c.get("times_used") or 0 for c in self.rows), default=0)
         docs = [Doc(c["id"], c["title"] or "", c.get("question") or "", c.get("text") or "",
@@ -221,12 +224,13 @@ class LibrarySearch:
         out: list[dict[str, Any]] = []
         heads: list[tuple[int, dict[str, Any]]] = []
         top = ranked[0][0] if ranked and ranked[0][0] > 0 else 1.0
-        for final, i, cand, why in ranked:
+        # Versions regroupées parmi les premiers seulement : au-delà, rien n'est affiché (évite de comparer toute la bibliothèque)
+        for final, i, cand, why in ranked[: max(k * 4, 40)]:
             c = self.rows[i]
             text = c.get("text") or ""
-            family = next((h for j, h in heads if (self.rows[j]["title"] or "").strip().lower() == (c["title"] or "").strip().lower()
-                           and similarity(self.rows[j].get("text") or "", text) >= FAMILY_SIMILARITY
-                           or similarity(self.rows[j].get("text") or "", text) >= 0.8), None)
+            title = (c["title"] or "").strip().lower()
+            family = next((h for j, h in heads if (sim := similarity(self.rows[j].get("text") or "", text)) >= 0.8
+                           or (sim >= FAMILY_SIMILARITY and (self.rows[j]["title"] or "").strip().lower() == title)), None)
             if family is not None:
                 family["variants"].append({"id": c["id"], "title": c["title"], "times_used": c.get("times_used") or 0,
                                            "last_used": c.get("last_used"), "modified": c.get("modified"), "expired": _expired(c, self.today)})
@@ -342,6 +346,7 @@ class SearchManager:
         self.downloads = neural.Downloads(models_root)
         self.extra_funds: list[str] = []
         self.history_for = lambda snapshot: {}  # fourni par le service : liens anciens RFI ↔ contenus de cet instantané
+        self.report_for = lambda snapshot: None  # fourni par le service : carte des erreurs déjà calculée (jamais refaite)
         self.history_signature = lambda snapshot: None
 
     # ------------------------------------------------------------------ modèles
@@ -389,6 +394,51 @@ class SearchManager:
     def full_signature(self, snapshot: Snapshot) -> tuple:
         return self.signature(snapshot) + (self.history_signature(snapshot),)
 
+    # ------------------------------------------------------------------ enregistrement sur disque
+    @staticmethod
+    def _disk(snapshot: Snapshot) -> Path:
+        return snapshot.path.with_name(f"{snapshot.path.stem}.engine.pkl")
+
+    def _load(self, snapshot: Snapshot) -> tuple[tuple, "LibrarySearch"] | None:
+        """Index enregistré par l'app elle-même (data/qvidian/, jamais un fichier venu d'ailleurs) : ~1 s au lieu d'une reconstruction."""
+        path = self._disk(snapshot)
+        if not path.exists():
+            return None
+        try:
+            with path.open("rb") as f:
+                stored = pickle.load(f)  # noqa: S301 - fichier écrit par l'app dans son propre dossier de données
+            if stored.get("version") != ENGINE_VERSION:
+                return None
+            return stored["sig"], stored["engine"]
+        except Exception:  # noqa: BLE001 - fichier abîmé ou d'une ancienne version : reconstruit
+            return None
+
+    def _save(self, snapshot: Snapshot, sig: tuple, engine: "LibrarySearch") -> None:
+        path = self._disk(snapshot)
+        try:
+            tmp = path.with_suffix(".tmp")
+            with tmp.open("wb") as f:
+                pickle.dump({"version": ENGINE_VERSION, "sig": sig, "engine": engine}, f, protocol=pickle.HIGHEST_PROTOCOL)
+            tmp.replace(path)
+        except Exception:  # noqa: BLE001 - disque plein, droits : l'index reste en mémoire
+            pass
+
+    def _attach(self, snapshot: Snapshot, engine: "LibrarySearch", sig: tuple) -> None:
+        """Index rechargé du disque : modèles ONNX rattachés en arrière-plan (la recherche lexicale répond déjà)."""
+        key = str(snapshot.path)
+        self._building[key] = {"running": True, "message": "Chargement des modèles", "done": 0, "total": 0, "started": time.time(), "sig": sig}
+
+        def run() -> None:
+            try:
+                engine.index.encoder = self._encoder() if engine.engine.get("encoder") else None
+                engine.index.reranker = self._reranker() if engine.engine.get("reranker") else None
+                self._engines[key] = (sig, engine)
+                self._building[key].update(running=False, message="Prêt", seconds=round(time.time() - self._building[key]["started"], 1))
+            except Exception as error:  # noqa: BLE001
+                self._building[key].update(running=False, error=str(error)[:300])
+
+        threading.Thread(target=run, name="qvidian-models", daemon=True).start()
+
     def get(self, snapshot: Snapshot, wait: bool = True) -> LibrarySearch:
         key = str(snapshot.path)
         sig = self.full_signature(snapshot) + (self._model_signature(),)
@@ -398,27 +448,34 @@ class SearchManager:
         building = self._building.get(key)
         if current and building and building.get("running"):
             return current[1]  # un index plus complet se construit déjà
-        if current and not wait:
+        if current:
             self._start_build(snapshot, sig)
             return current[1]
-        # premier moteur : lexical tout de suite (quelques secondes au pire), sémantique en arrière-plan
-        if not current:
-            # Rien n'attend le chargement des modèles (quelques secondes) : index lexical immédiat, modèles en arrière-plan
-            with self._lock:
-                current = self._engines.get(key)
-                if current:
-                    return current[1]
-                engine = LibrarySearch(snapshot, extra_funds=self.extra_funds, half_life=self.half_life, history=self.history_for(snapshot))
-                lexical_sig = self.full_signature(snapshot) + (("lexical",),)
-                self._engines[key] = (lexical_sig, engine)
+        with self._lock:
+            current = self._engines.get(key)
+            if current:
+                return current[1]
+            # 1. index enregistré : servi tout de suite (même s'il date un peu), mis à jour en arrière-plan
+            disk = self._load(snapshot)
+            if disk is not None:
+                stored_sig, engine = disk
+                self._engines[key] = (("disque",) + stored_sig, engine)
                 READY[key] = engine
-            if neural.available() and any(neural.installed(self.models_root, m) for m in neural.MODELS):
-                self._start_build(snapshot, sig)
             else:
-                self._engines[key] = (sig, engine)
-            return engine
-        self._start_build(snapshot, sig)
-        return current[1]
+                # 2. premier lancement : index lexical (quelques secondes), modèles en arrière-plan
+                engine = LibrarySearch(snapshot, extra_funds=self.extra_funds, half_life=self.half_life,
+                                       history=self.history_for(snapshot), report=self.report_for(snapshot))
+                self._engines[key] = (self.full_signature(snapshot) + (("lexical",),), engine)
+                READY[key] = engine
+                stored_sig = None
+        if disk is not None and stored_sig == sig:
+            self._attach(snapshot, engine, sig)
+        elif disk is None and not (neural.available() and any(neural.installed(self.models_root, m) for m in neural.MODELS)):
+            self._engines[key] = (sig, engine)
+            self._save(snapshot, sig, engine)
+        else:
+            self._start_build(snapshot, sig)
+        return engine
 
     def _model_signature(self) -> tuple:
         """Modèles installés (sans les charger : la signature ne doit jamais faire attendre une requête)."""
@@ -445,9 +502,10 @@ class SearchManager:
             try:
                 engine = LibrarySearch(snapshot, extra_funds=self.extra_funds, half_life=self.half_life,
                                        encoder=self._encoder(), reranker=self._reranker(), progress=progress,
-                                       history=self.history_for(snapshot))
+                                       history=self.history_for(snapshot), report=self.report_for(snapshot))
                 self._engines[key] = (sig, engine)
                 READY[key] = engine
+                self._save(snapshot, sig, engine)
                 self._building[key].update(running=False, message="Prêt", seconds=round(time.time() - self._building[key]["started"], 1))
             except Exception as error:  # noqa: BLE001 - l'index lexical reste utilisable
                 self._building[key].update(running=False, error=str(error)[:300])

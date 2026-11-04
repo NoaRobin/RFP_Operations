@@ -39,7 +39,10 @@ _LIGATURES = str.maketrans({"œ": "oe", "æ": "ae", "’": "'", "‘": "'", "`":
 def fold(text: str) -> str:
     """Minuscules, sans accents, ligatures dépliées."""
     value = unicodedata.normalize("NFKD", (text or "").translate(_LIGATURES))
-    return "".join(c for c in value if not unicodedata.combining(c)).lower()
+    return _COMBINING.sub("", value).lower()
+
+
+_COMBINING = re.compile(r"[\u0300-\u036f\u1ab0-\u1aff\u20d0-\u20ff]")
 
 
 WORD = re.compile(r"[a-z0-9]+(?:[.\-][a-z0-9]+)*")

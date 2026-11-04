@@ -594,6 +594,8 @@ export interface QvidianStatus {
   connected_by?: string
   api_key_configured?: boolean
   connect_error?: string
+  credentials_from?: '' | 'env' | 'app'
+  remembered?: { remembered: boolean; user: string; protection: '' | 'dpapi' | 'local' }
 }
 
 export interface QvidianIssue { category: string; label: string; severity: 'haute' | 'moyenne' | 'basse'; message: string; excerpt: string; fix?: string; others?: number[] }

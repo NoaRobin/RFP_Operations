@@ -7,6 +7,7 @@ Le jeton Qvidian reste en mémoire (jamais écrit sur disque).
 from __future__ import annotations
 
 import base64
+import json
 import re
 import threading
 import time
@@ -19,6 +20,7 @@ from .ai import FindingStore
 from .audit import audit
 from .bulk import Journal, Plan, WriteGuard, apply, make_plan, undo_plan
 from .client import QvidianClient, QvidianError
+from .credentials import CredentialStore
 from .demo import DemoQvidian
 from .history import History, build_links, demo_precedents
 from .library_search import SearchManager
@@ -31,6 +33,8 @@ class QvidianService:
         self.root = data_dir / "qvidian"
         self.root.mkdir(parents=True, exist_ok=True)
         self.guard = WriteGuard(settings.write_password)
+        self.credentials = CredentialStore(self.root / "credentials.json")
+        self._stored = self.credentials.load()  # clé d'API saisie une fois dans l'app, chiffrée sur le poste (DPAPI)
         self.journal = Journal(self.root / "journal.jsonl")
         self.ai = FindingStore(self.root / "ai_findings.json")
         self.demo = DemoQvidian()
@@ -40,6 +44,7 @@ class QvidianService:
         self.history_state: dict[str, Any] = {"running": False, "error": None}
         self.search.history_for = self.history_for
         self.search.history_signature = self._history_mtime
+        self.search.report_for = lambda snap: self.audit() if snap.path == self.snapshot().path else None
         self.real: QvidianClient | None = None
         self.plans: dict[str, Plan] = {}
         self.sync_state: dict[str, Any] = {"running": False, "message": "", "done": 0, "error": None, "result": None}
@@ -77,7 +82,16 @@ class QvidianService:
             return "off"
         if self.settings.mode == "demo":
             return "demo"
-        return "qvidian" if (self.real is not None or self.settings.credentials) else "demo"
+        return "qvidian" if (self.real is not None or self._creds()) else "demo"
+
+    def _creds(self) -> dict[str, str] | None:
+        """Identifiants de connexion automatique : .env d'abord, sinon ceux mémorisés depuis l'app."""
+        s = self.settings
+        if s.credentials:
+            return {"user": s.user, "api_key": s.api_key, "password": s.password, "auth_url": s.auth_url, "from": "env"}
+        if self._stored and self._stored.get("user") and (self._stored.get("api_key") or self._stored.get("password")):
+            return {**self._stored, "auth_url": self._stored.get("auth_url") or s.auth_url, "from": "app"}
+        return None
 
     def client(self):
         if self.mode == "demo":
@@ -91,12 +105,12 @@ class QvidianService:
     def _connect_from_settings(self) -> None:
         """Clé d'API (ou mot de passe) du .env : prioritaire sur le SSO, et reconnexion automatique quand la session
         expire — on ne se reconnecte jamais à la main tant que l'app tourne."""
-        s = self.settings
-        client = self.real or self._new_client()
-        if s.api_key:
-            login = lambda: client.connect_api_key(s.user, s.api_key)  # noqa: E731
-        elif s.password:
-            login = lambda: client.connect(s.user, s.password)  # noqa: E731
+        s = self._creds() or {}
+        client = self.real or self._new_client(s.get("auth_url"))
+        if s.get("api_key"):
+            login = lambda: client.connect_api_key(s["user"], s["api_key"])  # noqa: E731
+        elif s.get("password"):
+            login = lambda: client.connect(s["user"], s["password"])  # noqa: E731
         else:
             raise QvidianError("config", "Pas de connexion Qvidian (ou session expirée)",
                                "Connectez-vous depuis la fenêtre Qvidian (bouton SSO), ou mettez QVIDIAN_USER et QVIDIAN_API_KEY dans .env.")
@@ -104,14 +118,14 @@ class QvidianService:
         client.reauth = login
         self.real = client
         self.connect_error = ""
-        self.connected_by = "api_key" if s.api_key else "password"
+        self.connected_by = "api_key" if s.get("api_key") else "password"
         self._start_keepalive()
 
     def warmup(self) -> None:
         """Au démarrage de l'app : connexion par la clé d'API du .env, instantané, liens anciens RFI et index de recherche."""
         def run() -> None:
             try:
-                if self.mode == "qvidian" and self.settings.credentials and (self.real is None or not self.real.connected):
+                if self.mode == "qvidian" and self._creds() and (self.real is None or not self.real.connected):
                     self._connect_from_settings()
             except QvidianError as error:
                 self.connect_error = error.message
@@ -125,20 +139,46 @@ class QvidianService:
 
         threading.Thread(target=run, name="qvidian-warmup", daemon=True).start()
 
-    def _new_client(self) -> QvidianClient:
-        client = QvidianClient(self.settings.auth_url)
+    def _new_client(self, auth_url: str | None = None) -> QvidianClient:
+        client = QvidianClient(auth_url or self.settings.auth_url)
         if hasattr(client, "configure"):
             client.configure(self.settings.cache_seconds, self.settings.max_calls_per_second)
         return client
 
-    def connect(self, user: str, password: str = "", api_key: str = "") -> dict[str, Any]:
-        client = self._new_client()
-        binding = client.connect_api_key(user, api_key) if api_key else client.connect(user, password)
+    def connect(self, user: str, password: str = "", api_key: str = "", remember: bool = True, auth_url: str = "") -> dict[str, Any]:
+        """Connexion depuis l'app. Espaces et retours à la ligne d'un copier-coller retirés (cause n° 1 d'un refus).
+        remember : la clé est mémorisée sur ce poste (chiffrée DPAPI) et l'app se reconnecte seule ensuite."""
+        user, password, api_key, auth_url = user.strip(), password.strip(), "".join(api_key.split()), auth_url.strip()
+        client = self._new_client(auth_url or None)
+        try:
+            binding = client.connect_api_key(user, api_key) if api_key else client.connect(user, password)
+        except QvidianError as error:
+            if error.code == "auth" and api_key:
+                raise QvidianError("auth", f"Clé d'API refusée par Qvidian : {error.message}",
+                                   "Vérifiez : 1) l'identifiant est celui du compte Qvidian auquel la clé a été attribuée (souvent "
+                                   "l'adresse e-mail professionnelle) ; 2) la clé est copiée en entier ; 3) l'adresse du service "
+                                   f"({client.auth_url}) est bien celle de votre abonnement.") from error
+            raise
         client.reauth = (lambda: client.connect_api_key(user, api_key)) if api_key else (lambda: client.connect(user, password))
         self.real = client
         self.connected_by = "api_key" if api_key else "password"
+        self.connect_error = ""
+        if remember:
+            self.credentials.save(user, api_key=api_key, password=password, auth_url=auth_url)
+            self._stored = self.credentials.load()
         self._start_keepalive()
+        try:  # bibliothèque vide : première synchronisation lancée tout de suite (incrémentale ensuite)
+            self.start_sync("auto")
+        except QvidianError:
+            pass
         return {"user": binding.user}
+
+    def forget(self) -> None:
+        """Oublie la clé mémorisée sur ce poste (et se déconnecte si la session venait d'elle)."""
+        self.credentials.forget()
+        self._stored = None
+        if not self.settings.credentials:
+            self.disconnect()
 
     def sso_url(self, callback: str) -> str:
         """Le SubscriberSuffix est facultatif : l'exemple SSOQvidianWebServices (Default.aspx.cs) redirige avec le seul
@@ -353,7 +393,20 @@ class QvidianService:
                (today or date.today()).isoformat())
         cached = self._audit_cache.get(key)
         if cached is None:
-            cached = audit(snap.all(), today=today, ai=self.ai.load(), depth=depth)
+            disk = snap.path.with_name(f"{snap.path.stem}.audit-{depth}.json")
+            try:  # au redémarrage de l'app : la carte enregistrée sert si rien n'a changé
+                stored = json.loads(disk.read_text(encoding="utf-8")) if disk.exists() else None
+                cached = stored["audit"] if stored and stored.get("key") == list(key) else None
+            except (OSError, ValueError, KeyError):
+                cached = None
+            if cached is None:
+                cached = audit(snap.all(), today=today, ai=self.ai.load(), depth=depth)
+                try:
+                    tmp = disk.with_suffix(".tmp")
+                    tmp.write_text(json.dumps({"key": list(key), "audit": cached}, ensure_ascii=False), encoding="utf-8")
+                    tmp.replace(disk)
+                except OSError:
+                    pass
             self._audit_cache = {k: v for k, v in self._audit_cache.items() if k[0] != key[0] or k[5] != depth}
             self._audit_cache[key] = cached
         return cached
@@ -363,8 +416,9 @@ class QvidianService:
         meta = self.snapshot(mode).meta() if mode != "off" else {}
         return {"mode": mode, "connected": mode == "demo" or (self.real is not None and self.real.connected),
                 "user": (self.real.binding.user if self.real and self.real.binding else ("démo" if mode == "demo" else "")),
-                "auth_url": self.settings.auth_url, "sso": not self.settings.api_key, "connected_by": self.connected_by,
-                "api_key_configured": bool(self.settings.api_key and self.settings.user), "connect_error": self.connect_error, "last_sso_error": self.last_sso_error, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": self.settings.credentials,
+                "auth_url": self.settings.auth_url, "sso": True, "connected_by": self.connected_by,
+                "api_key_configured": bool((self._creds() or {}).get("api_key")),
+                "credentials_from": (self._creds() or {}).get("from", ""), "remembered": self.credentials.public(), "connect_error": self.connect_error, "last_sso_error": self.last_sso_error, "sso_suffix": bool(self.settings.subscriber_suffix), "credentials": bool(self._creds()),
                 "write_enabled": self.guard.configured, "locked": self.guard.locked, "snapshot": meta, "sync": self.sync_state,
                 "half_life_days": self.settings.half_life_days, "extended_fields": getattr(self.real, "extended_fields", True)}
 

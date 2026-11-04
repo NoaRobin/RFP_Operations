@@ -119,7 +119,7 @@ function StatusBar() {
       </span>
       {status.sync.error && <span role="alert" className="text-xs font-bold text-danger">{status.sync.error.message}</span>}
       <span className="ml-auto flex gap-2">
-        {!connected && status.mode !== 'off' && status.mode !== 'demo' && !status.api_key_configured && <Button size="sm" variant="primary" onClick={sso} icon={<LogIn size={14} />}>{Q.sso}</Button>}
+        {!connected && status.mode !== 'off' && status.mode !== 'demo' && !status.credentials && <Button size="sm" variant="primary" onClick={sso} icon={<LogIn size={14} />}>{Q.sso}</Button>}
         {status.connect_error && <span role="alert" className="text-xs font-bold text-danger">{status.connect_error}</span>}
         <Button size="sm" onClick={() => sync('auto')} loading={status.sync.running} disabled={status.sync.running || status.mode === 'off'} icon={<RefreshCw size={14} />}>
           {status.sync.running ? `${Q.syncing} ${status.sync.message}` : Q.syncAuto}

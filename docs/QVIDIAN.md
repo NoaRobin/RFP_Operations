@@ -350,3 +350,24 @@ code ; l'écran « Modifier » le demande au moment d'écrire (5 erreurs ⇒ ver
   session expire (20 min), elle est rouverte d'office avec la clé. Le bouton SSO n'apparaît plus. Au démarrage,
   instantané, liens historiques, index de recherche et carte des erreurs sont préparés en arrière-plan ; la carte des
   erreurs est gardée en mémoire et l'écran garde son dernier état : revenir sur la section est immédiat.
+
+## 15. Clé d'API saisie dans l'app, chargement rapide (novembre 2026)
+
+- **Sans .env** : Qvidian › Connexion → carte « Connexion par clé d'API » (identifiant du compte Qvidian, souvent l'e-mail
+  professionnel, + clé). Espaces et retours à la ligne d'un copier-coller retirés avant l'envoi (cause fréquente de refus).
+  « Mémoriser sur ce poste » (coché par défaut) : `data/qvidian/credentials.json` (jamais committé), secret chiffré par
+  Windows (DPAPI, `win32crypt.CryptProtectData`) — illisible depuis un autre compte ou un autre poste. La clé n'est jamais
+  renvoyée au navigateur ni écrite dans un journal ; une clé refusée n'est jamais mémorisée. « Oublier la clé » l'efface.
+- Au lancement suivant, connexion automatique (même chemin que le .env, qui reste prioritaire s'il est rempli) et
+  reconnexion silencieuse à l'expiration du jeton. Adresse du service modifiable dans la carte si l'abonnement n'est pas
+  sur `qpalogin.qvidian.eu`.
+- Après une connexion réussie, la synchronisation démarre seule (complète la première fois, incrémentale ensuite) :
+  avant, la bibliothèque restait vide tant qu'on n'avait pas cliqué « Synchroniser », d'où l'impression que la clé
+  « ne marchait pas ». Refus : message qui dit quoi vérifier (identifiant, clé complète, adresse du service).
+- **Vitesse** : index de recherche gardé sur disque (`<instantané>.engine.pkl`, rechargé en ~1 s au lieu de le
+  reconstruire), carte des erreurs gardée sur disque (`.audit-<profondeur>.json`), filtres d'expressions pré-compilés,
+  normalisations mémorisées, regroupement des versions limité aux premiers résultats ; réponses JSON compressées (GZip),
+  fichiers de l'interface gardés un an par le navigateur, moteur 3D plus chargé au démarrage ; l'écran Qvidian affiche
+  l'état de connexion sans attendre la carte des erreurs. Mesures sur 6 000 contenus : recherche 1,8 s → 0,38 s,
+  ouverture de l'index 28 s → ~1,4 s ; page sans requête : regroupement des versions limité aux premiers résultats
+  (n'est plus quadratique ; à re-mesurer sur la vraie bibliothèque).

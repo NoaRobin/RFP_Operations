@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -73,6 +74,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="RFP pas envie de travailler", version="1.0", lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=1000)  # carte des erreurs, recherche : JSON 5 à 10 × plus léger (SSE non compressé)
 app.add_middleware(
     CORSMiddleware, allow_origins=get_settings().cors_origins, allow_methods=["*"], allow_headers=["*"],
 )
@@ -111,7 +113,16 @@ async def http_handler(_: Request, error: HTTPException):
 # ---------------------------------------------------------------- frontend compilé (facultatif)
 dist = get_settings().frontend_dist
 if (dist / "index.html").exists():
-    app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
+    class _Immutable(StaticFiles):
+        """Fichiers de /assets nommés par leur empreinte : le navigateur les garde un an, l'app se rouvre sans les relire."""
+
+        async def get_response(self, path, scope):  # type: ignore[override]
+            response = await super().get_response(path, scope)
+            if response.status_code == 200:
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            return response
+
+    app.mount("/assets", _Immutable(directory=dist / "assets"), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     async def spa(path: str):
