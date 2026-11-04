@@ -3,19 +3,22 @@
  * et installation depuis le navigateur (liens + dépôt des fichiers, reconnus par empreinte) en repli.
  */
 import { useState } from 'react'
-import { CheckCircle2, Download, ExternalLink, FolderSearch, Square, Upload } from 'lucide-react'
+import { CheckCircle2, Copy, Download, ExternalLink, FolderSearch, Square, Upload } from 'lucide-react'
 import { texts } from '../../content/texts'
 import { api } from '../../lib/api'
 import type { QvidianEngineStatus } from '../../lib/types'
 import { Button } from '../ui/Button'
+import { TextInput } from '../ui/Field'
 import { useToast } from '../ui/Toast'
-import { Bar } from './Bits'
+import { Bar, copyText } from './Bits'
 
 const Q = texts.qvidian
 
 export function ModelsPanel({ engine, onChange, fail }: { engine: QvidianEngineStatus | null; onChange: (e?: QvidianEngineStatus) => void; fail: (e: unknown) => void }) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
+  const [folder, setFolder] = useState('')
+  const [it, setIt] = useState<string | null>(null)
   const models = engine?.models ?? []
   const byId = Object.fromEntries(models.map((m) => [m.id, m]))
   const blocked = models.map((m) => m.download).find((d) => d?.error && d.hint)
@@ -29,9 +32,16 @@ export function ModelsPanel({ engine, onChange, fail }: { engine: QvidianEngineS
     setBusy(true)
     try { installed(await api.qvidian.uploadModels(Array.from(files))) } catch (e) { fail(e) } finally { setBusy(false) }
   }
-  const scan = async () => {
+  const scan = async (path = '') => {
     setBusy(true)
-    try { installed(await api.qvidian.scanModels()) } catch (e) { fail(e) } finally { setBusy(false) }
+    try { installed(await api.qvidian.scanModels(path)) } catch (e) { fail(e) } finally { setBusy(false) }
+  }
+  const showIt = async () => {
+    try {
+      const packs = (engine?.packs ?? []).filter((p) => !p.installed).map((p) => p.id)
+      const texts_ = await Promise.all((packs.length ? packs : ['rapide']).map((p) => api.qvidian.itRequest(p)))
+      setIt(texts_.map((t) => t.text).join('\n\n'))
+    } catch (e) { fail(e) }
   }
   return (
     <div className="flex flex-col gap-4">
@@ -72,6 +82,17 @@ export function ModelsPanel({ engine, onChange, fail }: { engine: QvidianEngineS
           {!!blocked.attempts?.length && (
             <ul className="mt-2 text-xs font-semibold text-fg-3">{blocked.attempts.map((a, i) => <li key={i}>{a.via} : {a.error}</li>)}</ul>
           )}
+          <p className="mt-2 text-xs font-semibold text-fg-2">{Q.withoutModels}</p>
+          <div className="mt-3">
+            {it == null ? <Button size="sm" onClick={showIt}>{Q.itTitle}</Button> : (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-semibold text-fg-2">{Q.itLead}</p>
+                <textarea readOnly value={it} rows={10} className="w-full rounded-xl border-2 border-fg/30 bg-card p-2 font-mono text-xs" aria-label={Q.itTitle} />
+                <Button size="sm" className="self-start" icon={<Copy size={14} />}
+                  onClick={async () => { const ok = await copyText(it); toast(ok ? 'success' : 'error', ok ? Q.itCopied : Q.copyFailed) }}>{Q.itCopy}</Button>
+              </div>
+            )}
+          </div>
         </div>
       )}
       {missing.length > 0 && (
@@ -93,8 +114,14 @@ export function ModelsPanel({ engine, onChange, fail }: { engine: QvidianEngineS
               <Upload size={15} aria-hidden="true" />{Q.manualDrop}
               <input type="file" multiple accept=".onnx,.json" className="sr-only" onChange={(e) => { void upload(e.target.files); e.target.value = '' }} />
             </label>
-            <Button size="sm" onClick={scan} loading={busy} icon={<FolderSearch size={14} />}>{Q.manualScan}</Button>
+            <Button size="sm" onClick={() => void scan()} loading={busy} icon={<FolderSearch size={14} />}>{Q.manualScan}</Button>
           </div>
+          <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); if (folder.trim()) void scan(folder.trim()) }}>
+            <label className="flex min-w-[18rem] flex-1 flex-col gap-1 text-xs font-bold">{Q.folderLabel}
+              <TextInput value={folder} placeholder={String.raw`\\serveur\partage\modeles`} onChange={(e) => setFolder(e.target.value)} />
+            </label>
+            <Button type="submit" size="sm" disabled={!folder.trim() || busy}>{Q.folderGo}</Button>
+          </form>
         </details>
       )}
       <details className="text-sm">

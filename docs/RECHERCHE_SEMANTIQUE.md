@@ -128,6 +128,9 @@ vues (trop peu de couples) ; sur vos vrais anciens RFI, le seuil est mesuré et 
 
 « HTTP 403 » : les gros fichiers des modèles sont servis par un serveur de diffusion (`us.aws.cdn.hf.co`,
 `cas-bridge.xethub.hf.co`) souvent bloqué. L'app essaie Python (proxy et certificats de Windows, reprise Range),
-puis **BITS** (la pile de Windows Update, identifiants de la session), puis propose les liens à ouvrir dans Edge et
+puis la **connexion d'Edge** (WinINet : script PAC, proxy authentifié par la session Windows), **BITS** (PowerShell appelé
+par son chemin complet, même hors du PATH) et **curl.exe** (proxy authentifié Negotiate) ; si toutes les voies sont
+refusées par le même site, l'écran le dit (règle du proxy pour tout le poste) et fournit une **demande toute prête pour
+l'IT** (domaines, liens, tailles, SHA-256, licences) ; installation possible depuis un dossier partagé. Puis propose les liens à ouvrir dans Edge et
 reconnaît les fichiers déposés (ou trouvés dans Téléchargements) par leur **taille et SHA-256** publiées. Un fichier
 altéré n'est jamais installé. Miroir interne : `MERLIN_MODELS_URL` (plusieurs, séparés par des virgules).

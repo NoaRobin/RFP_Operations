@@ -135,3 +135,32 @@ def test_manual_install_recognises_files_by_size_and_hash(tmp_path, monkeypatch)
     r = Downloads(tmp_path / "models").scan(downloads)
     assert r["ready"] == ["fake"] and r["ignored"] == ["autre.onnx"] or "autre.onnx" in r["ignored"]
     assert (tmp_path / "models" / "fake" / "model.onnx").read_bytes() == payload
+
+
+def test_every_windows_path_is_tried_and_a_site_blocked_everywhere_is_explained(tmp_path, monkeypatch):
+    from merlin.search import install
+    from merlin.search.install import DownloadError, Downloads, diagnose, it_request
+    from merlin.search.neural import MODELS
+
+    _fake_spec(tmp_path, monkeypatch, b"x" * 50)
+    calls = []
+
+    def refuse(label):
+        def f(url, part, size, progress, stop):
+            calls.append(label)
+            raise DownloadError(f"HTTP 403 sur huggingface.co", "proxy", "huggingface.co", 403)
+        f.label = label
+        return f
+
+    d = Downloads(tmp_path / "models", fetchers=[refuse("python"), refuse("edge"), refuse("bits"), refuse("curl")])
+    d.state["fake"] = {"running": True, "done": 0, "attempts": []}
+    d._run(MODELS["fake"])
+    st = d.state["fake"]
+    assert calls == ["python", "edge", "bits", "curl"] and st["blocked_everywhere"] is True
+    assert "toutes les connexions de ce poste" in st["error"] and "Edge" in st["hint"] and "IT" in st["hint"]
+    assert diagnose([{"host": "a", "error": "HTTP 403"}, {"host": "b", "error": "HTTP 403"}]) is None  # deux sites : pas la même règle
+    text = it_request(MODELS, ["e5-small", "rerank-mminilm"])
+    assert "*.hf.co" in text and MODELS["e5-small"].files["model.onnx"].sha256 in text and "aucune donnée" in text.lower()
+    monkeypatch.setattr(install.sys, "platform", "win32")
+    monkeypatch.setattr(install.os.path, "exists", lambda p: True)  # PowerShell et curl présents hors du PATH
+    assert [t.name for t in install.transports()] == ["python", "wininet", "windows", "curl"]

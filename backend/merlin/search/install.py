@@ -117,6 +117,66 @@ class PythonFetch:
             raise DownloadError(f"Réseau : {type(error).__name__}", "Connexion coupée : relancez, le téléchargement reprendra.", host) from error
 
 
+def _system32(*parts: str) -> str:
+    return os.path.join(os.environ.get("SystemRoot") or os.environ.get("WINDIR") or r"C:\Windows", "System32", *parts)
+
+
+def _powershell() -> str | None:
+    """Chemin complet : sur beaucoup de postes d'entreprise, PowerShell n'est pas dans le PATH de l'app."""
+    path = _system32("WindowsPowerShell", "v1.0", "powershell.exe")
+    if os.path.exists(path):
+        return path
+    return shutil.which("powershell") or shutil.which("pwsh")
+
+
+def _watch(part: Path, progress: Callable[[int], None], stop: threading.Event, alive: Callable[[], bool],
+           pattern: str | None = None, on_stop: Callable[[], None] | None = None) -> None:
+    """Avancement d'un téléchargement fait par Windows : taille du fichier en cours d'écriture."""
+    seen = 0
+    while alive():
+        if stop.wait(1.0):
+            if on_stop:
+                on_stop()
+            raise DownloadError("Arrêté.")
+        files = list(part.parent.glob(pattern)) if pattern else ([part] if part.exists() else [])
+        now = max((f.stat().st_size for f in files if f.exists()), default=0)
+        if now > seen:
+            progress(now - seen)
+            seen = now
+    if part.exists() and part.stat().st_size > seen:
+        progress(part.stat().st_size - seen)
+
+
+class WinInetFetch:
+    """WinINet (urlmon) : la pile réseau d'Edge et d'Outlook — script PAC, proxy authentifié automatiquement avec la
+    session Windows (Kerberos / NTLM). Un proxy qui répond 403 à Python « inconnu » laisse souvent passer celle-ci."""
+    name = "wininet"
+    label = "Windows (connexion d'Edge)"
+
+    @staticmethod
+    def available() -> bool:
+        return sys.platform == "win32"
+
+    def __call__(self, url: str, part: Path, size: int, progress: Callable[[int], None], stop: threading.Event) -> None:
+        import ctypes
+
+        part.unlink(missing_ok=True)
+        result: dict[str, int] = {}
+
+        def run() -> None:
+            result["hr"] = ctypes.windll.urlmon.URLDownloadToFileW(None, url, str(part), 0, None) & 0xFFFFFFFF  # type: ignore[attr-defined]
+
+        worker = threading.Thread(target=run, daemon=True)
+        worker.start()
+        _watch(part, progress, stop, worker.is_alive)
+        hr = result.get("hr", 1)
+        if hr != 0:
+            host = urlparse(url).netloc
+            status = hr & 0xFFFF if (hr & 0xFFFF0000) == 0x80190000 else 0  # 0x8019xxxx : code HTTP renvoyé par le serveur
+            raise DownloadError(f"Windows (Edge) : HTTP {status} sur {host}" if status else f"Windows (Edge) : erreur 0x{hr:08X}",
+                                blocked_hint(host) if status in (401, 403, 407) else "", host, status)
+
+
 class BitsFetch:
     """BITS (Background Intelligent Transfer Service) : la pile de Windows Update, proxy et identifiants de la session."""
     name = "windows"
@@ -124,7 +184,7 @@ class BitsFetch:
 
     @staticmethod
     def available() -> bool:
-        return sys.platform == "win32" and shutil.which("powershell") is not None
+        return sys.platform == "win32" and _powershell() is not None
 
     def __call__(self, url: str, part: Path, size: int, progress: Callable[[int], None], stop: threading.Event) -> None:
         def q(text: str) -> str:
@@ -134,34 +194,83 @@ class BitsFetch:
         cmd = (f"$ErrorActionPreference='Stop'; Import-Module BitsTransfer; "
                f"Start-BitsTransfer -Source {q(url)} -Destination {q(str(part))} -ProxyUsage SystemDefault -Priority Foreground "
                f"-DisplayName 'Merlin modele' -Description 'Installation d un modele de recherche'")
-        proc = subprocess.Popen(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", cmd],
+        proc = subprocess.Popen([_powershell() or "powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", cmd],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        seen = 0
-        while proc.poll() is None:
-            if stop.wait(1.0):
-                proc.kill()
-                raise DownloadError("Arrêté.")
-            tmp = [p for p in part.parent.glob("BIT*.tmp")]  # fichier temporaire de BITS : sa taille donne l'avancement
-            now = max((p.stat().st_size for p in tmp), default=0) if tmp else 0
-            if now > seen:
-                progress(now - seen)
-                seen = now
+        _watch(part, progress, stop, lambda: proc.poll() is None, "BIT*.tmp", proc.kill)
         _, err = proc.communicate()
         if proc.returncode != 0 or not part.exists():
-            text = (err or "").strip().splitlines()
             host = urlparse(url).netloc
-            detail = next((t for t in text if t.strip()), "échec")[:200]
+            detail = next((t for t in (err or "").strip().splitlines() if t.strip()), "échec")[:200]
             denied = "403" in detail or "denied" in detail.lower() or "refus" in detail.lower()
             raise DownloadError(f"Windows (BITS) : {detail}", blocked_hint(host) if denied else "", host, 403 if denied else 0)
-        progress(max(0, part.stat().st_size - seen))
+
+
+class CurlFetch:
+    """curl.exe de Windows avec le proxy déclaré et l'authentification de la session (Negotiate) : utile quand le proxy
+    exige d'être authentifié (il répond 403 / 407 aux programmes qui ne s'identifient pas)."""
+    name = "curl"
+    label = "Windows (curl, proxy authentifié)"
+
+    @staticmethod
+    def available() -> bool:
+        return sys.platform == "win32" and os.path.exists(_system32("curl.exe"))
+
+    def __call__(self, url: str, part: Path, size: int, progress: Callable[[int], None], stop: threading.Event) -> None:
+        proxies = urllib.request.getproxies()
+        proxy = proxies.get("https") or proxies.get("http")
+        cmd = [_system32("curl.exe"), "-L", "-sS", "--ssl-revoke-best-effort", "-C", "-", "-o", str(part), "-w", "%{http_code}", url]
+        if proxy:
+            cmd[1:1] = ["--proxy", proxy, "--proxy-negotiate", "-U", ":"]
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        _watch(part, progress, stop, lambda: proc.poll() is None, None, proc.kill)
+        out, err = proc.communicate()
+        status = int(out.strip()[-3:]) if out.strip()[-3:].isdigit() else 0
+        if proc.returncode != 0 or status >= 400:
+            host = urlparse(url).netloc
+            raise DownloadError(f"Windows (curl) : HTTP {status} sur {host}" if status else f"Windows (curl) : {(err or 'échec').strip()[:160]}",
+                                blocked_hint(host) if status in (401, 403, 407) else "", host, status)
 
 
 def transports() -> list[Any]:
+    """Toutes les voies réseau du poste, de la plus rapide à la plus « Windows » : la première qui passe est retenue."""
     out: list[Any] = [PythonFetch()]
-    if BitsFetch.available():
-        out.append(BitsFetch())
+    for cls in (WinInetFetch, BitsFetch, CurlFetch):
+        if cls.available():
+            out.append(cls())
     return out
+
+
+def diagnose(attempts: list[dict[str, Any]]) -> tuple[str, str] | None:
+    """Toutes les voies refusées par le même site : c'est une règle du proxy pour tout le poste, pas un défaut de l'app."""
+    hosts = {a.get("host") for a in attempts if a.get("host")}
+    refused = [a for a in attempts if "403" in a.get("error", "") or "407" in a.get("error", "")]
+    if len(hosts) == 1 and refused and len(refused) == len(attempts):
+        host = hosts.pop()
+        return (f"{host} est bloqué par le proxy pour toutes les connexions de ce poste ({len(attempts)} voies essayées).",
+                f"Testez {host} dans Edge. S'il est bloqué aussi, seule l'IT peut l'ouvrir : envoyez-lui la demande toute prête "
+                "ci-dessous (domaines, fichiers, empreintes, licences), ou demandez-lui de déposer les fichiers dans un dossier "
+                "partagé que l'app installera (« Installer depuis un dossier »). En attendant, la recherche fonctionne sans modèle.")
+    return None
+
+
+def it_request(specs: dict[str, Any], model_ids: list[str]) -> str:
+    """Texte prêt à envoyer à l'IT : quoi ouvrir, pourquoi, et comment vérifier les fichiers."""
+    lines = ["Objet : autorisation de téléchargement de modèles de recherche (usage local, aucune donnée envoyée)", "",
+             "Bonjour,", "",
+             "L'outil interne « RFP pas envie de travailler » utilise des modèles open source exécutés sur le poste (ONNX Runtime, "
+             "processeur seul). Aucune donnée de l'entreprise n'est envoyée : seuls ces fichiers sont téléchargés, une fois.",
+             "Le proxy renvoie HTTP 403. Merci d'autoriser huggingface.co et *.hf.co (serveurs de diffusion us.aws.cdn.hf.co, "
+             "cas-bridge.xethub.hf.co), ou de déposer les fichiers ci-dessous dans un dossier partagé.", ""]
+    for mid in model_ids:
+        spec = specs[mid]
+        lines.append(f"- {spec.label} — licence {spec.license} — https://huggingface.co/{spec.repo}")
+        for name, f in spec.files.items():
+            lines.append(f"    {url_of(HF, spec.repo, f.remote)}")
+            lines.append(f"    {f.size} octets · SHA-256 {f.sha256}")
+    lines += ["", "L'outil vérifie la taille et l'empreinte SHA-256 de chaque fichier avant de l'installer.", "", "Merci !"]
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------------------------- installation
@@ -229,7 +338,9 @@ class Downloads:
                 except Exception:  # noqa: BLE001
                     pass
         except DownloadError as error:
-            state.update(running=False, error=str(error), hint=error.hint, host=error.host)
+            found = diagnose(state.get("attempts", []))
+            state.update(running=False, error=found[0] if found else str(error), hint=found[1] if found else error.hint,
+                         host=error.host, blocked_everywhere=bool(found))
         except Exception as error:  # noqa: BLE001 - un échec n'arrête jamais l'app
             state.update(running=False, error=str(error)[:300])
 
@@ -318,4 +429,4 @@ class Downloads:
         return {**self.install_files(found), "folder": str(folder), "looked_at": len(found)}
 
 
-__all__ = ["Downloads", "DownloadError", "PythonFetch", "BitsFetch", "bases", "sha256", "blocked_hint"]
+__all__ = ["Downloads", "DownloadError", "PythonFetch", "WinInetFetch", "BitsFetch", "CurlFetch", "diagnose", "it_request", "bases", "sha256", "blocked_hint"]

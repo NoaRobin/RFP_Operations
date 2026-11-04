@@ -182,6 +182,16 @@ def download_pack(pack: str, s: AppState = Depends(state)) -> dict[str, Any]:
     return svc.engine_status()
 
 
+@router.get("/engine/it-request")
+def it_request_text(pack: str = "rapide") -> dict[str, Any]:
+    """Demande toute prête pour l'IT (domaines à ouvrir, URL, tailles, SHA-256, licences)."""
+    from ..search.install import it_request
+    from ..search.neural import MODELS, PACKS
+
+    ids = PACKS[pack]["models"] if pack in PACKS else PACKS["rapide"]["models"]
+    return {"text": it_request(MODELS, ids)}
+
+
 @router.post("/engine/downloads/stop")
 def stop_downloads(s: AppState = Depends(state)) -> dict[str, Any]:
     service(s).search.downloads.stop()

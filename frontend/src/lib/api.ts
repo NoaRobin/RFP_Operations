@@ -128,6 +128,7 @@ export const api = {
     downloadModel: (id: string) => request<unknown>(`/qvidian/engine/models/${id}`, { method: 'POST' }),
     rebuild: () => request<QvidianEngineStatus>('/qvidian/engine/rebuild', { method: 'POST' }),
     downloadPack: (pack: string) => request<QvidianEngineStatus>(`/qvidian/engine/packs/${pack}`, { method: 'POST' }),
+    itRequest: (pack: string) => request<{ text: string }>(`/qvidian/engine/it-request?pack=${pack}`),
     stopDownloads: () => request<QvidianEngineStatus>('/qvidian/engine/downloads/stop', { method: 'POST' }),
     uploadModels: (files: File[]) => {
       const form = new FormData()

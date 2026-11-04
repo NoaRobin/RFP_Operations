@@ -684,7 +684,7 @@ export interface QvidianOverview {
 export interface QvidianModel {
   id: string; kind: 'encoder' | 'reranker'; label: string; size_mb: number; license: string; note: string; installed: boolean; active: boolean
   error?: string | null
-  download: { running: boolean; queued?: boolean; done: number; total: number; error: string | null; hint?: string; host?: string; via?: string; file: string
+  download: { running: boolean; queued?: boolean; blocked_everywhere?: boolean; done: number; total: number; error: string | null; hint?: string; host?: string; via?: string; file: string
     attempts?: { via: string; host: string; error: string }[] } | null
   links?: { name: string; url: string; size: number; sha256: string }[]
   packs?: string[]
