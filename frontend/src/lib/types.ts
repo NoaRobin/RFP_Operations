@@ -438,6 +438,12 @@ export interface SharePointStatus { site: string; root: string; graph: SourceSta
 export interface RemoteItem { id: string; name: string; path: string; is_folder: boolean; url: string; modified: string; size: number }
 export interface DueDiligenceList { year: number | null; folders: RemoteItem[]; years: number[]; tried?: number[] }
 export interface FinalListing { final_path: string | null; documents: (RemoteItem & { fund?: string })[]; funds: { fund: string; final_path: string }[]; hint: string }
+export interface SharePointSyncState {
+  running: boolean; phase?: string; folders?: number; found?: number; todo?: number; done?: number; imported?: number; skipped?: number
+  failed?: number; stopped?: boolean; started?: string; finished?: string | null
+  errors?: { file: string; message: string; hint: string }[]
+  corpus: { documents: number; questions: number; failed: number; last: string }
+}
 export interface SharePointImport { final_path: string | null; imported: number; hint: string; documents: { file: string; imported: number; identity_problem?: string; error?: string }[] }
 
 export interface RfiGenerated extends RfiAnalysis {

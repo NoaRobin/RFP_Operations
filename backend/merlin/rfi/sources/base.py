@@ -27,9 +27,11 @@ class RemoteItem:
 
 
 class SourceError(Exception):
-    def __init__(self, message: str, hint: str = ""):
+    """transient : vaut la peine de réessayer (limitation SharePoint 429/503, fichier OneDrive pas encore descendu…)."""
+
+    def __init__(self, message: str, hint: str = "", transient: bool = False, retry_after: float = 0.0):
         super().__init__(message)
-        self.hint = hint
+        self.hint, self.transient, self.retry_after = hint, transient, retry_after
 
 
 class DocumentSource(Protocol):

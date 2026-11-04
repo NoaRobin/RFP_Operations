@@ -5,7 +5,9 @@ Aucun secret : l'application Entra ID est un « client public » ; le jeton est 
 """
 from __future__ import annotations
 
+import os
 import threading
+import time
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
@@ -29,6 +31,23 @@ class GraphSharePointSource:
         self._app = None
         self._cache = None
         self._drive: str | None = None
+        self._http: httpx.Client | None = None
+
+    def _client(self) -> httpx.Client:
+        """Un seul client (connexions gardées ouvertes) : chaque dossier listé ne rouvre plus une connexion TLS."""
+        if self._http is None:
+            verify: object = True
+            try:  # certificats de l'entreprise (inspection TLS du proxy)
+                import ssl
+
+                import truststore
+
+                verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            except Exception:  # noqa: BLE001
+                pass
+            self._http = httpx.Client(timeout=httpx.Timeout(60, connect=20), follow_redirects=True, verify=verify,
+                                      limits=httpx.Limits(max_connections=8, max_keepalive_connections=8))
+        return self._http
 
     # ------------------------------------------------------------------ authentification
     def _msal(self):
@@ -66,18 +85,60 @@ class GraphSharePointSource:
             raise SourceError("Connexion Microsoft impossible.", str(detail)[:300])
         return result["access_token"]
 
-    def _get(self, url: str, **kwargs) -> httpx.Response:
-        headers = {"Authorization": f"Bearer {self._token()}"}
-        try:
-            response = httpx.get(url, headers=headers, timeout=60, follow_redirects=True, **kwargs)
-        except httpx.HTTPError as error:
-            raise SourceError("SharePoint injoignable.", f"Réseau ou proxy : {type(error).__name__}") from error
-        if response.status_code == 404:
-            raise SourceError("Élément introuvable dans SharePoint.")
-        if response.status_code in (401, 403):
-            raise SourceError("Accès refusé par SharePoint.", "Vérifiez vos droits sur le site et l'autorisation Sites.Read.All.")
-        response.raise_for_status()
-        return response
+    def _get(self, url: str, stream_to: Path | None = None, interactive: bool = True) -> httpx.Response:
+        """GET avec relances : limitation SharePoint (429 / 503, en-tête Retry-After), coupure réseau, jeton expiré (401 :
+        un nouveau jeton silencieux). Les erreurs restantes deviennent des SourceError (plus jamais d'erreur 500 brute)."""
+        last: Exception | None = None
+        for attempt in range(5):
+            headers = {"Authorization": f"Bearer {self._token(interactive)}"}
+            try:
+                if stream_to is None:
+                    response = self._client().get(url, headers=headers)
+                else:
+                    with self._client().stream("GET", url, headers=headers) as response:
+                        if response.status_code == 200:
+                            part = stream_to.with_name(stream_to.name + ".part")
+                            stream_to.parent.mkdir(parents=True, exist_ok=True)
+                            with part.open("wb") as f:
+                                for chunk in response.iter_bytes(1 << 20):
+                                    f.write(chunk)
+                            os.replace(part, stream_to)
+                        else:
+                            response.read()
+            except httpx.HTTPError as error:
+                last = error
+                time.sleep(min(30, 2 ** attempt))
+                continue
+            code = response.status_code
+            if code in (429, 503, 502, 504):
+                wait = float(response.headers.get("Retry-After") or 2 ** attempt)
+                last = SourceError("SharePoint demande de ralentir.", f"HTTP {code}", transient=True, retry_after=wait)
+                time.sleep(min(60.0, wait))
+                continue
+            if code == 401 and attempt == 0:
+                self._forget_token()
+                continue
+            if code == 404:
+                raise SourceError("Élément introuvable dans SharePoint (déplacé ou renommé ?).")
+            if code in (401, 403):
+                raise SourceError("Accès refusé par SharePoint.", "Vérifiez vos droits sur le site et l'autorisation Sites.Read.All.")
+            if code >= 400:
+                raise SourceError(f"SharePoint a répondu HTTP {code}.", response.text[:200] if stream_to is None else "", transient=code >= 500)
+            return response
+        if isinstance(last, SourceError):
+            raise last
+        raise SourceError("SharePoint injoignable.", f"Réseau ou proxy : {type(last).__name__ if last else 'inconnu'}", transient=True)
+
+    def _forget_token(self) -> None:
+        """Jeton refusé : le prochain appel en redemande un en silence (le compte reste en cache)."""
+        with self._lock:
+            app = self._msal()
+            for account in app.get_accounts():
+                try:
+                    app.acquire_token_silent(SCOPES, account=account, force_refresh=True)
+                except Exception:  # noqa: BLE001
+                    pass
+            self._save_cache()
 
     # ------------------------------------------------------------------ site / bibliothèque
     def _drive_id(self) -> str:
@@ -120,7 +181,7 @@ class GraphSharePointSource:
         return sorted(items, key=lambda i: i.name.lower())
 
     def download(self, item: RemoteItem, target: Path) -> Path:
-        response = self._get(f"{GRAPH}/drives/{self._drive_id()}/items/{item.id}/content")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(response.content)
+        """Écrit au fil de l'eau dans un .part puis renomme : un gros RFI ne passe plus par la mémoire, et une coupure
+        ne laisse jamais un fichier tronqué."""
+        self._get(f"{GRAPH}/drives/{self._drive_id()}/items/{item.id}/content", stream_to=target)
         return target

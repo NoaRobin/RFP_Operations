@@ -16,12 +16,36 @@ from ..rfi.sources.base import RemoteItem, SourceError
 from ..rfi.sources.graph import GraphSharePointSource
 from ..rfi.sources.local import LocalFolderSource, discover
 from ..rfi.sources.navigator import DueDiligenceNavigator
+from ..rfi.sources.sync import SharePointSync, cache_name, retry
 from ..state import AppState
 from .deps import bad_request, state
 
 router = APIRouter(prefix="/api/rfi")
 MAX_UPLOAD = 60 * 1024 * 1024
 _graph: dict[str, GraphSharePointSource] = {}
+_syncs: dict[str, SharePointSync] = {}
+
+
+def _import_item(s: AppState):
+    """Un document SharePoint → précédents, rangé sous son chemin complet (clé unique)."""
+    store = get_index(_root(s)).store
+
+    def run(path: Path, item: RemoteItem, key: str) -> dict[str, Any]:
+        if key != item.name:
+            store.replace_source(item.name, "sharepoint", [])  # ancienne clé (nom seul, risquait d'écraser un homonyme)
+        return import_document(store, path, "sharepoint", display_name=key, url=item.url, modified=item.modified)
+    return run
+
+
+def _sync(s: AppState) -> SharePointSync:
+    key = str(_root(s))
+    if key not in _syncs:
+        def done() -> None:  # nouvelles questions : liens anciens RFI ↔ textes Qvidian, puis index de recherche
+            from ..qvidian.service import get_service
+
+            get_service(s.settings.qvidian, s.settings.data_dir).rebuild_history(background=True)
+        _syncs[key] = SharePointSync(_root(s) / "sharepoint", _import_item(s), on_done=done)
+    return _syncs[key]
 
 
 def _root(s: AppState) -> Path:
@@ -126,19 +150,47 @@ def sharepoint_import(body: ImportRequest, s: AppState = Depends(state)) -> dict
     """Télécharge les documents du dossier « final » (copie locale) et en fait des précédents."""
     nav = _nav(s, body.source)
     listing = _guard(nav.final_documents, body.path, body.fund)
-    store = get_index(_root(s)).store
-    cache = _root(s) / "sharepoint"
+    cache = _root(s) / "sharepoint" / "files"
+    importer = _import_item(s)
     results = []
     for doc in listing["documents"]:
         item = RemoteItem(**{k: v for k, v in doc.items() if k != "fund"})
-        target = cache / item.path
+        target = cache / cache_name(item.path)
         try:
-            _guard(nav.source.download, item, target)
-            results.append(import_document(store, target, "sharepoint", display_name=item.name, url=item.url, modified=item.modified))
+            retry(lambda: nav.source.download(item, target))
+            results.append({**importer(target, item, item.path), "file": item.name})
         except Exception as error:  # noqa: BLE001 - un document illisible n'arrête pas les autres
-            results.append({"file": item.name, "imported": 0, "error": getattr(error, "hint", "") or type(error).__name__})
+            results.append({"file": item.name, "imported": 0, "error": f"{error} {getattr(error, 'hint', '')}".strip()[:300]})
     return {"final_path": listing["final_path"], "documents": results, "imported": sum(r.get("imported", 0) for r in results),
             "hint": listing.get("hint", "")}
+
+
+class SyncRequest(BaseModel):
+    source: str | None = None
+    years: list[int] = []
+    full: bool = False  # tout relire (sinon : seulement les documents nouveaux ou modifiés)
+
+
+@router.post("/sharepoint/sync")
+def sharepoint_sync(body: SyncRequest, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Toutes les due diligences, toutes les années, en arrière-plan (suivre avec GET /sharepoint/sync)."""
+    source = _source(s, body.source)
+    st = source.status()
+    if not st.get("ready"):
+        raise bad_request("SharePoint n'est pas joignable.", st.get("hint", ""))
+    _sync(s).start(source, body.years or None, body.full)
+    return _sync(s).status()
+
+
+@router.get("/sharepoint/sync")
+def sharepoint_sync_status(s: AppState = Depends(state)) -> dict[str, Any]:
+    return _sync(s).status()
+
+
+@router.post("/sharepoint/sync/stop")
+def sharepoint_sync_stop(s: AppState = Depends(state)) -> dict[str, Any]:
+    _sync(s).stop()
+    return _sync(s).status()
 
 
 # ------------------------------------------------------------------ liaisons apprises

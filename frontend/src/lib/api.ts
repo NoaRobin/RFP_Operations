@@ -11,7 +11,7 @@ import type {
   QvidianStatus, QvidianSuggest, QvidianApiStats, QvidianEngineStatus, QvidianFilters, QvidianFolder, QvidianOverview, QvidianSearchResult, QvidianHistorySummary,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
-  DueDiligenceList, FinalListing, SharePointImport, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -208,6 +208,9 @@ export const api = {
         request<DueDiligenceList>(`/rfi/sharepoint/due-diligences?${year ? `year=${year}&` : ''}q=${encodeURIComponent(q)}`),
       final: (path: string, fund = '') => request<FinalListing>(`/rfi/sharepoint/final?path=${encodeURIComponent(path)}&fund=${encodeURIComponent(fund)}`),
       importFinal: (path: string, fund = '') => request<SharePointImport>('/rfi/sharepoint/import', json({ path, fund })),
+      sync: (full = false) => request<SharePointSyncState>('/rfi/sharepoint/sync', json({ full })),
+      syncStatus: () => request<SharePointSyncState>('/rfi/sharepoint/sync'),
+      syncStop: () => request<SharePointSyncState>('/rfi/sharepoint/sync/stop', { method: 'POST' }),
     },
   },
 

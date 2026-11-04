@@ -3,11 +3,11 @@
  * Lecture seule côté SharePoint ; tout reste sur le poste (data/rfi).
  */
 import { useEffect, useState } from 'react'
-import { Cloud, FolderOpen, FolderSearch, History, Import, ListChecks, Upload } from 'lucide-react'
+import { Cloud, FolderOpen, FolderSearch, History, Import, ListChecks, RefreshCw, Square, Upload } from 'lucide-react'
 import { texts } from '../../content/texts'
 import { api, ApiError } from '../../lib/api'
 import { useAsync } from '../../lib/hooks'
-import type { DueDiligenceList, FinalListing, PrecedentInventory } from '../../lib/types'
+import type { DueDiligenceList, FinalListing, PrecedentInventory, SharePointSyncState } from '../../lib/types'
 import { Button } from '../ui/Button'
 import { Field, Select, TextInput } from '../ui/Field'
 import { Loading } from '../ui/States'
@@ -22,6 +22,58 @@ function FilePick({ label, accept, onFile, busy }: { label: string; accept: stri
       <Upload size={15} aria-hidden="true" />{label}
       <input type="file" accept={accept} className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = '' }} />
     </label>
+  )
+}
+
+/** Synchronisation complète en arrière-plan : la page reste utilisable, l'avancement est relu toutes les 1,5 s. */
+function SyncAll({ onImported }: { onImported: () => void }) {
+  const toast = useToast()
+  const [st, setSt] = useState<SharePointSyncState | null>(null)
+  const fail = (e: unknown) => toast('error', e instanceof ApiError ? e.message : texts.errors.generic, e instanceof ApiError ? e.hint : undefined)
+  useEffect(() => { api.rfi.sharepoint.syncStatus().then(setSt).catch(() => undefined) }, [])
+  useEffect(() => {
+    if (!st?.running) return
+    const t = window.setInterval(async () => {
+      try {
+        const n = await api.rfi.sharepoint.syncStatus()
+        setSt(n)
+        if (!n.running) { window.clearInterval(t); onImported(); if (!n.stopped) toast('success', T.syncDone(n.imported ?? 0)) }
+      } catch { /* réessayé au tour suivant */ }
+    }, 1500)
+    return () => window.clearInterval(t)
+  }, [st?.running]) // eslint-disable-line react-hooks/exhaustive-deps
+  const start = async (full: boolean) => { try { setSt(await api.rfi.sharepoint.sync(full)) } catch (e) { fail(e) } }
+  const pct = st?.running && st.todo ? Math.round(100 * (st.done ?? 0) / Math.max(1, st.todo)) : null
+  return (
+    <div className="rounded-xl border-2 border-fg/30 bg-card-2 p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {st?.running
+          ? <Button size="sm" onClick={async () => setSt(await api.rfi.sharepoint.syncStop())} icon={<Square size={13} />}>{T.syncStop}</Button>
+          : <>
+              <Button size="sm" variant="primary" onClick={() => void start(false)} icon={<RefreshCw size={14} />}>{T.syncAll}</Button>
+              <Button size="sm" variant="ghost" onClick={() => void start(true)}>{T.syncFull}</Button>
+            </>}
+        {st?.corpus && <span className="text-xs font-bold text-fg-3">{T.syncCorpus(st.corpus.documents, st.corpus.questions)}</span>}
+      </div>
+      <p className="mt-1 text-xs font-semibold text-fg-3">{T.syncLead}</p>
+      {st?.phase && <p className="mt-2 text-sm font-bold" aria-live="polite">{st.phase}</p>}
+      {st?.running && st.todo != null && (
+        <>
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-fg/10" role="progressbar" aria-valuenow={pct ?? 0} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full bg-mint-400 transition-[width] motion-reduce:transition-none" style={{ width: `${pct ?? 0}%` }} />
+          </div>
+          <p className="mt-1 text-xs font-semibold text-fg-3">{T.syncProgress(st.done ?? 0, st.todo, st.skipped ?? 0)}</p>
+        </>
+      )}
+      {!!st?.errors?.length && (
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer font-bold text-danger">{T.syncErrors(st.failed ?? st.errors.length)}</summary>
+          <ul className="mt-1 flex max-h-48 flex-col gap-1 overflow-auto">
+            {st.errors.map((e, i) => <li key={i} className="text-xs"><span className="font-bold">{e.file}</span> — {e.message}{e.hint ? ` · ${e.hint}` : ''}</li>)}
+          </ul>
+        </details>
+      )}
+    </div>
   )
 }
 
@@ -92,6 +144,7 @@ function SharePoint({ onImported }: { onImported: () => void }) {
       {!ready && <p className="mt-2 text-sm font-semibold text-fg-2">{T.spHelp}</p>}
       {ready && (
         <div className="mt-3 flex flex-col gap-3">
+          <SyncAll onImported={onImported} />
           <div className="grid gap-3 sm:grid-cols-[8rem_minmax(0,1fr)]">
             <Field label={T.year}>
               {({ id }) => (

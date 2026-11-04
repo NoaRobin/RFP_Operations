@@ -751,6 +751,14 @@ export const texts = {
   },
 
   precedents: {
+    syncAll: 'Tout synchroniser',
+    syncFull: 'Tout relire',
+    syncStop: 'Arrêter',
+    syncLead: 'Toutes les due diligences de toutes les années, en arrière-plan. Seuls les documents nouveaux ou modifiés sont relus ; interrompue, elle reprend où elle en était.',
+    syncCorpus: (d: number, q: number) => `${d} documents lus · ${q} réponses dans le corpus`,
+    syncProgress: (done: number, todo: number, skipped: number) => `${done} / ${todo} documents lus · ${skipped} déjà à jour`,
+    syncErrors: (n: number) => `${n} document${n > 1 ? 's' : ''} non lu${n > 1 ? 's' : ''} (détail)`,
+    syncDone: (q: number) => `Synchronisation terminée : ${q} réponses lues. La recherche Qvidian apprend de ces questions.`,
     eyebrow: 'Anciens RFI',
     title: 'Ce qu\'on a déjà répondu (et ce que Fabric en dit).',
     lead: 'Chaque question est comparée aux RFI déjà envoyés : si l\'ancienne réponse correspond à la donnée Fabric du fonds d\'alors, on reprend la même donnée pour le nouveau fonds, en le disant. Sinon : modèle d\'ontologie, ou incohérence signalée. Rien d\'historique n\'est recopié sans votre feu vert.',
