@@ -21,15 +21,15 @@ type FacetKey = 'scope' | 'theme' | 'fund'
 function Facet({ title, values, active, onToggle }: { title: string; values: QvidianFacet[]; active: string[]; onToggle: (v: string) => void }) {
   if (!values.length) return null
   return (
-    <fieldset className="flex flex-col gap-1">
+    <fieldset className="flex min-w-0 flex-col gap-1">
       <legend className="mb-1 text-[0.7rem] font-bold uppercase tracking-widest text-fg-3">{title}</legend>
       {values.slice(0, 10).map((v) => {
         const on = active.includes(v.value)
         return (
-          <label key={v.value} className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold ${on ? 'bg-sun-400/50' : 'hover:bg-card-2'}`}>
-            <input type="checkbox" checked={on} onChange={() => onToggle(v.value)} className="size-4 accent-[var(--color-magic-500)]" />
-            <span className="min-w-0 flex-1 truncate">{v.label ?? v.value}</span>
-            <span className="text-xs tabular-nums text-fg-3">{v.count}</span>
+          <label key={v.value} className={`flex min-w-0 cursor-pointer items-start gap-2 rounded-lg px-2 py-1 text-sm font-semibold ${on ? 'bg-sun-400/50' : 'hover:bg-card-2'}`}>
+            <input type="checkbox" checked={on} onChange={() => onToggle(v.value)} className="mt-0.5 size-4 shrink-0 accent-[var(--color-magic-500)]" />
+            <span className="min-w-0 flex-1 break-words leading-snug [overflow-wrap:anywhere]">{v.label ?? v.value}</span>
+            <span className="mt-0.5 shrink-0 text-xs tabular-nums text-fg-3">{v.count}</span>
           </label>
         )
       })}
@@ -230,7 +230,7 @@ export function SearchView() {
       )}
 
       <div className="grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside data-enter className="flex h-fit flex-col gap-4 rounded-[var(--radius-card)] border-2 border-fg bg-card p-4 lg:sticky lg:top-24" aria-label="Filtres">
+        <aside data-enter className="flex h-fit min-w-0 flex-col gap-4 rounded-[var(--radius-card)] border-2 border-fg bg-card p-4 lg:sticky lg:top-24" aria-label="Filtres">
           <label className="flex flex-col gap-1 text-xs font-bold text-fg-3">{Q.sort}
             <Select value={sort} onChange={(e) => setSort(e.target.value)}>
               {Object.entries(Q.sorts).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
