@@ -2,9 +2,10 @@
 modifications en masse protégées par mot de passe, import des projets comme anciens RFI."""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import File, UploadFile, APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
@@ -141,6 +142,92 @@ def engine(s: AppState = Depends(state)) -> dict[str, Any]:
 def download_model(model_id: str, s: AppState = Depends(state)) -> dict[str, Any]:
     """Téléchargement explicite d'un modèle ONNX (data/models/) ; l'index sémantique se construit ensuite en arrière-plan."""
     return _guard(service(s).download_model, model_id)
+
+
+class MatchRequest(BaseModel):
+    q: str = Field(min_length=1, max_length=4000)
+    k: int = 8
+
+
+@router.post("/match")
+def match(body: MatchRequest, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Questions déjà tombées identiques à celle-ci (probabilité calibrée) et textes Qvidian choisis pour elles."""
+    return service(s).match(body.q, body.k)
+
+
+@router.get("/match/status")
+def match_status(s: AppState = Depends(state)) -> dict[str, Any]:
+    return service(s).match_status()
+
+
+@router.post("/match/rebuild")
+def match_rebuild(s: AppState = Depends(state)) -> dict[str, Any]:
+    svc = service(s)
+    snap = svc.snapshot()
+    model = snap.path.with_name(f"{snap.path.stem}.matcher.json")
+    model.unlink(missing_ok=True)  # réapprentissage complet
+    svc.build_matcher(snap)
+    return svc.match_status()
+
+
+@router.post("/engine/packs/{pack}")
+def download_pack(pack: str, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Pack « rapide » ou « precis » : ses modèles l'un après l'autre (clic explicite)."""
+    from ..search.neural import PACKS
+
+    if pack not in PACKS:
+        raise bad_request(f"Pack inconnu : {pack}")
+    svc = service(s)
+    svc.search.downloads.start_many(PACKS[pack]["models"])
+    return svc.engine_status()
+
+
+@router.post("/engine/downloads/stop")
+def stop_downloads(s: AppState = Depends(state)) -> dict[str, Any]:
+    service(s).search.downloads.stop()
+    return service(s).engine_status()
+
+
+@router.post("/engine/models/upload")
+async def upload_models(files: list[UploadFile] = File(...), s: AppState = Depends(state)) -> dict[str, Any]:
+    """Fichiers téléchargés dans le navigateur : reconnus par taille + SHA-256 (le nom ne compte pas), puis installés."""
+    import shutil
+    import tempfile
+
+    svc = service(s)
+    folder = Path(tempfile.mkdtemp(prefix="merlin-models-", dir=svc.search.models_root.parent if svc.search.models_root.parent.exists() else None))
+    try:
+        paths = []
+        for k, f in enumerate(files):
+            target = folder / f"{k}.bin"
+            with target.open("wb") as out:
+                shutil.copyfileobj(f.file, out, 1 << 20)
+            paths.append(target)
+        result = svc.search.downloads.install_files(paths)
+        result["ignored"] = [files[int(Path(n).stem)].filename for n in result["ignored"] if Path(n).stem.isdigit()]
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+    if result["ready"]:
+        svc.rebuild_index()
+    return {**result, "engine": svc.engine_status()}
+
+
+class ScanRequest(BaseModel):
+    folder: str = ""  # vide : dossier Téléchargements de la session Windows
+
+
+@router.post("/engine/models/scan")
+def scan_models(body: ScanRequest, s: AppState = Depends(state)) -> dict[str, Any]:
+    from ..search.install import DownloadError
+
+    svc = service(s)
+    try:
+        result = svc.search.downloads.scan(Path(body.folder) if body.folder.strip() else None)
+    except DownloadError as error:
+        raise bad_request(str(error), error.hint) from error
+    if result["ready"]:
+        svc.rebuild_index()
+    return {**result, "engine": svc.engine_status()}
 
 
 @router.post("/engine/rebuild")

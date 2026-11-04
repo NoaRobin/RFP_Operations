@@ -146,7 +146,9 @@ class HybridIndex:
 
     # ------------------------------------------------------------------ recherche
     def search(self, text: str, k: int = 50, allowed: Callable[[int], bool] | None = None, rerank: bool = True,
-               rm3: bool = True, depth: int = 100) -> tuple[QueryInfo, list[Candidate]]:
+               rm3: bool = True, depth: int = 100, history: list[tuple[int, float]] | None = None) -> tuple[QueryInfo, list[Candidate]]:
+        """history : textes choisis pour cette question dans d'anciens RFI, déjà calculés par le rapprochement calibré
+        (merlin/match) — remplace alors la voie « questions passées » interne, pour un résultat identique partout."""
         q = self.analyse(text)
         t0 = time.time()
         lists: dict[str, list[Hit]] = {}
@@ -156,7 +158,10 @@ class HybridIndex:
                 first = self.bm25.score(self.bm25.rm3(q.vector, first), depth)
             lists["bm25"] = first
         lists["ngram"] = self.ngrams.score(q.pivot, depth)
-        if self.asked is not None and q.vector and q.seq:
+        if history is not None:
+            if history:
+                lists["history"] = [Hit(i, s) for i, s in history[:depth]]
+        elif self.asked is not None and q.vector and q.seq:
             # Une question passée ne compte que si elle couvre vraiment la question posée (mots rares d'abord) :
             # un mot commun (« société », « gestion ») ne suffit pas à rattacher un texte choisi pour autre chose.
             content = list(dict.fromkeys(q.seq))

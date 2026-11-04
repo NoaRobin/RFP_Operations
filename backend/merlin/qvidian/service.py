@@ -34,6 +34,9 @@ class QvidianService:
         self.root.mkdir(parents=True, exist_ok=True)
         self.guard = WriteGuard(settings.write_password)
         self.credentials = CredentialStore(self.root / "credentials.json")
+        from ..match.service import MatchBuilder
+
+        self.matcher = MatchBuilder()
         self._stored = self.credentials.load()  # clé d'API saisie une fois dans l'app, chiffrée sur le poste (DPAPI)
         self.journal = Journal(self.root / "journal.jsonl")
         self.ai = FindingStore(self.root / "ai_findings.json")
@@ -134,6 +137,8 @@ class QvidianService:
                 self.history_for(snap)
                 self.search.get(snap, wait=False)
                 self.audit()
+                if self.matcher.get(snap.path) is None:
+                    self.build_matcher(snap, background=False)
             except Exception:  # noqa: BLE001 - préparation facultative
                 pass
 
@@ -313,6 +318,7 @@ class QvidianService:
                 History(self._history_path(snap)).save(links, len(precedents), self._history_key(snap, len(precedents)))
                 self.history_state.update(running=False, finished=time.strftime("%Y-%m-%dT%H:%M:%S"))
                 self.search.get(snap, wait=False)  # l'index de recherche intègre les questions passées
+                self.build_matcher(snap, background=False)  # rapprochement calibré des questions (même moteur partout)
             except Exception as error:  # noqa: BLE001 - l'historique ne doit jamais bloquer la recherche
                 self.history_state.update(running=False, error=str(error)[:300])
 
@@ -321,6 +327,37 @@ class QvidianService:
         else:
             run()
         return self.history_summary(snap)
+
+    # ------------------------------------------------------------------ questions déjà tombées
+    def build_matcher(self, snap: Snapshot | None = None, background: bool = True) -> dict[str, Any]:
+        snap = snap or self.snapshot()
+        precedents = self._precedents(snap)
+        links = History(self._history_path(snap)).links
+        enc2, rr2 = self.search.precise_models()
+        models = {"encoder": self.search._encoder(), "reranker": self.search._reranker(), "precise_encoder": enc2, "precise_reranker": rr2}
+        return self.matcher.build(snap, precedents, links, models, self._history_key(snap, len(precedents)), background)
+
+    def match(self, question: str, k: int = 8) -> dict[str, Any]:
+        snap = self.snapshot()
+        m = self.matcher.get(snap.path)
+        if m is None:
+            if not self.matcher.state["running"]:
+                self.build_matcher(snap)
+            return {"ready": False, "state": self.matcher.state, "matches": [], "answers": []}
+        t0 = time.time()
+        matches = m.match(question, k=k)
+        votes = m.content_votes(question)
+        titles = {c["id"]: c for c in snap.many([cid for cid, *_ in votes])}
+        answers = [{"id": cid, "p": round(p, 3), "files": files, "asked": asked, "title": titles.get(cid, {}).get("title", ""),
+                    "text": (titles.get(cid, {}).get("text") or "")[:400]} for cid, p, files, asked in votes if cid in titles]
+        threshold = (m.fast_model.report.get("threshold") if m.fast_model else None)
+        return {"ready": True, "matches": [x.public() for x in matches], "answers": answers, "threshold": threshold,
+                "calibrated": m.fast_model is not None, "ms": round((time.time() - t0) * 1000, 1)}
+
+    def match_status(self) -> dict[str, Any]:
+        snap = self.snapshot()
+        m = self.matcher.get(snap.path)
+        return {"state": self.matcher.state, "stats": m.stats() if m else None}
 
     def history_summary(self, snap: Snapshot | None = None) -> dict[str, Any]:
         snap = snap or self.snapshot()

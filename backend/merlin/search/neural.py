@@ -25,13 +25,19 @@ HF = "https://huggingface.co"
 
 
 @dataclass(frozen=True)
+class FileSpec:
+    remote: str  # chemin dans le dépôt Hugging Face
+    size: int  # octets exacts
+    sha256: str  # empreinte publiée par Hugging Face : vérifie un fichier venu par n'importe quel chemin (dépôt manuel compris)
+
+
+@dataclass(frozen=True)
 class ModelSpec:
     id: str
     kind: str  # encoder | reranker
     label: str
     repo: str
-    files: dict[str, str]  # nom local → chemin dans le dépôt
-    size_mb: int
+    files: dict[str, FileSpec]  # nom local → fichier du dépôt
     license: str
     dim: int = 0
     max_len: int = 512
@@ -39,23 +45,47 @@ class ModelSpec:
     passage_prefix: str = ""
     note: str = ""
 
+    @property
+    def size_mb(self) -> int:
+        return round(sum(f.size for f in self.files.values()) / 1e6)
 
+
+def _tok(sha: str, size: int) -> FileSpec:
+    return FileSpec("tokenizer.json", size, sha)
+
+
+XLMR_TOK = _tok("62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626", 17082660)
 MODELS: dict[str, ModelSpec] = {m.id: m for m in [
     ModelSpec("e5-small", "encoder", "Multilingual E5 small (int8)", "Xenova/multilingual-e5-small",
-              {"model.onnx": "onnx/model_quantized.onnx", "tokenizer.json": "tokenizer.json"}, 136, "MIT", 384, 512,
-              "query: ", "passage: ", "Rapide : ~100 langues, idéal sur un poste standard."),
+              {"model.onnx": FileSpec("onnx/model_quantized.onnx", 118308185, "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193"),
+               "tokenizer.json": _tok("0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39", 17082730)},
+              "MIT", 384, 512, "query: ", "passage: ", "Rapide : ~100 langues, idéal sur un poste standard."),
     ModelSpec("e5-base", "encoder", "Multilingual E5 base (int8)", "Xenova/multilingual-e5-base",
-              {"model.onnx": "onnx/model_quantized.onnx", "tokenizer.json": "tokenizer.json"}, 296, "MIT", 768, 512,
-              "query: ", "passage: ", "Plus précis, deux fois plus lent à indexer."),
+              {"model.onnx": FileSpec("onnx/model_quantized.onnx", 278647662, "df7a9a29309e3ad491e1783adf8baee710262cc06079c7cbab63c630277fac94"),
+               "tokenizer.json": XLMR_TOK}, "MIT", 768, 512, "query: ", "passage: ", "Intermédiaire."),
+    ModelSpec("e5-large", "encoder", "Multilingual E5 large (int8)", "Xenova/multilingual-e5-large",
+              {"model.onnx": FileSpec("onnx/model_quantized.onnx", 561768762, "0a8d65db9a36f810ba5da15249f13145fcdc7890e6656f1fd38cd8b7c4db1fca"),
+               "tokenizer.json": XLMR_TOK}, "MIT", 1024, 512, "query: ", "passage: ", "Précis : le plus fin pour reconnaître une même question reformulée."),
     ModelSpec("rerank-mminilm", "reranker", "mMiniLM-L12 cross-encoder mMARCO (int8)", "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
-              {"model.onnx": "onnx/model_quint8_avx2.onnx", "tokenizer.json": "tokenizer.json"}, 136, "Apache-2.0", 0, 512,
-              note="Reclasse les 30 premiers résultats en lisant question et texte ensemble (FR / EN / ES / IT…)."),
+              {"model.onnx": FileSpec("onnx/model_quint8_avx2.onnx", 118620016, "6c2513767fb63d008a4377bef7a7a3555433d9436342bb53e35a3a72ffc52d4b"),
+               "tokenizer.json": XLMR_TOK}, "Apache-2.0", 0, 512,
+              note="Relit question et candidat ensemble (FR / EN / ES / IT…) : rapide."),
     ModelSpec("rerank-bge-m3", "reranker", "BGE reranker v2 m3 (int8)", "onnx-community/bge-reranker-v2-m3-ONNX",
-              {"model.onnx": "onnx/model_int8.onnx", "tokenizer.json": "tokenizer.json"}, 588, "Apache-2.0", 0, 512,
-              note="Reranker multilingue de référence (BAAI) : plus fin, environ trois fois plus lent."),
+              {"model.onnx": FileSpec("onnx/model_int8.onnx", 570727094, "912fc1215c2dbff6499700534bd8d31253af01573861abbfc43afd1fab6cce5d"),
+               "tokenizer.json": _tok("8bf8afbfd11306bd872018c53bfdf2e160a56f8edbcf49933324404791c148d3", 17082900)},
+              "Apache-2.0", 0, 512, note="Reranker multilingue de référence (BAAI) : plus fin, environ quatre fois plus lent."),
 ]}
 DEFAULT_ENCODER = "e5-small"
 DEFAULT_RERANKER = "rerank-mminilm"
+
+# Deux niveaux, au choix (ou les deux : le précis ne relit que les cas où le rapide hésite)
+PACKS: dict[str, dict[str, Any]] = {
+    "rapide": {"label": "Rapide", "models": ["e5-small", "rerank-mminilm"],
+               "note": "≈ 270 Mo. Réponse en une fraction de seconde, même sur un poste modeste."},
+    "precis": {"label": "Précis", "models": ["e5-large", "rerank-bge-m3"],
+               "note": "≈ 1,2 Go. Plus lent (quelques secondes par question difficile) ; avec le rapide installé, ne sert "
+                       "qu'aux questions où le rapide hésite."},
+}
 
 
 def available() -> bool:
@@ -73,69 +103,19 @@ def model_dir(root: Path, model_id: str) -> Path:
 
 def installed(root: Path, model_id: str) -> bool:
     spec = MODELS.get(model_id)
-    return bool(spec) and all((model_dir(root, model_id) / name).exists() for name in spec.files)
-
-
-# ---------------------------------------------------------------------------------------------- téléchargement
-class Downloads:
-    """Téléchargements explicites, un à la fois par modèle, écriture atomique (.part puis renommage)."""
-
-    def __init__(self, root: Path):
-        self.root = root
-        self.state: dict[str, dict[str, Any]] = {}
-        self._lock = threading.Lock()
-
-    def start(self, model_id: str) -> dict[str, Any]:
-        spec = MODELS[model_id]
-        with self._lock:
-            current = self.state.get(model_id)
-            if current and current.get("running"):
-                return current
-            self.state[model_id] = {"running": True, "done": 0, "total": spec.size_mb * 1_000_000, "error": None, "file": ""}
-        threading.Thread(target=self._run, args=(spec,), name=f"model-{model_id}", daemon=True).start()
-        return self.state[model_id]
-
-    def _run(self, spec: ModelSpec) -> None:
-        import httpx
-
-        from ..fundshop.net import NetError, _classify  # mêmes règles réseau que le reste de l'app (proxy, certificats)
-
-        state = self.state[spec.id]
-        base = os.environ.get("MERLIN_MODELS_URL", HF).rstrip("/")
-        folder = model_dir(self.root, spec.id)
-        folder.mkdir(parents=True, exist_ok=True)
-        verify: Any = True
+    if not spec:
+        return False
+    for name, f in spec.files.items():
+        path = model_dir(root, model_id) / name
         try:
-            import ssl
+            if path.stat().st_size != f.size:
+                return False
+        except OSError:
+            return False
+    return True
 
-            import truststore
 
-            verify = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        except Exception:  # noqa: BLE001
-            pass
-        try:
-            with httpx.Client(follow_redirects=True, timeout=120, verify=verify) as client:
-                for name, remote in spec.files.items():
-                    target = folder / name
-                    if target.exists():
-                        continue
-                    state["file"] = name
-                    part = target.with_suffix(target.suffix + ".part")
-                    url = f"{base}/{spec.repo}/resolve/main/{remote}"
-                    with client.stream("GET", url) as r:
-                        if r.status_code >= 400:
-                            raise RuntimeError(f"{url} : HTTP {r.status_code}")
-                        with part.open("wb") as f:
-                            for chunk in r.iter_bytes(1 << 20):
-                                f.write(chunk)
-                                state["done"] += len(chunk)
-                    part.replace(target)
-            state.update(running=False, finished=time.time())
-        except httpx.HTTPError as error:
-            err: NetError = _classify(error, base)
-            state.update(running=False, error=f"{err.code} : {err}")
-        except Exception as error:  # noqa: BLE001 - un échec n'arrête jamais l'app
-            state.update(running=False, error=str(error)[:300])
+from .install import Downloads  # noqa: E402  (téléchargement : repli Windows, reprise, empreintes, dépôt manuel)
 
 
 # ---------------------------------------------------------------------------------------------- inférence
@@ -269,5 +249,5 @@ class VectorCache:
         tmp.replace(self.path)
 
 
-__all__ = ["MODELS", "ModelSpec", "Encoder", "Reranker", "VectorCache", "Downloads", "available", "installed", "model_dir",
+__all__ = ["MODELS", "PACKS", "FileSpec", "ModelSpec", "Encoder", "Reranker", "VectorCache", "Downloads", "available", "installed", "model_dir",
            "text_hash", "DEFAULT_ENCODER", "DEFAULT_RERANKER"]

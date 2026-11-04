@@ -18,6 +18,7 @@ from ..rfi.aggregate import HALF_LIFE_DAYS, Choice, Vote, aggregate, to_date
 from .snapshot import STOP, Snapshot
 
 MIN_QUESTION_SIMILARITY = 0.45
+PROPOSE_P = 0.5  # probabilité calibrée minimale pour proposer un texte rapproché par merlin/match
 
 
 def _tokens(text: str) -> set[str]:
@@ -85,7 +86,11 @@ def votes(snapshot: Snapshot, question: str, k: int = 40, min_similarity: float 
             continue
         sim = max(question_similarity(question, c["title"], idf), question_similarity(question, c["question"] or "", idf))
         if c["id"] in past:
-            sim = max(sim, past[c["id"]][0])
+            # probabilité calibrée « même question » (merlin/match) : plus probable que non (≥ 50 %), le texte reste en
+            # lice quel que soit son titre, classé par cette probabilité ; en dessous, il ne sert qu'au classement
+            p = past[c["id"]][0]
+            if p >= PROPOSE_P:
+                sim = max(sim, min_similarity + (1 - min_similarity) * p)
         if sim >= min_similarity:
             scored.append((sim, c))
     best = max((sim for sim, _ in scored), default=0.0)
@@ -100,7 +105,7 @@ def votes(snapshot: Snapshot, question: str, k: int = 40, min_similarity: float 
         if c["id"] in past and past[c["id"]][1]:
             files = past[c["id"]][1]
             boost = 1.0 + 0.6 * math.log1p(files)  # choisi dans d'anciens RFI pour cette question : priorité
-            label += f" · choisi dans {files} ancien{'s' if files > 1 else ''} RFI (« {past[c['id']][2][:60]} »)"
+            label += f" · choisi dans {files} ancien{'s' if files > 1 else ''} RFI (« {past[c['id']][2][:60]} », même question à {round(100 * past[c['id']][0])} %)"
         out.append(Vote(c["text"].strip(), "qvidian", label, weight=sim * boost * (0.3 if expired else 1.0),
                         when=to_date(c["last_used"]) or to_date(c["modified"]), uses=max(c["times_used"], 1), ref=str(c["id"]),
                         check="expired" if expired else None))

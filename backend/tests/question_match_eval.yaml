@@ -1,0 +1,85 @@
+# Banc « même question ? » (données fictives). Chaque sujet : formulations vues dans d'anciens RFI (train) et
+# formulations jamais vues (test). Les sujets « voisins » (1 an / 3 ans, frais de gestion / de performance, création du
+# fonds / de la stratégie) doivent rester distincts. Mesure : python -m merlin.match.evaluate
+topics:
+  - id: 1
+    train: ["Who are the main shareholders of the management company?", "Please describe the shareholding structure of the firm.",
+            "Quel est l'actionnariat de la société de gestion ?", "Ownership structure of the asset manager"]
+    test: ["Can you detail who owns your company?", "Répartition du capital de la société de gestion", "¿Quiénes son los accionistas de la gestora?"]
+  - id: 2
+    train: ["Describe your business continuity plan.", "Do you have a business continuity plan (BCP)? Please describe it.",
+            "Décrivez votre plan de continuité d'activité.", "PCA : quelles sont les mesures prévues en cas de sinistre ?"]
+    test: ["What disaster recovery arrangements are in place?", "Piano di continuità operativa: descriverlo.", "Plan de continuité d'activité (PCA)"]
+  - id: 3
+    train: ["Describe your ESG integration process.", "How do you integrate ESG criteria in the investment process?",
+            "Comment intégrez-vous les critères ESG dans la gestion ?", "Intégration des critères environnementaux, sociaux et de gouvernance"]
+    test: ["Explain how sustainability factors are taken into account in investment decisions", "¿Cómo integran los criterios ESG en sus inversiones?",
+           "Processus d'intégration ESG"]
+  - id: 4
+    train: ["What is the fund's management fee?", "Management fee (%)", "Frais de gestion du fonds", "Annual management charge"]
+    test: ["Please indicate the management fees applied to the fund", "Commissione di gestione", "Frais de gestion annuels (en %)"]
+  - id: 5
+    train: ["Is there a performance fee?", "Performance fee (%) and hurdle", "Commission de surperformance", "Does the fund charge a performance fee?"]
+    test: ["Please detail any outperformance fee", "¿Existe comisión de éxito?", "Commission de performance : oui / non"]
+  - id: 6
+    train: ["Fund inception date", "Date de création du fonds", "Launch date of the fund", "When was the fund launched?"]
+    test: ["Date de lancement du fonds", "Data di lancio del fondo", "Inception date of the fund (dd/mm/yyyy)"]
+  - id: 7
+    train: ["Strategy inception date", "Date de création de la stratégie", "When was the investment strategy launched?", "Track record start date of the strategy"]
+    test: ["Since when has the strategy been managed?", "Date de lancement de la stratégie", "Fecha de inicio de la estrategia"]
+  - id: 8
+    train: ["Fund performance over 1 year", "1-year performance of the fund", "Performance du fonds sur 1 an", "Performance 1 an (%)"]
+    test: ["Return over the last 12 months", "Rendimiento a 1 año", "Performance sur un an glissant"]
+  - id: 9
+    train: ["Fund performance over 3 years", "3-year performance of the fund", "Performance du fonds sur 3 ans", "Performance 3 ans (%)"]
+    test: ["Return over the last 36 months", "Rendimiento a 3 años", "Performance sur trois ans glissants"]
+  - id: 10
+    train: ["Who is the depositary of the fund?", "Name of the custodian", "Dépositaire du fonds", "Depositary bank"]
+    test: ["Which bank acts as depositary?", "Nom du dépositaire", "Banca depositaria del fondo"]
+  - id: 11
+    train: ["Who is the auditor of the fund?", "Name of the statutory auditor", "Commissaire aux comptes du fonds", "External auditor"]
+    test: ["Which audit firm audits the fund?", "Nom du commissaire aux comptes", "Revisor de cuentas del fondo"]
+  - id: 12
+    train: ["Describe your cybersecurity policy.", "What measures do you have against cyber attacks?", "Politique de cybersécurité",
+            "Comment protégez-vous vos systèmes contre les cyberattaques ?"]
+    test: ["Information security framework: please describe", "Sicurezza informatica: quali misure?", "Mesures de sécurité informatique"]
+  - id: 13
+    train: ["Describe your anti-money laundering procedures.", "AML / KYC policy", "Procédures de lutte contre le blanchiment",
+            "Quelles sont vos procédures LCB-FT ?"]
+    test: ["How do you prevent money laundering?", "Politica antiriciclaggio", "Lutte anti-blanchiment et financement du terrorisme"]
+  - id: 14
+    train: ["Is the fund UCITS compliant?", "Is the fund a UCITS?", "Le fonds est-il un OPCVM ?", "UCITS status of the fund"]
+    test: ["Does the fund comply with the UCITS directive?", "¿Es el fondo UCITS?", "Le fonds est-il conforme à la directive OPCVM ?"]
+  - id: 15
+    train: ["Is the fund not UCITS compliant? If not, explain.", "Le fonds n'est-il pas un OPCVM ?"]
+    test: ["If the fund is not a UCITS, why?"]
+  - id: 16
+    train: ["How many employees does the company have?", "Number of staff", "Effectif de la société de gestion", "Headcount of the firm"]
+    test: ["Total number of employees", "Numero di dipendenti", "Nombre de salariés"]
+  - id: 17
+    train: ["Number of investment professionals", "How many portfolio managers and analysts?", "Nombre de gérants et d'analystes",
+            "Size of the investment team"]
+    test: ["How many people are in the investment team?", "Número de gestores y analistas", "Taille de l'équipe de gestion"]
+  - id: 18
+    train: ["Total assets under management of the firm", "AUM of the company", "Encours total sous gestion de la société", "Firm-wide AUM"]
+    test: ["What are your total assets under management?", "Patrimonio gestito totale", "Actifs sous gestion de la société"]
+  - id: 19
+    train: ["Assets under management of the fund", "Fund AUM", "Encours du fonds", "Fund size"]
+    test: ["What is the size of the fund?", "Patrimonio del fondo", "Actif net du fonds"]
+  - id: 20
+    train: ["Describe your voting policy.", "Proxy voting policy", "Politique de vote", "How do you exercise voting rights?"]
+    test: ["Please describe how you vote at general meetings", "Politique d'exercice des droits de vote", "Política de voto"]
+  - id: 21
+    train: ["Describe your engagement policy with companies.", "Shareholder engagement approach", "Politique d'engagement actionnarial",
+            "How do you engage with investee companies?"]
+    test: ["Stewardship and dialogue with issuers: please describe", "Dialogue avec les émetteurs", "Politica di engagement"]
+  - id: 22
+    train: ["What is the cut-off time for subscriptions?", "Subscription cut-off", "Heure limite de centralisation des souscriptions",
+            "Cut-off souscriptions"]
+    test: ["Deadline for subscription orders", "Ora limite per le sottoscrizioni", "Heure de centralisation des ordres de souscription"]
+  - id: 23
+    train: ["Settlement period for redemptions", "Redemption settlement (T+N)", "Délai de règlement des rachats", "Règlement des rachats"]
+    test: ["How many days to settle a redemption?", "Plazo de liquidación de reembolsos", "Délai de paiement des rachats"]
+  - id: 24
+    train: ["Benchmark of the fund", "What is the fund's reference index?", "Indicateur de référence du fonds", "Indice de référence"]
+    test: ["Which benchmark is used?", "Indice di riferimento del fondo", "Benchmark index"]

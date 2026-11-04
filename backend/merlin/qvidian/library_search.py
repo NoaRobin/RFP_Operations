@@ -77,6 +77,7 @@ class LibrarySearch:
         self.max_files = max((h["files"] for h in self.history.values()), default=0)
         self.today = today or date.today()
         self.half_life = half_life
+        self.snapshot_path = str(snapshot.path)
         self.rows = [c for c in snapshot.all()]
         self.by_id = {c["id"]: i for i, c in enumerate(self.rows)}
         paths = [c.get("folder_path") or "" for c in self.rows] + [f.get("path") or "" for f in snapshot.folders()]
@@ -185,7 +186,9 @@ class LibrarySearch:
         sort = sort if sort in SORTS else "pertinence"
         if not query.strip():
             return self._browse(f, allowed, sort, k)
-        q, cands = self.index.search(query, k=max(80, k * 4), allowed=allowed, rerank=rerank)
+        matched = self._matched(query)
+        history = [(self.by_id[cid], p) for cid, p, _, _ in matched if cid in self.by_id] if matched is not None else None
+        q, cands = self.index.search(query, k=max(80, k * 4), allowed=allowed, rerank=rerank, history=history)
         ql = query_level(q.pivot, self.funds)
         scored = []
         for c in cands:
@@ -288,9 +291,26 @@ class LibrarySearch:
             return None
         return {"files": h["files"], "last": h["last"], "questions": h["questions"][:8], "examples": h["examples"][:5]}
 
+    def _matched(self, question: str) -> list[tuple[int, float, int, str]] | None:
+        """Rapprochement calibré (merlin/match) s'il est prêt pour cet instantané ; None sinon (repli : voie interne)."""
+        from ..match.service import MATCHERS
+
+        m = MATCHERS.get(getattr(self, "snapshot_path", ""))
+        if m is None:
+            return None
+        try:
+            return m.content_votes(question)
+        except Exception:  # noqa: BLE001
+            return None
+
     def history_matches(self, question: str, min_similarity: float = 0.5, k: int = 8) -> list[tuple[int, float, int, str]]:
-        """Contenus choisis pour une question voisine dans d'anciens RFI : (id, similarité, nb de RFI, question passée)."""
+        """Contenus choisis pour une question voisine dans d'anciens RFI : (id, probabilité ou similarité, nb de RFI,
+        question passée). Avec le rapprochement calibré : exactement les mêmes que la recherche (même moteur)."""
         from .suggest import question_similarity
+
+        matched = self._matched(question)
+        if matched is not None:
+            return [t for t in matched if t[1] >= 0.2][:k]  # probabilité calibrée : seuil propre, pas celui des similarités
 
         if self.index.asked is None:
             return []
@@ -364,6 +384,27 @@ class SearchManager:
                 return self._models[mid]
         return None
 
+    def precise_models(self) -> tuple[Any, Any]:
+        """Pack « Précis » : encodeur large et reranker BGE, chargés seulement s'ils sont installés."""
+        if not neural.available():
+            return None, None
+        fast = getattr(self._encoder(), "id", None)
+        out = []
+        for ids in (["e5-large", "e5-base"], ["rerank-bge-m3"]):
+            mid = next((m for m in ids if m != fast and neural.installed(self.models_root, m)), None)
+            if mid is None:
+                out.append(None)
+                continue
+            if mid not in self._models:
+                try:
+                    cls = neural.Encoder if neural.MODELS[mid].kind == "encoder" else neural.Reranker
+                    self._models[mid] = cls(self.models_root, mid)
+                except Exception as error:  # noqa: BLE001
+                    self._models[mid] = None
+                    self._models[f"{mid}:error"] = str(error)[:200]
+            out.append(self._models[mid])
+        return out[0], out[1]
+
     def _reranker(self):
         mid = neural.DEFAULT_RERANKER
         if not self.use_reranker or not neural.available() or not neural.installed(self.models_root, mid):
@@ -382,8 +423,13 @@ class SearchManager:
             state = self.downloads.state.get(mid, {})
             out.append({"id": mid, "kind": spec.kind, "label": spec.label, "size_mb": spec.size_mb, "license": spec.license,
                         "note": spec.note, "installed": neural.installed(self.models_root, mid), "active": bool(self._models.get(mid)),
-                        "error": self._models.get(f"{mid}:error"), "download": state or None})
+                        "error": self._models.get(f"{mid}:error"), "download": state or None, "links": self.downloads.links(mid),
+                        "packs": [p for p, v in neural.PACKS.items() if mid in v["models"]]})
         return out
+
+    def packs(self) -> list[dict[str, Any]]:
+        return [{"id": p, **v, "size_mb": sum(neural.MODELS[m].size_mb for m in v["models"]),
+                 "installed": all(neural.installed(self.models_root, m) for m in v["models"])} for p, v in neural.PACKS.items()]
 
     # ------------------------------------------------------------------ moteurs
     @staticmethod
@@ -517,7 +563,7 @@ class SearchManager:
         current = self._engines.get(key)
         building = {k: v for k, v in (self._building.get(key) or {}).items() if k != "sig"} or None
         return {"ready": current is not None, "engine": current[1].engine if current else None,
-                "building": building, "neural_runtime": neural.available(), "models": self.models()}
+                "building": building, "neural_runtime": neural.available(), "models": self.models(), "packs": self.packs()}
 
     def reset_models(self) -> None:
         self._models.clear()
