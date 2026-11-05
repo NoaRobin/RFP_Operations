@@ -11,7 +11,7 @@ import type {
   QvidianStatus, QvidianSuggest, QvidianApiStats, QvidianEngineStatus, QvidianFilters, QvidianFolder, QvidianOverview, QvidianSearchResult, QvidianHistorySummary,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
-  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, ContactGroup, ContactsStatus, AskPlan, MatchResult, MatchStatus, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, ContactGroup, ContactsStatus, AskPlan, MatchResult, MatchStatus, QvidianMemory, FundSheet, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -149,6 +149,7 @@ export const api = {
       return request<{ installed: { model: string; file: string }[]; ignored: string[]; ready: string[]; engine: QvidianEngineStatus }>('/qvidian/engine/models/upload', { method: 'POST', body: form })
     },
     scanModels: (folder = '') => request<{ installed: { model: string; file: string }[]; ignored: string[]; ready: string[]; folder: string; looked_at: number; engine: QvidianEngineStatus }>('/qvidian/engine/models/scan', json({ folder })),
+    memory: () => request<QvidianMemory>('/qvidian/memory'),
     match: (q: string, k = 8) => request<MatchResult>('/qvidian/match', json({ q, k })),
     matchStatus: () => request<MatchStatus>('/qvidian/match/status'),
     matchRebuild: () => request<MatchStatus>('/qvidian/match/rebuild', { method: 'POST' }),
@@ -256,6 +257,8 @@ export const api = {
   },
 
   atelier: {
+    fundSheet: (isin: string, asOf = '') => request<FundSheet>(`/atelier/fund-sheet?isin=${encodeURIComponent(isin)}&as_of=${asOf}`),
+    fundSheetXlsx: (isin: string, asOf = '') => `/api/atelier/fund-sheet.xlsx?isin=${encodeURIComponent(isin)}&as_of=${asOf}`,
     extractions: () => request<{ key_types: { id: string; label: string }[]; extractions: Extraction[] }>('/atelier/extractions'),
     workbooks: () => request<WorkbookMeta[]>('/atelier/workbooks'),
     workbook: (id: string, sheet?: string, headerRow?: number, orientation?: 'rows' | 'columns') => {

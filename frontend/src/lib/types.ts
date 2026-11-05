@@ -736,3 +736,17 @@ export interface AskPlan {
   teams: { team: string; people: string[]; to: string; questions: string[]; mail: string; matches: { asked_as: string; score: number; times: number }[] }[]
   unknown: string[]; built_at: string | null
 }
+
+export interface MemoryCard { id: number; title: string; folder_path: string; rfis: number; times_used: number; last_rfi: string; modified: string
+  level: string; questions: string[]; age_days?: number | null; expired?: boolean }
+export interface QvidianMemory {
+  today: string; rfis: number; links: number; texts_reused: number; library: number; reuse_rate: number
+  modes: Record<string, number>; levels: Record<string, number>
+  bank: { questions: number; distinct: number; covered: number; rate: number | null
+    orphans: { question: string; rfis: number; last: string; answers: string[] }[] }
+  timeline: { month: string; answers: number }[]
+  pillars: MemoryCard[]; stale: MemoryCard[]; unused: MemoryCard[]; unused_total: number
+}
+
+export interface FundSheetItem { id: string; label: string; display: string; has_value: boolean; issues: string[]; evidence: string; source: string }
+export interface FundSheet { isin: string; as_of: string; groups: Record<string, FundSheetItem[]>; filled: number; total: number; errors: string[] }

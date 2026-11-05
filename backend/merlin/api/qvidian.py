@@ -155,6 +155,12 @@ def match(body: MatchRequest, s: AppState = Depends(state)) -> dict[str, Any]:
     return service(s).match(body.q, body.k)
 
 
+@router.get("/memory")
+def memory(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Mémoire des réponses : couverture, réutilisation, textes piliers, à créer, à rafraîchir, jamais utilisés."""
+    return service(s).memory()
+
+
 @router.get("/match/status")
 def match_status(s: AppState = Depends(state)) -> dict[str, Any]:
     return service(s).match_status()

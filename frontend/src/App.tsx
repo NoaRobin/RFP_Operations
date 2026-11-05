@@ -19,6 +19,8 @@ const Omni = lazy(() => import('./pages/Omni'))
 const RFPascontente = lazy(() => import('./pages/RFPascontente'))
 const MergeCodes = lazy(() => import('./pages/MergeCodes'))
 const Contacts = lazy(() => import('./pages/Contacts'))
+const MerlinHub = lazy(() => import('./pages/MerlinHub'))
+const FundSheetPage = lazy(() => import('./pages/FundSheetPage'))
 const Qvidian = lazy(() => import('./pages/qvidian/QvidianSection'))
 const Suivi = lazy(() => import('./pages/Suivi'))
 const AutomationPage = lazy(() => import('./pages/AutomationPage'))
@@ -36,7 +38,10 @@ function Shell() {
         {(display) => (
           <Suspense fallback={<Loading />}>
             <Routes location={display}>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<MerlinHub />} />
+              <Route path="/rfp" element={<Home />} />
+              <Route path="/atelier/fonds" element={<FundSheetPage />} />
+              <Route path="/atelier/fonds/:isin" element={<FundSheetPage />} />
               <Route path="/rfi" element={<Rfi />} />
               <Route path="/documents" element={<FundShop />} />
               <Route path="/omni" element={<Omni />} />

@@ -355,6 +355,16 @@ class QvidianService:
         return {"ready": True, "matches": [x.public() for x in matches], "answers": answers, "threshold": threshold,
                 "calibrated": m.fast_model is not None, "ms": round((time.time() - t0) * 1000, 1)}
 
+    def memory(self) -> dict[str, Any]:
+        from .memory import memory
+
+        snap = self.snapshot()
+        engine = self.search.get(snap, wait=False)
+        levels = {}
+        if engine is not None and getattr(engine, "rows", None):
+            levels = {c["id"]: engine.levels[i].scope for i, c in enumerate(engine.rows)}
+        return memory(snap.all(), History(self._history_path(snap)).links, self.matcher.get(snap.path), levels=levels)
+
     def match_status(self) -> dict[str, Any]:
         snap = self.snapshot()
         m = self.matcher.get(snap.path)

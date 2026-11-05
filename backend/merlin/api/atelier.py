@@ -208,3 +208,64 @@ def run_recipe(recipe_id: str, s: AppState = Depends(state), user: str = Depends
 def delete_recipe(recipe_id: str, s: AppState = Depends(state)):
     s.store.delete_recipe(recipe_id)
     return {"ok": True}
+
+
+# ------------------------------------------------------------------ fiche fonds (Product Info + JUMP)
+def _fund_sheet(s: AppState, isin: str, as_of: str) -> dict[str, Any]:
+    from ..atelier.ontology_bridge import GROUPS, OntologyFiller
+
+    onto = ontology_for(s.data)
+    when = as_of or date.today().isoformat()
+    filler = OntologyFiller(s.data, onto, when)
+    if filler.values(isin) is None:
+        raise not_found(f"ISIN {isin.upper()} inconnu de Product Info.")
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for c in onto.concepts.values():
+        if c.problems:
+            continue
+        try:
+            r = filler.fill(c, c.label_fr, isin)
+        except Exception as error:  # noqa: BLE001 - un concept illisible n'empêche pas la fiche
+            r = {"value": None, "display": "", "issues": [str(error)[:160]], "evidence": ""}
+        group = GROUPS.get(c.id.split(".", 1)[0], GROUPS["meta"]).replace("Ontologie RFI · ", "")
+        groups.setdefault(group, []).append({"id": c.id, "label": c.label_fr, "display": r["display"], "has_value": r["value"] is not None,
+                                             "issues": r["issues"][:2], "evidence": r["evidence"], "source": c.source if isinstance(c.source, str) else " / ".join(c.source.values())})
+    filled = sum(1 for g in groups.values() for x in g if x["has_value"])
+    total = sum(len(g) for g in groups.values())
+    return {"isin": isin.upper(), "as_of": when, "groups": groups, "filled": filled, "total": total, "errors": filler.errors[:10]}
+
+
+@router.get("/fund-sheet")
+def fund_sheet(isin: str, as_of: str = "", s: AppState = Depends(state)) -> dict[str, Any]:
+    """Toutes les données Product Info + JUMP d'une part (concepts de l'ontologie RFI), avec leur source."""
+    try:
+        return _fund_sheet(s, isin.strip(), as_of)
+    except DataError as error:
+        raise bad_request(str(error), error.hint) from error
+
+
+@router.get("/fund-sheet.xlsx")
+def fund_sheet_xlsx(isin: str, as_of: str = "", s: AppState = Depends(state)):
+    import io
+
+    from fastapi.responses import Response
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+
+    sheet = fund_sheet(isin, as_of, s)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = sheet["isin"]
+    ws.append([f"Fiche {sheet['isin']} au {sheet['as_of']}"])
+    ws.append(["Rubrique", "Donnée", "Valeur", "Source", "Remarque"])
+    for c in ws[2]:
+        c.font = Font(bold=True)
+    for group, items in sheet["groups"].items():
+        for x in items:
+            ws.append([group, x["label"], x["display"], x["source"], "; ".join(x["issues"])])
+    for col, w in zip("ABCDE", (24, 46, 40, 40, 40)):
+        ws.column_dimensions[col].width = w
+    buf = io.BytesIO()
+    wb.save(buf)
+    return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="Fiche_{sheet["isin"]}_{sheet["as_of"]}.xlsx"'})

@@ -4,12 +4,12 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  Activity, Bot, Cpu, FolderTree, Gauge, HeartPulse, History, Library, LogIn, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, X,
-} from 'lucide-react'
+import { Activity, Bot, BrainCircuit, Cpu, FolderTree, Gauge, HeartPulse, History, LogIn, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { ErrorState, Loading } from '../../components/ui/States'
 import { useToast } from '../../components/ui/Toast'
+import { Mechanic } from '../../universe/Mascots'
+import { MemoryView } from './views/MemoryView'
 import { texts } from '../../content/texts'
 import { api } from '../../lib/api'
 import { gsap, useGSAP } from '../../motion/gsap'
@@ -25,7 +25,7 @@ import { SearchView } from './views/SearchView'
 
 const Q = texts.qvidian
 const NAV: { group: string; items: { to: string; key: string; icon: typeof Gauge }[] }[] = [
-  { group: 'explore', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'recherche', key: 'recherche', icon: Search },
+  { group: 'explore', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'memoire', key: 'memoire', icon: BrainCircuit }, { to: 'recherche', key: 'recherche', icon: Search },
     { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree }, { to: 'reponses', key: 'reponses', icon: Sparkles }] },
   { group: 'quality', items: [{ to: 'sante', key: 'sante', icon: HeartPulse }, { to: 'ia', key: 'ia', icon: Bot }] },
   { group: 'act', items: [{ to: 'modifier', key: 'modifier', icon: PenSquare }, { to: 'journal', key: 'journal', icon: History }] },
@@ -52,8 +52,14 @@ function Sidebar() {
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto" aria-label={Q.section} data-lenis-prevent>
       <div className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-4 shadow-[4px_4px_0_0_var(--color-fg)]">
-        <p className="flex items-center gap-2 font-display text-2xl font-bold"><Library size={22} aria-hidden="true" />{Q.section}</p>
-        <p className="mt-1 text-xs font-semibold text-fg-2">{Q.sectionLead}</p>
+        <div className="flex items-center gap-3">
+          <Mechanic className="size-14 shrink-0" />
+          <div>
+            <p className="font-display text-2xl font-bold leading-none">{texts.pitstop.name}</p>
+            <p className="mt-1 text-xs font-bold text-magic-300">{texts.pitstop.sub}</p>
+          </div>
+        </div>
+        <p className="mt-2 text-xs font-semibold text-fg-2">{texts.pitstop.lead}</p>
         {status && (
           <p className={`mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${status.mode === 'demo' ? 'bg-sun-400' : status.connected ? 'bg-mint-400' : 'bg-[#ffd6dc]'}`}>
             <span className={`size-2 rounded-full ${status.connected ? 'bg-fg' : 'bg-fg/40'}`} aria-hidden="true" />
@@ -161,6 +167,7 @@ function Body() {
       {status && (
         <Routes>
           <Route index element={<Cockpit />} />
+          <Route path="memoire" element={<MemoryView />} />
           <Route path="recherche" element={<SearchView />} />
           <Route path="bibliotheque" element={<LibraryView />} />
           <Route path="contenu/:id" element={<ContentView />} />
