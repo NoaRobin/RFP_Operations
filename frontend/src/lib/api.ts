@@ -170,6 +170,17 @@ export const api = {
     content: (id: number) => request<QvidianContent>(`/qvidian/contents/${id}`),
     suggest: (q: string) => request<QvidianSuggest>(`/qvidian/suggest?q=${encodeURIComponent(q)}`),
     aiPrompt: (ids: number[]) => request<QvidianAiPrompt>('/qvidian/ai/prompt', json({ ids })),
+    aiExport: async (ids: number[]) => {
+      const r = await fetch('/api/qvidian/ai/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) })
+      if (!r.ok) throw new ApiError('Export impossible.')
+      const name = /filename="([^"]+)"/.exec(r.headers.get('content-disposition') ?? '')?.[1] ?? 'Qvidian_relecture.json'
+      return { blob: await r.blob(), name }
+    },
+    aiImportXlsx: (files: File[]) => {
+      const form = new FormData()
+      files.forEach((f) => form.append('files', f))
+      return request<{ read: number; texts: number; unknown: number[]; sheets: Record<string, number> }>('/qvidian/ai/import-xlsx', { method: 'POST', body: form })
+    },
     aiReply: (text: string, ids: number[]) => request<QvidianAiReply>('/qvidian/ai/reply', json({ text, ids })),
     plan: (ids: number[], action: string, params: Record<string, unknown>) => request<QvidianPlan>('/qvidian/bulk/plan', json({ ids, action, params })),
     apply: (planId: string, password: string, force: boolean) => request<QvidianApplyResult>('/qvidian/bulk/apply', json({ plan_id: planId, password, force })),

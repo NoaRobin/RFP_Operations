@@ -14,7 +14,7 @@ import { LiquidGauge } from '../../../components/qviapi/LiquidGauge'
 import { useReducedMotion } from '../../../motion/useReducedMotion'
 import { texts } from '../../../content/texts'
 import { api, ApiError } from '../../../lib/api'
-import type { QvidianFacet, QvidianFilters, QvidianHit, QvidianSearchResult } from '../../../lib/types'
+import type { QvidianFacet, QvidianFilters, QvidianHit, QvidianSearchResult, QvidianSuggest } from '../../../lib/types'
 import { useQvidian } from '../context'
 
 const KeyboardScene = lazy(() => import('../../../components/qviapi/KeyboardScene'))
@@ -133,6 +133,14 @@ export function SearchView() {
   const [res, setRes] = useState<QvidianSearchResult | null>(null)
   const [busy, setBusy] = useState(false)
   const pressed = useRef('')
+  const [best, setBest] = useState<QvidianSuggest['choices'][number] | null>(null)
+  useEffect(() => {
+    const text = (params.get('q') ?? '').trim()
+    if (text.length < 8) { setBest(null); return }
+    let alive = true
+    api.qvidian.suggest(text).then((r) => alive && setBest(r.choices[0] ?? null)).catch(() => alive && setBest(null))
+    return () => { alive = false }
+  }, [params])
   const reduced = useReducedMotion()
   const show3d = !reduced && webgl()
   const [refining, setRefining] = useState(false)
@@ -294,6 +302,18 @@ export function SearchView() {
             {res?.index?.running && <span className="rounded-full bg-sun-400/50 px-2 py-0.5 text-xs">{Q.indexing} {res.index.done}/{res.index.total}</span>}
             <span className="ml-auto hidden text-xs font-semibold text-fg-3 md:inline">{Q.keyboard}</span>
           </p>
+          {best && (
+            <article className="rounded-[var(--radius-card)] border-2 border-magic-500 bg-card p-4" aria-label={texts.qviapi.recommended}>
+              <p className="flex flex-wrap items-center gap-2 text-xs font-bold text-magic-300">
+                <Wand2 size={14} aria-hidden="true" />{texts.qviapi.recommended}
+                <span className="font-semibold text-fg-3">{texts.qviapi.recommendedWhy(Math.round(best.share * 100))}</span>
+                <button onClick={async () => { const ok = await copyText(best.value); toast(ok ? 'success' : 'error', ok ? Q.copied : Q.copyFailed) }}
+                  className="ml-auto inline-flex items-center gap-1 rounded-full border border-fg/30 px-2.5 py-1 text-fg hover:border-fg"><Copy size={13} aria-hidden="true" />{Q.copy}</button>
+              </p>
+              <p className="mt-2 line-clamp-6 whitespace-pre-line text-sm">{best.value}</p>
+              <p className="mt-1 text-xs text-fg-3">{best.why} · {best.contents.map((x) => <Link key={x} to={`/qvidian/contenu/${x}`} className="mr-1 underline">#{x}</Link>)}</p>
+            </article>
+          )}
           {res && results.length === 0 && !busy && <p className="rounded-2xl border-2 border-dashed border-fg/40 p-6 text-center font-semibold text-fg-2">{Q.noResults}</p>}
           {results.map((hit, i) => (
             <Hit key={hit.id} hit={hit} active={i === active} selected={selected.has(hit.id)} query={q}

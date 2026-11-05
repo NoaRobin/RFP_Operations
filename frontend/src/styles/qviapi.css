@@ -6,16 +6,17 @@
  */
 html[data-section="qviapi"] {
   color-scheme: dark;
-  --color-canvas: #060b1a;
-  --color-field: #0a1330;
-  --color-card: #0c1530;
-  --color-card-2: #111d3f;
-  --color-card-3: #172751;
-  --color-line: rgb(120 160 255 / 0.14);
-  --color-line-strong: #2a3d6e;
-  --color-fg: #e7eeff;
-  --color-fg-2: #a8b7d9;
-  --color-fg-3: #7d8db4;
+  /* bleu ardoise lumineux (plus clair que le quasi-noir), surfaces qui se détachent nettement */
+  --color-canvas: #0e1830;
+  --color-field: #16223f;
+  --color-card: #142040;
+  --color-card-2: #1b2a50;
+  --color-card-3: #22345f;
+  --color-line: rgb(148 178 255 / 0.18);
+  --color-line-strong: #34497d;
+  --color-fg: #eef3ff;
+  --color-fg-2: #b4c2e2;
+  --color-fg-3: #8a9bc2;
   --color-on-accent: #ffffff;
   /* aplats sombres saturés : le texte clair reste lisible dessus */
   --color-sun-200: #bfdbfe; --color-sun-300: #93c5fd; --color-sun-400: #1d4ed8; --color-sun-600: #2563eb;
@@ -28,10 +29,7 @@ html[data-section="qviapi"] {
   --radius-card: 0.9rem;
 }
 html[data-section="qviapi"] body {
-  background:
-    radial-gradient(1100px 560px at 78% -12%, rgb(59 130 246 / 0.20), transparent 62%),
-    radial-gradient(760px 520px at -8% 34%, rgb(34 211 238 / 0.10), transparent 60%),
-    #060b1a fixed;
+  background: radial-gradient(1200px 600px at 75% -15%, rgb(59 130 246 / 0.16), transparent 65%), #0e1830 fixed;
 }
 /* De la BD à la salle des machines : contours fins et lueurs au lieu de l'encre épaisse et des ombres pleines */
 html[data-section="qviapi"] .qv :is([class*="border-fg"], [class*="border-[2"], [class*="border-[3"], .border-2) {
@@ -39,15 +37,29 @@ html[data-section="qviapi"] .qv :is([class*="border-fg"], [class*="border-[2"], 
   border-color: var(--color-line) !important;
 }
 html[data-section="qviapi"] .qv [class*="shadow-["] {
-  box-shadow: 0 0 0 1px rgb(59 130 246 / 0.16), 0 18px 42px -24px rgb(59 130 246 / 0.6) !important;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 28px -20px rgb(0 0 0 / 0.55) !important;
 }
 html[data-section="qviapi"] .qv [class*="hover:-translate-y"]:hover { transform: none; }
 html[data-section="qviapi"] .qv :is(h1, h2, h3) { letter-spacing: -0.02em; }
 html[data-section="qviapi"] .qv h1 { font-weight: 600; }
-html[data-section="qviapi"] .qv .bg-card { background-color: rgb(12 21 48 / 0.78); backdrop-filter: blur(10px); }
+html[data-section="qviapi"] .qv .bg-card { background-color: var(--color-card); }
 html[data-section="qviapi"] .glass { background: rgb(8 14 34 / 0.72) !important; border-color: var(--color-line) !important; box-shadow: none !important; }
 html[data-section="qviapi"] :focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
 /* Cartouche « instrument » : titre de panneau en petites capitales espacées, réservé aux mesures */
 .qv-meter { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 @keyframes qv-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .qv-wave { animation: none !important; } }
+
+/* Champs : jamais de jaune (remplissage automatique du navigateur), focus net */
+html[data-section="qviapi"] :is(input, textarea, select) { background-color: var(--color-field); color: var(--color-fg); }
+html[data-section="qviapi"] :is(input, textarea, select):-webkit-autofill,
+html[data-section="qviapi"] :is(input, textarea, select):autofill {
+  -webkit-box-shadow: 0 0 0 100px var(--color-field) inset !important;
+  -webkit-text-fill-color: var(--color-fg) !important;
+  caret-color: var(--color-fg);
+}
+html[data-section="qviapi"] .qv :is(input, textarea, select):focus { border-color: #60a5fa !important; box-shadow: 0 0 0 3px rgb(96 165 250 / 0.25) !important; }
+html[data-section="qviapi"] ::placeholder { color: var(--color-fg-3); }
+/* Épure : moins de gras, plus d'air dans les panneaux */
+html[data-section="qviapi"] .qv :is(.font-bold) { font-weight: 600; }
+html[data-section="qviapi"] .qv .text-xs { letter-spacing: 0.005em; }

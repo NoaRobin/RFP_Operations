@@ -132,7 +132,7 @@ if (dist / "index.html").exists():
         candidate = (dist / path).resolve()
         if path and candidate.is_file() and dist.resolve() in candidate.parents:
             return FileResponse(candidate)
-        return FileResponse(dist / "index.html")
+        return FileResponse(dist / "index.html", headers={"Cache-Control": "no-cache"})  # toujours la dernière version du front
 
 
 __all__ = ["app", "get_state"]

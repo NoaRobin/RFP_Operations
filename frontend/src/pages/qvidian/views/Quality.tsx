@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { KeyRound, LogIn, LogOut, RotateCcw, Search, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { AiPanel } from '../../../components/qvidian/AiPanel'
+import { ChatReview } from '../../../components/qvidian/ChatReview'
 import { ContentList } from '../../../components/qvidian/ContentList'
 import { ErrorMap, type MapFilter } from '../../../components/qvidian/ErrorMap'
 import { Button } from '../../../components/ui/Button'
@@ -131,7 +132,10 @@ export function AiView() {
     <div className="flex flex-col gap-5">
       <Title title={Q.aiTitle} lead={Q.aiLead} />
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <section data-enter className="rounded-[var(--radius-card)] border-2 border-fg bg-card p-5"><AiPanel ids={ids} onDone={reload} /></section>
+        <div className="flex flex-col gap-5">
+          <section data-enter className="rounded-[var(--radius-card)] border-2 border-fg bg-card p-5"><ChatReview ids={ids} onDone={reload} /></section>
+          <section data-enter className="rounded-[var(--radius-card)] border-2 border-fg bg-card p-5"><AiPanel ids={ids} onDone={reload} /></section>
+        </div>
         <section data-enter className="rounded-[var(--radius-card)] border-2 border-fg bg-card p-5">
           <p className="mb-3 text-sm font-bold text-fg-2">{ids.length ? Q.selected(ids.length) : Q.emptySelection}</p>
           <ItemList items={items.length ? items : audit?.items.filter((i) => i.issues.length) ?? []} />

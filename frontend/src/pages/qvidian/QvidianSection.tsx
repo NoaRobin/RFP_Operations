@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, Library, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, Tags, X } from 'lucide-react'
+import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, Library, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Tags, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { ErrorState, Loading } from '../../components/ui/States'
 import { useToast } from '../../components/ui/Toast'
@@ -15,7 +15,7 @@ import { api } from '../../lib/api'
 import { gsap, useGSAP } from '../../motion/gsap'
 import { d, ease, prefersReducedMotion } from '../../motion/tokens'
 import { QvidianProvider, useQvidian } from './context'
-import { AiView, AnswersView, ConnectionView, HealthView, JournalView } from './views/Quality'
+import { AiView, ConnectionView, HealthView, JournalView } from './views/Quality'
 import { ApiView } from './views/ApiView'
 import { Cockpit } from './views/Cockpit'
 import { ContentView } from './views/ContentView'
@@ -27,14 +27,14 @@ const Q = texts.qvidian
 const NAV: { group: string; items: { to: string; key: string; icon: typeof Gauge; external?: boolean }[] }[] = [
   { group: 'pilot', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'memoire', key: 'memoire', icon: BrainCircuit }] },
   { group: 'find', items: [{ to: 'recherche', key: 'recherche', icon: Search }, { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree },
-    { to: 'questions', key: 'questions', icon: MessagesSquare }, { to: 'reponses', key: 'reponses', icon: Sparkles }] },
+    { to: 'questions', key: 'questions', icon: MessagesSquare }] },
   { group: 'care', items: [{ to: 'sante', key: 'sante', icon: HeartPulse }, { to: 'fraicheur', key: 'fraicheur', icon: CalendarClock },
     { to: 'doublons', key: 'doublons', icon: Copy }, { to: 'ia', key: 'ia', icon: Bot }] },
   { group: 'act', items: [{ to: 'modifier', key: 'modifier', icon: PenSquare }, { to: 'journal', key: 'journal', icon: History },
     { to: '/merge-codes', key: 'mergecodes', icon: Tags, external: true }] },
   { group: 'system', items: [{ to: 'api', key: 'api', icon: Cpu }, { to: 'connexion', key: 'connexion', icon: Plug }] },
 ]
-const LEGACY: Record<string, string> = { apercu: '', carte: 'sante', bibliotheque: 'bibliotheque', reponses: 'reponses', ia: 'ia', modifier: 'modifier', connexion: 'connexion' }
+const LEGACY: Record<string, string> = { apercu: '', carte: 'sante', bibliotheque: 'bibliotheque', reponses: 'recherche', ia: 'ia', modifier: 'modifier', connexion: 'connexion' }
 
 function Sidebar() {
   const { status, audit, selected, clear } = useQvidian()
@@ -175,7 +175,7 @@ function Body() {
           <Route path="recherche" element={<SearchView />} />
           <Route path="bibliotheque" element={<LibraryView />} />
           <Route path="contenu/:id" element={<ContentView />} />
-          <Route path="reponses" element={<AnswersView />} />
+          <Route path="reponses" element={<Navigate to="/qvidian/recherche" replace />} />
           <Route path="sante" element={<HealthView />} />
           <Route path="ia" element={<AiView />} />
           <Route path="modifier" element={<EditView />} />

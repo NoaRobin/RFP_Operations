@@ -433,3 +433,34 @@ def test_refused_api_key_says_what_to_check(tmp_path, monkeypatch):
         svc.connect("demo.user", api_key="WRONG")
     assert "Clé d'API refusée" in err.value.message and "identifiant" in err.value.hint
     assert not (tmp_path / "qvidian" / "credentials.json").exists()  # une clé refusée n'est jamais mémorisée
+
+
+def test_ai_export_json_and_excel_return(client):
+    """Export JSON (prompt + textes) pour un chat, puis retour Excel à onglets rangé sur chaque texte."""
+    import io
+    import json as _json
+
+    from openpyxl import Workbook
+
+    r = client.post("/api/qvidian/ai/export", json={"ids": [1006, 1010]})
+    pack = _json.loads(r.content)
+    assert "Textes dépassés" in pack["consignes"] and pack["nombre_de_textes"] == 2 and pack["textes"][0]["texte"]
+    assert pack["format_de_retour"]["colonnes"][0] == "ID"
+    wb = Workbook()
+    wb.active.title = "Synthèse"
+    ws = wb.create_sheet("Textes dépassés")
+    ws.append(["ID", "Titre", "Extrait concerné", "Problème", "Correction proposée", "Gravité"])
+    ws.append(["C1006", "Processus", "en 2019", "Date ancienne", "Mettre à jour", "haute"])
+    ws.append([999999, "?", "", "Inconnu", "", "basse"])
+    ws2 = wb.create_sheet("Orthographe")
+    ws2.append(["Gravité", "ID", "Problème", "Correction proposée"])  # colonnes dans un autre ordre : tolérées
+    ws2.append(["basse", 1010, "Faute d'accord", "politiques intégrées"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    out = client.post("/api/qvidian/ai/import-xlsx", files={"files": ("retour.xlsx", buf.getvalue(), "application/octet-stream")}).json()
+    assert out["read"] == 2 and out["unknown"] == [999999] and out["sheets"] == {"Textes dépassés": 1, "Orthographe": 1}
+    from merlin.api.qvidian import service
+    from merlin.state import get_state
+
+    saved = service(get_state()).ai.load()
+    assert saved["1010"]["findings"][0]["kind"] == "orthographe" and saved["1006"]["findings"][0]["severity"] == "haute"

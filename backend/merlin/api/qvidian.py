@@ -2,6 +2,7 @@
 modifications en masse protégées par mot de passe, import des projets comme anciens RFI."""
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -365,6 +366,61 @@ def ai_reply(body: AiReplyRequest, s: AppState = Depends(state)) -> dict[str, An
     out["saved"] = svc.ai.save(out["findings"], revisions)
     out["findings"] = {str(k): v for k, v in out["findings"].items()}
     return out
+
+
+@router.post("/ai/export")
+def ai_export(body: IdsRequest, s: AppState = Depends(state)):
+    """Textes en JSON + prompt pour un chat (rendu attendu : Excel à onglets). Sans sélection : toute la bibliothèque
+    active. Plusieurs parties si elle est grande : archive .zip, un JSON par partie, chacun avec le même prompt."""
+    import io
+    import json as _json
+    import zipfile
+
+    from fastapi.responses import Response
+
+    from ..qvidian.ai import json_pack
+
+    snap = service(s).snapshot()
+    contents = snap.many(body.ids) if body.ids else [c for c in snap.all() if c.get("enabled", True)]
+    if not contents:
+        raise bad_request("Aucun texte à exporter.")
+    parts = json_pack(contents)
+    stamp = date.today().isoformat()
+    if len(parts) == 1:
+        return Response(_json.dumps(parts[0], ensure_ascii=False, indent=1).encode("utf-8"), media_type="application/json",
+                        headers={"Content-Disposition": f'attachment; filename="Qvidian_relecture_{stamp}.json"'})
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        for k, p in enumerate(parts, 1):
+            z.writestr(f"Qvidian_relecture_{stamp}_partie_{k}_sur_{len(parts)}.json", _json.dumps(p, ensure_ascii=False, indent=1))
+    return Response(buf.getvalue(), media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="Qvidian_relecture_{stamp}_{len(parts)}_parties.zip"'})
+
+
+@router.post("/ai/import-xlsx")
+async def ai_import_xlsx(files: list[UploadFile] = File(...), s: AppState = Depends(state)) -> dict[str, Any]:
+    """Excel(s) rendu(s) par le chat : constats rangés sur chaque texte (carte des erreurs, Analyse IA)."""
+    from ..qvidian.ai import parse_xlsx
+
+    svc = service(s)
+    known = {c["id"] for c in svc.snapshot().all()}
+    total = {"read": 0, "unknown": [], "sheets": {}, "texts": 0}
+    for f in files:
+        try:
+            out = parse_xlsx(await f.read(), known)
+        except Exception as error:  # noqa: BLE001
+            raise bad_request(f"{f.filename} : Excel illisible.", "Déposez le fichier .xlsx rendu par le chat.") from error
+        revisions = {c["id"]: c["revision"] for c in svc.snapshot().many(list(out["findings"]))}
+        svc.ai.save(out["findings"], revisions)
+        total["read"] += out["read"]
+        total["texts"] += len(out["findings"])
+        total["unknown"] += out["unknown"]
+        for k, v in out["sheets"].items():
+            total["sheets"][k] = total["sheets"].get(k, 0) + v
+    if total["read"] == 0:
+        raise bad_request("Aucun constat lu dans l'Excel.", "Les onglets attendus : " + ", ".join(__import__("merlin.qvidian.ai", fromlist=["SHEETS"]).SHEETS)
+                          + " ; colonnes : ID, Titre, Extrait concerné, Problème, Correction proposée, Gravité.")
+    return total
 
 
 class PlanRequest(BaseModel):
