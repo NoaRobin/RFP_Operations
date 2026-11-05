@@ -112,7 +112,7 @@ def test_collected_file_from_a_colleague_is_merged(tmp_path, monkeypatch):
     monkeypatch.setenv("USERNAME", "collegue.fictive")
     collected = [{**m, "id": f"c{m['id']}"} for m in mails()]
     target = mod.write(collected, [ALICE["email"]], 36)
-    assert target.parent.name == "SharePoint - Glossaire" and "collegue.fictive" in target.name
+    assert target.parent.name == "Collectes" and target.parent.parent.name == "SharePoint - Glossaire" and "collegue.fictive" in target.name
     inv = Inventory(tmp_path / "contacts" / "inventory.json")
     got = inv.import_collected(target.read_bytes())
     assert got == {"by": "collegue.fictive", "mails": 5}
@@ -128,6 +128,30 @@ def test_the_bat_contains_the_current_collector():
     bat = path.with_name("Collecte_Qui_Contacter.bat").read_text(encoding="utf-8").replace("\r\n", "\n")
     marker = "#" + "__PYTHON__"
     assert bat.count(marker) == 1, "le marqueur ne doit apparaître qu'une fois"
-    assert bat.split(marker, 1)[1].lstrip() == path.read_text(encoding="utf-8"), "lancer outils/collecte_qui_contacter/construire.py"
+    assert bat.split(marker, 1)[1].lstrip() == path.read_text(encoding="utf-8"), "lancer : python outils/collecte_qui_contacter/collecte.py --construire"
     head = bat.split(marker, 1)[0]
     assert "COLLECTE_DIR" in head and head.rstrip().endswith("exit /b 1")  # rien n'est exécuté après le marqueur
+
+
+def test_collector_builds_the_glossary_itself_and_keeps_corrections(tmp_path, monkeypatch):
+    from openpyxl import load_workbook
+
+    mod, _ = _collector()
+    folder = tmp_path / "Glossaire .PY"
+    monkeypatch.setattr(mod, "DESTINATION", str(folder))
+    for user, ms in (("collegue.a", mails()), ("collegue.b", [{**m, "id": "b" + m["id"]} for m in mails()[:1]])):
+        monkeypatch.setenv("USERNAME", user)
+        mod.write(ms, [ALICE["email"]], 36)
+    master, n, sources = mod.build_glossary(folder)
+    assert master.name == "Glossaire qui contacter.xlsx" and sources == 2
+    wb = load_workbook(master)
+    assert wb.sheetnames == ["Questions", "Par équipe", "Par type de due diligence", "Mails types", "Sources"]
+    ws = wb["Questions"]
+    head = [c.value for c in ws[1]]
+    staff = next(r for r in ws.iter_rows(min_row=2) if "collaborateurs" in r[0].value.lower())
+    assert staff[head.index("Équipe")].value == "Conformité" and staff[head.index("Nb de fois")].value == 3  # 2 boîtes, fusionnées
+    staff[head.index("Équipe (corrigée)")].value = "Contrôle interne"
+    wb.save(master)
+    mod.build_glossary(folder)  # nouveau lancement : la correction reste
+    ws = load_workbook(master)["Questions"]
+    assert next(r for r in ws.iter_rows(min_row=2, values_only=True) if "collaborateurs" in r[0].lower())[1] == "Contrôle interne"

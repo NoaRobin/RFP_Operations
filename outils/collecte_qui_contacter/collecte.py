@@ -257,6 +257,274 @@ class Reader:
                 "to": to, "cc": cc, "questions": qs, "attachments": files, "frame": frame(body)}
 
 
+# ---------------------------------------------------------------------------------------------- glossaire
+# Mêmes règles que l'app (backend/merlin/contacts/inventory.py), en version autonome.
+DD_TYPES = [
+    ("ESG / opérationnelle", ["esg", "isr", "sfdr", "pai", "taxonomie", "durabilite", "sustainability", "climat", "climate", "pri", "odd",
+                              "operational due diligence", "due diligence operationnelle", "operationnelle", "operational",
+                              "cybersecurite", "cybersecurity", "bcp", "continuite"]),
+    ("Consultant", ["consultant", "mercer", "aon", "willis towers watson", "wtw", "bfinance", "cambridge associates", "russell investments",
+                    "morningstar", "fundsquare", "selecteur", "selector", "manager research", "gatekeeper", "rfp consultant"]),
+    ("Distributeur", ["distributeur", "distributor", "distribution", "plateforme", "platform", "banque privee", "private bank", "cgp",
+                      "conseiller en gestion", "allfunds", "fundsettle", "selection de fonds", "fund selection", "wealth", "gestion privee",
+                      "assurance vie", "unite de compte"]),
+    ("Institutionnel", ["institutionnel", "institutional", "assureur", "insurer", "mutuelle", "caisse", "pension", "retraite",
+                        "fonds de pension", "pension fund", "prevoyance", "family office", "fondation", "endowment", "appel d'offres",
+                        "appel d offres", "tender", "mandat"]),
+]
+DEFAULT_INTRO = "Dans le cadre d'une due diligence pour {client}, pourriez-vous nous aider à répondre aux questions suivantes ?"
+NUMBERING = re.compile(r"^\s*(?:(?:q(?:uestion)?|n°|no\.?)\s*\d+[a-z]?\s*[.):-]?\s+|\d+(?:\.\d+)*[.)]\s+|\d+(?:\.\d+)+\s+|[a-z][).]\s+)", re.I)
+MASTER = "Glossaire qui contacter.xlsx"
+
+
+def fold(text: str) -> str:
+    import unicodedata
+
+    return "".join(c for c in unicodedata.normalize("NFKD", text or "") if not unicodedata.combining(c)).lower()
+
+
+def qkey(question: str) -> str:
+    return " ".join(re.sub(r"[^\w%]+", " ", fold(NUMBERING.sub("", question or ""))).split())
+
+
+def dd_type(*texts: str) -> str:
+    t = " " + " ".join(re.sub(r"[^\w]+", " ", fold(x or "")) for x in texts) + " "
+    for label, words in DD_TYPES:
+        if any(f" {w} " in t for w in words):
+            return label
+    return "Non classé"
+
+
+def asks(mails: list[dict], members: set[str]) -> list[dict]:
+    """Une demande = mail d'un membre de l'équipe RFP avec des questions ; contacts = destinataires internes hors équipe."""
+    tok = fold(TEAM)
+    is_team = lambda p: tok in fold(p.get("name", "")) or tok in fold(p.get("email", "")) or p.get("email") in members  # noqa: E731
+    if not members:
+        members = {m["sender"]["email"] for m in mails if m.get("questions") and m["sender"].get("email")}
+    doms = [m["sender"]["email"].rsplit("@", 1)[-1] for m in mails if m["sender"].get("email") in members and "@" in m["sender"]["email"]]
+    house = max(set(doms), key=doms.count) if doms else ""
+    out = []
+    for m in mails:
+        if m["sender"].get("email") not in members or not m.get("questions"):
+            continue
+        people = [p for p in m["to"] if not is_team(p) and not p.get("list")] or [p for p in m["cc"] if not is_team(p) and not p.get("list")]
+        internal = [p for p in people if p.get("department") or (house and p.get("email", "").endswith("@" + house))]
+        if not internal:
+            continue
+        dd = dd_type(m["subject"], " ".join(m.get("attachments", [])), " ".join(m["questions"][:5]))
+        for q in m["questions"]:
+            out.append({"question": q, "date": m.get("date", ""), "subject": m["subject"], "dd": dd, "frame": m.get("frame", {}),
+                        "contacts": [{"name": p.get("name", ""), "email": p.get("email", ""), "department": p.get("department", "")} for p in internal]})
+    return out
+
+
+def _tri(k: str) -> set[str]:
+    t = f"  {k}  "
+    return {t[i:i + 3] for i in range(len(t) - 2)}
+
+
+def groups(items: list[dict]) -> list[dict]:
+    """Même question posée plusieurs fois : regroupée (trigrammes de caractères, recherche par mots rares)."""
+    by_key: dict[str, list[dict]] = {}
+    for a in items:
+        k = qkey(a["question"])
+        if len(k) >= 8:
+            by_key.setdefault(k, []).append(a)
+    keys = list(by_key)
+    tris = [_tri(k) for k in keys]
+    words = [set(k.split()) for k in keys]
+    df: dict[str, int] = {}
+    for ws in words:
+        for w in ws:
+            df[w] = df.get(w, 0) + 1
+    index: dict[str, list[int]] = {}
+    for i, ws in enumerate(words):
+        for w in sorted(ws, key=lambda w: df[w])[:3]:
+            index.setdefault(w, []).append(i)
+    parent = list(range(len(keys)))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i in range(len(keys)):
+        cands = {j for w in sorted(words[i], key=lambda w: df[w])[:3] for j in index.get(w, []) if j != i}
+        for j in cands:
+            if 2 * len(tris[i] & tris[j]) / (len(tris[i]) + len(tris[j])) >= 0.8:
+                parent[find(i)] = find(j)
+    clusters: dict[int, list[str]] = {}
+    for i, k in enumerate(keys):
+        clusters.setdefault(find(i), []).append(k)
+    out = []
+    for ks in clusters.values():
+        its = [a for k in ks for a in by_key[k]]
+        variants: dict[str, int] = {}
+        teams: dict[str, int] = {}
+        people: dict[str, int] = {}
+        dds: dict[str, int] = {}
+        for a in its:
+            variants[a["question"]] = variants.get(a["question"], 0) + 1
+            dds[a["dd"]] = dds.get(a["dd"], 0) + 1
+            for c in a["contacts"]:
+                t = c.get("department") or "Service inconnu"
+                teams[t] = teams.get(t, 0) + 1
+                p = f"{c['name']} <{c['email']}>" if c.get("email") else c.get("name", "")
+                people[p] = people.get(p, 0) + 1
+        srt = lambda d: sorted(d.items(), key=lambda kv: -kv[1])  # noqa: E731
+        team = srt(teams)[0][0] if teams else ""
+        share = teams.get(team, 0) / (sum(teams.values()) or 1)
+        out.append({"question": srt(variants)[0][0], "variants": [v for v, _ in srt(variants)], "times": len(its),
+                    "last": max(a["date"] for a in its), "dd_types": dict(srt(dds)), "team": team, "team_share": round(share, 2),
+                    "teams": dict(srt(teams)[:5]), "people": [p for p, _ in srt(people)[:4]],
+                    "subjects": list(dict.fromkeys(a["subject"] for a in its))[:5],
+                    "check": team in ("", "Service inconnu") or share < 0.6})
+    return sorted(out, key=lambda g: (-g["times"], g["question"]))
+
+
+def templates(items: list[dict]) -> dict[str, dict]:
+    per: dict[str, list[dict]] = {}
+    seen = set()
+    for a in items:
+        if (a["subject"], a["date"]) in seen:
+            continue
+        seen.add((a["subject"], a["date"]))
+        for t in {c.get("department") or "Service inconnu" for c in a["contacts"]}:
+            per.setdefault(t, []).append(a.get("frame") or {})
+    out = {}
+    for t, frames in per.items():
+        def most(f: str, minimum: int, default: str) -> str:
+            c: dict[str, int] = {}
+            for fr in frames:
+                v = (fr.get(f) or "").strip()
+                if v:
+                    c[v] = c.get(v, 0) + 1
+            best = max(c.items(), key=lambda kv: kv[1]) if c else None
+            return best[0] if best and best[1] >= minimum else default
+        out[t] = {"greeting": most("greeting", 1, "Bonjour,"), "intro": most("intro", 2, DEFAULT_INTRO),
+                  "closing": most("closing", 1, "Merci d'avance,"), "mails": len(frames)}
+    return out
+
+
+def draft(t: dict, qs: list[str]) -> str:
+    return "\n".join([t["greeting"], "", t["intro"].replace("{client}", "[client]"), "", *[f"{i}. {q}" for i, q in enumerate(qs, 1)], "", t["closing"]])
+
+
+def read_collect(path: Path) -> tuple[dict, list[dict]] | None:
+    from openpyxl import load_workbook
+
+    try:
+        wb = load_workbook(path, read_only=True)
+        info = {str(r[0]): r[1] for r in wb["Infos"].iter_rows(values_only=True) if r and r[0]}
+        if info.get("format") != "collecte-qui-contacter":
+            return None
+        mails = [json.loads(r[1]) for r in wb["Mails"].iter_rows(min_row=2, values_only=True) if r and r[1]]
+        return info, mails
+    except Exception:  # noqa: BLE001 - fichier ouvert ou abîmé : ignoré
+        return None
+
+
+def corrections(master: Path) -> dict[str, tuple[str, str]]:
+    """Corrections faites à la main dans le glossaire : reprises à chaque reconstruction."""
+    from openpyxl import load_workbook
+
+    if not master.exists():
+        return {}
+    try:
+        ws = load_workbook(master, read_only=True)["Questions"]
+        rows = ws.iter_rows(values_only=True)
+        head = [str(h or "") for h in next(rows)]
+        qi, ti, pi = head.index("Question"), head.index("Équipe (corrigée)"), head.index("Personnes (corrigées)")
+        return {qkey(str(r[qi])): (str(r[ti] or "").strip(), str(r[pi] or "").strip()) for r in rows if r and r[qi] and (r[ti] or r[pi])}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def build_glossary(folder: Path) -> tuple[Path, int, int]:
+    """Glossaire commun : toutes les collectes du dossier « Collectes », un mail vu dans deux boîtes compté une fois."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    all_asks, seen, sources = [], set(), []
+    for f in sorted((folder / "Collectes").glob("Collecte_*.xlsx")):
+        got = read_collect(f)
+        if not got:
+            continue
+        info, mails = got
+        mails = [m for m in mails if m.get("id") not in seen]
+        seen |= {m.get("id") for m in mails}
+        all_asks += asks(mails, set(json.loads(info.get("membres_equipe") or "[]")))
+        sources.append(f"{info.get('collecte_par')} ({str(info.get('date') or '')[:10]})")
+    master = folder / MASTER
+    fixes = corrections(master)
+    gs = groups(all_asks)
+    for g in gs:
+        fix = fixes.get(qkey(g["question"]))
+        g["fix"] = fix or ("", "")
+        if fix:
+            g["check"] = False
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Questions"
+    head = ["Question", "Équipe", "Personnes", "Nb de fois", "Dernière fois", "Types de due diligence", "Part de l'équipe",
+            "Autres équipes", "Variantes", "Objets des mails", "À vérifier", "Équipe (corrigée)", "Personnes (corrigées)"]
+    ws.append(head)
+    for g in gs:
+        ws.append([g["question"], g["fix"][0] or g["team"], g["fix"][1] or "\n".join(g["people"]), g["times"], g["last"],
+                   ", ".join(f"{k} ({v})" for k, v in g["dd_types"].items()), g["team_share"],
+                   ", ".join(f"{k} ({v})" for k, v in g["teams"].items() if k != g["team"]), "\n".join(g["variants"][1:8]),
+                   "\n".join(g["subjects"]), "oui" if g["check"] else "", g["fix"][0], g["fix"][1]])
+    yellow = PatternFill("solid", fgColor="FFFF00")
+    for row in ws.iter_rows(min_row=2):
+        for c in row:
+            c.alignment = Alignment(wrap_text=True, vertical="top")
+        if row[10].value == "oui":
+            row[10].fill = yellow
+    for i, w in enumerate([70, 24, 40, 10, 14, 30, 12, 30, 60, 50, 10, 24, 40]):
+        ws.column_dimensions[chr(65 + i)].width = w
+    ws.freeze_panes = "B2"
+    ws.auto_filter.ref = ws.dimensions
+    by_team: dict[str, list[dict]] = {}
+    for g in gs:
+        by_team.setdefault(g["fix"][0] or g["team"], []).append(g)
+    t = wb.create_sheet("Par équipe")
+    t.append(["Équipe", "Questions", "Fois demandées", "Personnes"])
+    for team, items in sorted(by_team.items(), key=lambda kv: -sum(g["times"] for g in kv[1])):
+        people: dict[str, int] = {}
+        for g in items:
+            for p in g["people"]:
+                people[p] = people.get(p, 0) + 1
+        t.append([team, len(items), sum(g["times"] for g in items), "\n".join(sorted(people, key=lambda p: -people[p])[:6])])
+    d = wb.create_sheet("Par type de due diligence")
+    d.append(["Type de due diligence", "Question", "Équipe", "Nb de fois"])
+    for g in gs:
+        for k, v in g["dd_types"].items():
+            d.append([k, g["question"], g["fix"][0] or g["team"], v])
+    m = wb.create_sheet("Mails types")
+    m.append(["Équipe", "Salutation", "Introduction", "Formule de fin", "Mails analysés", "Exemple"])
+    for team, v in templates(all_asks).items():
+        m.append([team, v["greeting"], v["intro"], v["closing"], v["mails"], draft(v, ["(question 1)", "(question 2)"])])
+    s = wb.create_sheet("Sources")
+    s.append(["Boîtes lues", "Construit le"])
+    for src in sources:
+        s.append([src, datetime.now().strftime("%Y-%m-%d %H:%M")])
+    for sheet in wb.worksheets:
+        for c in sheet[1]:
+            c.font = Font(bold=True)
+        if sheet.title != "Questions":
+            for col in "ABCDEF":
+                sheet.column_dimensions[col].width = 40
+    tmp = master.with_name("~tmp_" + master.name)
+    wb.save(tmp)
+    try:
+        os.replace(tmp, master)
+    except PermissionError:  # glossaire ouvert dans Excel : nouvelle version à côté, jamais d'écrasement forcé
+        master = master.with_name(f"Glossaire qui contacter ({datetime.now():%Y-%m-%d %H%M}).xlsx")
+        os.replace(tmp, master)
+    return master, len(gs), len(sources)
+
+
 # ---------------------------------------------------------------------------------------------- destination
 def destination() -> Path:
     """Le dossier SharePoint du glossaire : celui du .bat s'il le contient, sinon recherche dans les dossiers
@@ -314,16 +582,28 @@ def write(mails: list[dict], members: list[str], months: int) -> Path:
                  "periode_mois": months, "equipe": TEAM, "membres_equipe": json.dumps(members), "mails": len(mails),
                  "questions": sum(len(m["questions"]) for m in mails)}.items():
         info.append([k, v])
-    folder = destination()
+    folder = destination() / "Collectes"
     folder.mkdir(parents=True, exist_ok=True)
-    target = folder / f"Qui_contacter_collecte_{user}_{datetime.now():%Y-%m-%d}.xlsx"
+    target = folder / f"Collecte_{user}.xlsx"  # une par personne, remplacée à chaque lancement
     tmp = target.with_suffix(".tmp.xlsx")
     wb.save(tmp)
     os.replace(tmp, target)
     return target
 
 
+def rebuild_bat() -> None:
+    """Après une modification de ce fichier : python collecte.py --construire (remet le script dans le .bat)."""
+    bat = Path(__file__).with_name("Collecte_Qui_Contacter.bat")
+    marker = "#" + "__PYTHON__"
+    head = bat.read_text(encoding="utf-8").replace("\r\n", "\n").split(marker, 1)[0].rstrip()
+    bat.write_text(head + "\n" + marker + "\n" + Path(__file__).read_text(encoding="utf-8"), encoding="utf-8", newline="\r\n")
+    print("Collecte_Qui_Contacter.bat reconstruit")
+
+
 def main() -> int:
+    if "--construire" in sys.argv:
+        rebuild_bat()
+        return 0
     try:
         sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[attr-defined]
     except Exception:  # noqa: BLE001
@@ -352,13 +632,16 @@ def main() -> int:
         if len(mails) % 25 == 0:
             say(f"{len(mails)} mails avec des questions trouvés…")
     target = write(mails, members, months)
+    say("Construction du glossaire…")
+    master, n_questions, n_sources = build_glossary(target.parent.parent)
     say("")
-    say(f"Terminé en {int(time.time() - t0)} s : {len(mails)} mails, {sum(len(m['questions']) for m in mails)} questions.")
-    say(f"Fichier : {target}")
-    if target.parent.name.lower() == "desktop":
-        say("Le dossier SharePoint du glossaire n'a pas été trouvé : déposez ce fichier dans ce dossier SharePoint.")
+    say(f"Terminé en {int(time.time() - t0)} s : {len(mails)} mails, {sum(len(m['questions']) for m in mails)} questions lues.")
+    say(f"Glossaire : {master}")
+    say(f"  {n_questions} questions distinctes, {n_sources} boîte(s) lue(s).")
+    if master.parent.name.lower() == "desktop":
+        say("Le dossier SharePoint « Glossaire .PY » n'a pas été trouvé : déposez le glossaire et le dossier Collectes dans ce dossier.")
     try:
-        os.startfile(str(target.parent))  # type: ignore[attr-defined]
+        os.startfile(str(master))  # type: ignore[attr-defined]
     except Exception:  # noqa: BLE001
         pass
     return 0
