@@ -1,7 +1,7 @@
 Collecte « Qui contacter » — équipe RFP
 
-1. Copier ce dossier (Collecte_Qui_Contacter.bat + collecte.py) dans le dossier SharePoint où se trouve le glossaire
-   (dossier synchronisé avec OneDrive, ou l'ouvrir dans l'Explorateur).
+1. Copier UN SEUL fichier, Collecte_Qui_Contacter.bat (il contient le script), dans le dossier SharePoint du glossaire
+   (Glossaire .PY). collecte.py et construire.py servent seulement à le reconstruire.
 2. Le collègue ouvre Outlook classique, puis double-clique sur Collecte_Qui_Contacter.bat.
    La première fois : installation automatique (Python et deux bibliothèques, dans son profil, sans droits admin).
 3. Le fichier « Qui_contacter_collecte_<nom>_<date>.xlsx » est déposé à côté du glossaire.

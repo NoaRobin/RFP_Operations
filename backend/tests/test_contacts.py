@@ -120,3 +120,14 @@ def test_collected_file_from_a_colleague_is_merged(tmp_path, monkeypatch):
     summary = inv.rebuild_all("AmeuRFPteam")
     assert {x["by"] for x in summary["sources"]} == {"moi", "collegue.fictive"} and summary["teams"].get("Conformité")
     assert inv.import_collected(inv.to_excel()) is None  # un fichier exporté n'est pas une collecte
+
+
+def test_the_bat_contains_the_current_collector():
+    """Un seul fichier à copier : le .bat embarque collecte.py (reconstruire avec construire.py après modification)."""
+    _, path = _collector()
+    bat = path.with_name("Collecte_Qui_Contacter.bat").read_text(encoding="utf-8").replace("\r\n", "\n")
+    marker = "#" + "__PYTHON__"
+    assert bat.count(marker) == 1, "le marqueur ne doit apparaître qu'une fois"
+    assert bat.split(marker, 1)[1].lstrip() == path.read_text(encoding="utf-8"), "lancer outils/collecte_qui_contacter/construire.py"
+    head = bat.split(marker, 1)[0]
+    assert "COLLECTE_DIR" in head and head.rstrip().endswith("exit /b 1")  # rien n'est exécuté après le marqueur

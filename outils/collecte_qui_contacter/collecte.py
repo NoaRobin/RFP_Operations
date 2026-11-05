@@ -263,7 +263,8 @@ def destination() -> Path:
     synchronisés (OneDrive / SharePoint) du poste ; sinon le Bureau."""
     if DESTINATION:
         return Path(DESTINATION)
-    here = Path(__file__).resolve().parent
+    # dossier du .bat (le script est extrait du .bat dans le profil : son propre dossier ne compte pas)
+    here = Path(os.environ.get("COLLECTE_DIR") or Path(__file__).resolve().parent).resolve()
     if GLOSSARY in here.name.lower() or any(GLOSSARY in p.name.lower() for p in here.iterdir()):
         return here  # le .bat est lancé depuis le dossier du glossaire : le fichier va à côté
     home = Path(os.environ.get("USERPROFILE") or Path.home())
