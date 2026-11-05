@@ -214,8 +214,12 @@ class Reader:
                     if folder.DefaultItemType != 0:
                         continue
                     items = folder.Items.Restrict(dasl)
+                    count = items.Count
                 except Exception:  # noqa: BLE001
                     continue
+                self.folders_done = getattr(self, "folders_done", 0) + 1
+                if count:
+                    say(f"Dossier {self.folders_done} · {folder.Name} : {count} mail(s) avec {TEAM} en copie")
                 for item in items:
                     try:
                         if item.Class != 43 or item.EntryID in seen:
@@ -625,12 +629,13 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         say("Outlook ne répond pas. Ouvrez Outlook classique (pas le « nouvel Outlook »), puis relancez.")
         return 1
+    say("Lecture d'Outlook en cours : chaque dossier lu s'affiche ci-dessous (quelques minutes sur une grosse boîte)…")
     members = reader.members()
     mails, t0 = [], time.time()
     for m in reader.mails(datetime.now() - timedelta(days=int(months * 30.5))):
         mails.append(m)
-        if len(mails) % 25 == 0:
-            say(f"{len(mails)} mails avec des questions trouvés…")
+        if len(mails) % 10 == 0:
+            say(f"  → {len(mails)} mails avec des questions trouvés jusqu'ici")
     target = write(mails, members, months)
     say("Construction du glossaire…")
     master, n_questions, n_sources = build_glossary(target.parent.parent)
