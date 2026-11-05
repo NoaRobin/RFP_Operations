@@ -5,7 +5,8 @@ setlocal EnableExtensions
 chcp 65001 >nul
 title Collecte Qui contacter - equipe RFP
 cd /d "%~dp0"
-set "BASE=%LOCALAPPDATA%\RFPCollecte"
+REM Dossier hors de AppData : le Python du Microsoft Store redirige AppData\Local vers son propre dossier
+set "BASE=%USERPROFILE%\.rfpcollecte"
 set "VENV=%BASE%\venv"
 set "VPY=%VENV%\Scripts\python.exe"
 set "PS=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -33,7 +34,22 @@ set PY="%BASE%\Python312\python.exe"
 :venv
 echo   Preparation de l'environnement...
 %PY% -m venv "%VENV%"
+if exist "%VPY%" goto deps
+REM Python du Microsoft Store : l'environnement a pu etre cree dans son dossier redirige
+for /d %%D in ("%LOCALAPPDATA%\Packages\PythonSoftwareFoundation.Python.*") do (
+  if exist "%%D\LocalCache\Local\RFPCollecte\venv\Scripts\python.exe" set "VPY=%%D\LocalCache\Local\RFPCollecte\venv\Scripts\python.exe"
+)
+if exist "%VPY%" goto deps
+REM Dernier recours : le Python trouve directement, bibliotheques installees pour l'utilisateur
+set VPY=%PY%
+for /f "delims=" %%P in ('%PY% -c "import sys; print(sys.executable)"') do set "VPY=%%P"
 if not exist "%VPY%" goto failed
+"%VPY%" -c "import win32com.client, openpyxl" >nul 2>nul
+if not errorlevel 1 goto run
+echo   Installation des bibliotheques (pywin32, openpyxl)...
+"%VPY%" -m pip install --user --disable-pip-version-check -q pywin32 openpyxl
+if errorlevel 1 goto nopip
+goto run
 
 :deps
 "%VPY%" -c "import win32com.client, openpyxl" >nul 2>nul
