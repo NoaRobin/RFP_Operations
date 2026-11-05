@@ -4,12 +4,13 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Activity, Bot, BrainCircuit, Cpu, FolderTree, Gauge, HeartPulse, History, LogIn, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, X } from 'lucide-react'
+import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, Tags, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { ErrorState, Loading } from '../../components/ui/States'
 import { useToast } from '../../components/ui/Toast'
 import { Mechanic } from '../../universe/Mascots'
 import { MemoryView } from './views/MemoryView'
+import { DuplicatesView, FreshnessView, QuestionsView } from './views/WorkshopViews'
 import { texts } from '../../content/texts'
 import { api } from '../../lib/api'
 import { gsap, useGSAP } from '../../motion/gsap'
@@ -24,11 +25,14 @@ import { LibraryView } from './views/LibraryView'
 import { SearchView } from './views/SearchView'
 
 const Q = texts.qvidian
-const NAV: { group: string; items: { to: string; key: string; icon: typeof Gauge }[] }[] = [
-  { group: 'explore', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'memoire', key: 'memoire', icon: BrainCircuit }, { to: 'recherche', key: 'recherche', icon: Search },
-    { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree }, { to: 'reponses', key: 'reponses', icon: Sparkles }] },
-  { group: 'quality', items: [{ to: 'sante', key: 'sante', icon: HeartPulse }, { to: 'ia', key: 'ia', icon: Bot }] },
-  { group: 'act', items: [{ to: 'modifier', key: 'modifier', icon: PenSquare }, { to: 'journal', key: 'journal', icon: History }] },
+const NAV: { group: string; items: { to: string; key: string; icon: typeof Gauge; external?: boolean }[] }[] = [
+  { group: 'pilot', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'memoire', key: 'memoire', icon: BrainCircuit }] },
+  { group: 'find', items: [{ to: 'recherche', key: 'recherche', icon: Search }, { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree },
+    { to: 'questions', key: 'questions', icon: MessagesSquare }, { to: 'reponses', key: 'reponses', icon: Sparkles }] },
+  { group: 'care', items: [{ to: 'sante', key: 'sante', icon: HeartPulse }, { to: 'fraicheur', key: 'fraicheur', icon: CalendarClock },
+    { to: 'doublons', key: 'doublons', icon: Copy }, { to: 'ia', key: 'ia', icon: Bot }] },
+  { group: 'act', items: [{ to: 'modifier', key: 'modifier', icon: PenSquare }, { to: 'journal', key: 'journal', icon: History },
+    { to: '/merge-codes', key: 'mergecodes', icon: Tags, external: true }] },
   { group: 'system', items: [{ to: 'api', key: 'api', icon: Cpu }, { to: 'connexion', key: 'connexion', icon: Plug }] },
 ]
 const LEGACY: Record<string, string> = { apercu: '', carte: 'sante', bibliotheque: 'bibliotheque', reponses: 'reponses', ia: 'ia', modifier: 'modifier', connexion: 'connexion' }
@@ -80,7 +84,7 @@ function Sidebar() {
             {g.items.map((it) => {
               const Icon = it.icon
               return (
-                <NavLink key={it.key} to={`/qvidian${it.to ? `/${it.to}` : ''}`} end={it.to === ''}
+                <NavLink key={it.key} to={it.external ? it.to : `/qvidian${it.to ? `/${it.to}` : ''}`} end={it.to === ''}
                   className={({ isActive }) => `inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-colors ${isActive ? 'bg-fg text-canvas' : 'hover:bg-card-2'}`}>
                   <Icon size={16} aria-hidden="true" />
                   <span>{Q.nav[it.key]}</span>
@@ -97,6 +101,10 @@ function Sidebar() {
           <div className="mt-2 flex flex-wrap gap-2">
             <Button size="sm" variant="primary" onClick={() => navigate('/qvidian/modifier')} icon={<PenSquare size={14} />}>{Q.trayEdit}</Button>
             <Button size="sm" onClick={() => navigate('/qvidian/ia')} icon={<Bot size={14} />}>{Q.trayAi}</Button>
+            <Button size="sm" onClick={async () => {
+              const blob = await api.qvidian.exportSelection([...selected])
+              const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Selection_Qvidian.xlsx'; a.click(); URL.revokeObjectURL(a.href)
+            }} icon={<Download size={14} />}>{texts.qviapi.exportSel}</Button>
             <button onClick={clear} aria-label={Q.unselect} className="rounded-full border-2 border-fg/30 p-1.5 hover:border-fg"><X size={14} /></button>
           </div>
         </div>
@@ -168,6 +176,9 @@ function Body() {
         <Routes>
           <Route index element={<Cockpit />} />
           <Route path="memoire" element={<MemoryView />} />
+          <Route path="questions" element={<QuestionsView />} />
+          <Route path="fraicheur" element={<FreshnessView />} />
+          <Route path="doublons" element={<DuplicatesView />} />
           <Route path="recherche" element={<SearchView />} />
           <Route path="bibliotheque" element={<LibraryView />} />
           <Route path="contenu/:id" element={<ContentView />} />

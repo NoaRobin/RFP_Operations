@@ -161,6 +161,36 @@ def memory(s: AppState = Depends(state)) -> dict[str, Any]:
     return service(s).memory()
 
 
+@router.get("/freshness")
+def freshness(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Échéances : expirations Qvidian et dates de révision proposées d'après le contenu du texte."""
+    return service(s).freshness()
+
+
+@router.get("/families")
+def families(s: AppState = Depends(state)) -> list[dict[str, Any]]:
+    """Doublons et versions d'un même texte, avec le texte à garder proposé."""
+    return service(s).families()
+
+
+@router.get("/questions")
+def question_bank(q: str = "", only: str = "", s: AppState = Depends(state)) -> dict[str, Any]:
+    """Questions des anciens RFI, les plus posées d'abord ; only = covered | orphan."""
+    return service(s).question_bank(q, only)
+
+
+class ExportRequest(BaseModel):
+    ids: list[int] = Field(min_length=1, max_length=2000)
+
+
+@router.post("/export.xlsx")
+def export(body: ExportRequest, s: AppState = Depends(state)):
+    from fastapi.responses import Response
+
+    return Response(service(s).export(body.ids), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": 'attachment; filename="Selection_Qvidian.xlsx"'})
+
+
 @router.get("/match/status")
 def match_status(s: AppState = Depends(state)) -> dict[str, Any]:
     return service(s).match_status()

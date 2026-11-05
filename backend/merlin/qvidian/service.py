@@ -365,6 +365,38 @@ class QvidianService:
             levels = {c["id"]: engine.levels[i].scope for i, c in enumerate(engine.rows)}
         return memory(snap.all(), History(self._history_path(snap)).links, self.matcher.get(snap.path), levels=levels)
 
+    def _levels(self, snap: Snapshot) -> dict[int, str]:
+        engine = self.search.get(snap, wait=False)
+        if engine is not None and getattr(engine, "rows", None):
+            return {c["id"]: engine.levels[i].scope for i, c in enumerate(engine.rows)}
+        return {}
+
+    def freshness(self) -> dict[str, Any]:
+        from .workshop import freshness
+
+        return freshness(self.snapshot().all())
+
+    def families(self) -> list[dict[str, Any]]:
+        from .workshop import families
+
+        return families(self.snapshot().all())
+
+    def question_bank(self, q: str = "", only: str = "") -> dict[str, Any]:
+        from .workshop import question_bank
+
+        snap = self.snapshot()
+        m = self.matcher.get(snap.path)
+        if m is None and not self.matcher.state["running"]:
+            self.build_matcher(snap)
+        return {**question_bank(m, {c["id"]: c for c in snap.all()}, q, only), "state": self.matcher.state}
+
+    def export(self, ids: list[int]) -> bytes:
+        from .workshop import export_xlsx
+
+        snap = self.snapshot()
+        rows = {c["id"]: c for c in snap.many(ids)}
+        return export_xlsx([rows[i] for i in ids if i in rows], self._levels(snap))
+
     def match_status(self) -> dict[str, Any]:
         snap = self.snapshot()
         m = self.matcher.get(snap.path)

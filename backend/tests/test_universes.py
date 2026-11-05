@@ -18,3 +18,23 @@ def test_fund_sheet_reads_product_info_and_jump(client):
     assert item["display"] and item["source"]
     assert client.get(f"/api/atelier/fund-sheet.xlsx?isin={isin}").content[:2] == b"PK"
     assert client.get("/api/atelier/fund-sheet?isin=QZ0000000000").status_code == 404
+
+
+def test_qviapi_workshop(client):
+    from datetime import date
+
+    from merlin.qvidian.workshop import review_date
+
+    f = client.get("/api/qvidian/freshness").json()
+    assert f["items"] and sum(f["counts"].values()) == len(f["items"])
+    assert all(f["items"][i]["days"] <= f["items"][i + 1]["days"] for i in range(len(f["items"]) - 1))
+    d, why = review_date({"text": "Encours de 12 milliards d'euros au 31/12/2025.", "modified": "2026-01-15"}, date(2026, 11, 5))
+    assert d.isoformat() == "2026-04-30" and "trimestriel" in why
+    assert "deux ans" in review_date({"text": "Notre philosophie de gestion.", "modified": "2026-01-15"}, date(2026, 11, 5))[1]
+    fam = client.get("/api/qvidian/families").json()
+    assert all(sum(m["keep"] for m in x["members"]) == 1 and x["size"] >= 2 for x in fam)
+    client.post("/api/qvidian/history/rebuild")
+    bank = client.get("/api/qvidian/questions").json()
+    assert bank["ready"] and bank["items"] and bank["items"][0]["rfis"] >= bank["items"][-1]["rfis"]
+    ids = [x["id"] for x in f["items"][:3]]
+    assert client.post("/api/qvidian/export.xlsx", json={"ids": ids}).content[:2] == b"PK"

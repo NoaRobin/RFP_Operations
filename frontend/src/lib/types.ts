@@ -750,3 +750,11 @@ export interface QvidianMemory {
 
 export interface FundSheetItem { id: string; label: string; display: string; has_value: boolean; issues: string[]; evidence: string; source: string }
 export interface FundSheet { isin: string; as_of: string; groups: Record<string, FundSheetItem[]>; filled: number; total: number; errors: string[] }
+
+export interface FreshItem { id: number; title: string; folder_path: string; times_used: number; modified: string; expires: string | null
+  proposed: string; why: string; due: string; days: number; state: 'en retard' | '30 jours' | '90 jours' | 'plus tard'; no_expiry: boolean }
+export interface QvidianFreshness { today: string; counts: Record<string, number>; without_expiry: number; items: FreshItem[] }
+export interface QvidianFamily { keep: number; size: number; uses: number
+  members: { id: number; title: string; folder_path: string; times_used: number; modified: string; enabled: boolean; keep: boolean; text: string }[] }
+export interface QvidianBankItem { question: string; rfis: number; last: string; funds: string[]; contents: { id: number; title: string }[]; covered: boolean; variants: number }
+export interface QvidianBank { ready: boolean; total: number; items: QvidianBankItem[]; state?: { running: boolean; message: string } }

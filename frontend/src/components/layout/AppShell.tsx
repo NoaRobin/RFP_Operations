@@ -63,7 +63,8 @@ function UniverseTabs() {
 /** Second étage : les pages de l'univers courant (Pit Stop a sa propre barre latérale). */
 function UniversePages() {
   const u = useUniverse()
-  if (!u.pages.length) return null
+  const { pathname } = useLocation()
+  if (!u.pages.length || pathname.startsWith('/qvidian')) return null  // le garage QviAPI a sa propre barre latérale
   return (
     <nav aria-label={`Pages de ${u.name}`} className="mx-auto mt-2 flex w-[min(100%-1.5rem,82rem)] gap-1 overflow-x-auto px-1 pb-1">
       {u.pages.map((p) => (

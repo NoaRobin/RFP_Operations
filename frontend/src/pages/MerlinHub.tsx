@@ -4,7 +4,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, FileSpreadsheet, IdCard, Search, Tags } from 'lucide-react'
+import { ArrowUpRight, IdCard, Search } from 'lucide-react'
 import { texts } from '../content/texts'
 import { api } from '../lib/api'
 import type { AskPlan, FundEntry, MatchResult, QvidianMemory } from '../lib/types'
@@ -22,7 +22,7 @@ export default function MerlinHub() {
   const [q, setQ] = useState('')
   const [found, setFound] = useState<Found | null>(null)
   const [memory, setMemory] = useState<QvidianMemory | null>(null)
-  useEffect(() => { input.current?.focus(); api.qvidian.memory().then(setMemory).catch(() => undefined) }, [])
+  useEffect(() => { api.qvidian.memory().then(setMemory).catch(() => undefined) }, [])
   useEffect(() => {
     const text = q.trim()
     if (text.length < 2) { setFound(null); return }
@@ -42,23 +42,48 @@ export default function MerlinHub() {
     else if (q.trim()) navigate(`/qvidian/recherche?q=${encodeURIComponent(q.trim())}`)
   }
   const doors = [
-    { u: UNIVERSES.rfp, stat: H.rfpStat, lead: H.rfpLead },
-    { u: UNIVERSES.pitstop, stat: memory ? H.pitStat(Math.round(memory.reuse_rate * 100), memory.rfis) : H.pitStatNone, lead: H.pitLead },
-    { u: UNIVERSES.suivi, stat: H.suiviStat, lead: H.suiviLead },
+    { u: UNIVERSES.rfp, stat: H.rfpStat, lead: H.rfpLead, items: H.rfpItems },
+    { u: UNIVERSES.pitstop, stat: memory ? H.pitStat(Math.round(memory.reuse_rate * 100), memory.rfis) : H.pitStatNone, lead: H.pitLead, items: H.pitItems },
+    { u: UNIVERSES.suivi, stat: H.suiviStat, lead: H.suiviLead, items: H.suiviItems },
   ]
   return (
-    <div className="mx-auto flex w-[min(100%-2rem,82rem)] flex-col gap-10 pt-8 sm:pt-12">
-      <section className="grid items-center gap-6 md:grid-cols-[auto_minmax(0,1fr)]">
-        <Wizard className="mx-auto size-36 motion-safe:animate-[float_4s_var(--ease-in-out-premium)_infinite] sm:size-44" />
-        <div>
-          <h1 className="font-display text-[clamp(2.4rem,5.5vw,4.4rem)] font-bold leading-[0.95] tracking-tight">{H.title}</h1>
-          <p className="mt-3 max-w-xl text-base font-semibold text-fg-2">{H.lead}</p>
-          <form className="relative mt-5" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
-            <Search size={22} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
-            <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} aria-label={H.searchLabel} placeholder={H.searchPlaceholder}
-              className="h-16 w-full rounded-[1.25rem] border-[3px] border-fg bg-field pl-14 pr-5 text-lg font-semibold shadow-[6px_6px_0_0_var(--color-magic-500)] placeholder:font-normal placeholder:text-fg-3 focus:shadow-[6px_6px_0_0_var(--color-fg)] focus:outline-none" />
-          </form>
+    <div className="mx-auto flex w-[min(100%-2rem,82rem)] flex-col gap-8 pt-8 sm:pt-12">
+      <section className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-end sm:text-left">
+        <Wizard className="size-32 shrink-0 motion-safe:animate-[float_4s_var(--ease-in-out-premium)_infinite] sm:size-40" />
+        <div className="relative rounded-[var(--radius-card)] border-[3px] border-fg bg-card px-6 py-5 shadow-[6px_6px_0_0_var(--color-fg)]">
+          <span className="absolute -left-3 bottom-8 hidden size-6 rotate-45 border-b-[3px] border-l-[3px] border-fg bg-card sm:block" aria-hidden="true" />
+          <h1 className="font-display text-[clamp(2.2rem,5vw,3.8rem)] font-bold leading-[0.95] tracking-tight">{H.title}</h1>
+          <p className="mt-2 max-w-xl text-base font-semibold text-fg-2">{H.lead}</p>
         </div>
+      </section>
+
+      <section aria-label={H.universes} className="grid gap-6 lg:grid-cols-3">
+        {doors.map(({ u, stat, lead, items }) => (
+          <Link key={u.id} to={u.home}
+            className="group relative flex min-h-[22rem] flex-col gap-4 overflow-hidden rounded-[2rem] border-[3px] border-fg bg-card p-6 shadow-[7px_7px_0_0_var(--color-fg)] transition-[transform,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-spring)] hover:-translate-y-1.5 hover:rotate-[-0.6deg] hover:shadow-[10px_10px_0_0_var(--color-fg)] focus-visible:-translate-y-1.5">
+            <span className="absolute inset-x-0 top-0 h-28 border-b-[3px] border-fg" style={{ background: `color-mix(in srgb, ${u.accent} 55%, white)` }} aria-hidden="true" />
+            <span className="relative flex items-end justify-between">
+              {u.id === 'rfp' ? <AppMark className="size-24 transition-transform group-hover:-rotate-6" /> : <Mascot universe={u.id} className="size-28 transition-transform group-hover:-rotate-6" />}
+              <ArrowUpRight size={26} className="mb-2 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block font-display text-3xl font-bold leading-none">{u.id === 'rfp' ? H.rfpName : u.name}</span>
+              {u.id !== 'rfp' && <span className="mt-1 block text-sm font-bold text-fg-3">{u.sub}</span>}
+            </span>
+            <span className="text-sm font-semibold text-fg-2">{lead}</span>
+            <span className="flex flex-wrap gap-1.5">{items.map((x) => <span key={x} className="rounded-full border-2 border-fg/20 px-2 py-0.5 text-xs font-bold">{x}</span>)}</span>
+            <span className="mt-auto font-mono text-sm font-bold">{stat}</span>
+          </Link>
+        ))}
+      </section>
+
+      <section className="rounded-[var(--radius-card)] border-2 border-dashed border-fg/30 p-5">
+        <h2 className="text-lg">{H.orAsk}</h2>
+        <form className="relative mt-2" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
+          <Search size={20} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
+          <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} aria-label={H.searchLabel} placeholder={H.searchPlaceholder}
+            className="h-14 w-full rounded-2xl border-[2.5px] border-fg bg-field pl-12 pr-4 font-semibold shadow-[4px_4px_0_0_var(--color-magic-500)] placeholder:font-normal placeholder:text-fg-3 focus:outline-none" />
+        </form>
       </section>
 
       {found && (
@@ -102,40 +127,6 @@ export default function MerlinHub() {
         </section>
       )}
 
-      <section aria-label={H.universes} className="grid gap-5 md:grid-cols-3">
-        {doors.map(({ u, stat, lead }) => (
-          <Link key={u.id} to={u.home}
-            className="group relative flex flex-col gap-3 overflow-hidden rounded-[var(--radius-card)] border-[3px] border-fg bg-card p-5 shadow-[5px_5px_0_0_var(--color-fg)] transition-[transform,box-shadow] duration-[var(--duration-fast)] hover:-translate-y-1 hover:shadow-[8px_8px_0_0_var(--color-fg)]">
-            <span className="absolute inset-x-0 top-0 h-3 border-b-[3px] border-fg" style={{ background: u.accent }} aria-hidden="true" />
-            <span className="mt-2 flex items-center gap-3">
-              {u.id === 'rfp' ? <AppMark className="size-14" /> : <Mascot universe={u.id} className="size-16" />}
-              <span>
-                <span className="block font-display text-2xl font-bold leading-none">{u.name}</span>
-                <span className="text-sm font-semibold text-fg-3">{u.sub}</span>
-              </span>
-              <ArrowUpRight size={20} className="ml-auto transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
-            </span>
-            <span className="text-sm font-semibold text-fg-2">{lead}</span>
-            <span className="mt-auto font-mono text-sm font-bold">{stat}</span>
-          </Link>
-        ))}
-      </section>
-
-      <section aria-label={H.tools}>
-        <h2 className="text-xl">{H.tools}</h2>
-        <div className="mt-3 grid gap-4 sm:grid-cols-3">
-          {[
-            { to: '/atelier/fonds', icon: IdCard, title: H.toolSheet, lead: H.toolSheetLead },
-            { to: '/atelier', icon: FileSpreadsheet, title: H.toolAtelier, lead: H.toolAtelierLead },
-            { to: '/merge-codes', icon: Tags, title: H.toolMerge, lead: H.toolMergeLead },
-          ].map(({ to, icon: Icon, title, lead }) => (
-            <Link key={to} to={to} className="flex items-start gap-3 rounded-2xl border-2 border-fg bg-card-2 p-4 transition-colors hover:bg-card-3">
-              <Icon size={22} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span><span className="block font-display text-lg font-semibold">{title}</span><span className="text-sm text-fg-2">{lead}</span></span>
-            </Link>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }
