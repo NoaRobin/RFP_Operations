@@ -297,11 +297,31 @@ class Reader:
             except Exception:  # noqa: BLE001
                 pass
 
-    def mails(self, since: datetime):
+    SKIP = {"éléments supprimés", "deleted items", "courrier indésirable", "junk email", "junk e-mail", "brouillons", "drafts",
+            "boîte d'envoi", "outbox", "problèmes de synchronisation", "sync issues", "conflicts", "conflits", "local failures",
+            "échecs locaux", "server failures", "échecs du serveur", "rss feeds", "flux rss", "historique des conversations",
+            "conversation history"}
+    SENDER_SMTP = "http://schemas.microsoft.com/mapi/proptag/0x5D01001F"
+
+    def me(self) -> set[str]:
+        try:
+            u = self.ns.CurrentUser.AddressEntry.GetExchangeUser()
+            return {u.PrimarySmtpAddress.lower()} if u is not None and u.PrimarySmtpAddress else set()
+        except Exception:  # noqa: BLE001
+            return set()
+
+    def mails(self, since: datetime, members: set[str], known: set[str]):
+        """Rapide : Outlook renvoie d'un coup, en tableau (GetTable / GetArray), l'identifiant, l'expéditeur et la date
+        des mails avec l'équipe en copie ; seuls les mails ÉCRITS par l'équipe RFP (les demandes) sont ouverts. Les
+        réponses des autres équipes, la grande majorité, ne sont jamais ouvertes."""
         t = TEAM.replace("'", "''")
         dasl = ("@SQL=(\"urn:schemas:httpmail:displayto\" LIKE '%{t}%' OR \"urn:schemas:httpmail:displaycc\" LIKE '%{t}%') "
-                "AND \"urn:schemas:httpmail:datereceived\" >= '{w}'").format(t=t, w=since.strftime("%Y-%m-%d %H:%M"))
+                "AND \"urn:schemas:httpmail:datereceived\" >= '{w}' "
+                "AND \"http://schemas.microsoft.com/mapi/proptag/0x001A001F\" LIKE 'IPM.Note%'").format(t=t, w=since.strftime("%Y-%m-%d %H:%M"))
         seen, tmp = set(), Path(tempfile.mkdtemp(prefix="collecte-"))
+        members = {m.lower() for m in members}
+        candidates: list[str] = []
+        scanned = 0
         for store in list(self.ns.Stores):
             try:
                 root = store.GetRootFolder()
@@ -309,31 +329,48 @@ class Reader:
                 continue
             for folder in self.folders(root):
                 try:
-                    if folder.DefaultItemType != 0:
+                    if folder.DefaultItemType != 0 or folder.Name.strip().lower() in self.SKIP:
                         continue
-                    items = folder.Items.Restrict(dasl)
-                    count = items.Count
+                    table = folder.GetTable(dasl)
+                    cols = table.Columns
+                    cols.RemoveAll()
+                    for c in ("EntryID", self.SENDER_SMTP, "SenderEmailAddress"):
+                        cols.Add(c)
+                    n = 0
+                    while not table.EndOfTable:
+                        rows = table.GetArray(500) or ()
+                        for row in rows:
+                            n += 1
+                            eid, smtp, addr = row[0], (row[1] or "").lower(), (row[2] or "").lower()
+                            if eid in seen:
+                                continue
+                            seen.add(eid)
+                            if members and smtp not in members and addr not in members:
+                                continue  # réponse d'une autre équipe : jamais ouverte
+                            if hashlib.sha1(eid.encode()).hexdigest()[:16] in known:
+                                continue  # déjà lu à la collecte précédente
+                            candidates.append(eid)
+                    scanned += n
+                    if n:
+                        say(f"{folder.Name} : {n} mail(s) avec {TEAM} · {len(candidates)} demande(s) de l'équipe à lire")
                 except Exception:  # noqa: BLE001
                     continue
-                self.folders_done = getattr(self, "folders_done", 0) + 1
-                if count:
-                    say(f"Dossier {self.folders_done} · {folder.Name} : {count} mail(s) avec {TEAM} en copie")
-                for item in items:
-                    try:
-                        if item.Class != 43 or item.EntryID in seen:
-                            continue
-                        seen.add(item.EntryID)
-                        m = self.mail(item, tmp)
-                        if m["questions"]:
-                            yield m
-                    except Exception:  # noqa: BLE001
-                        continue
+        say(f"{scanned} mails passés en revue ; lecture des {len(candidates)} demandes de l'équipe RFP…")
+        for k, eid in enumerate(candidates, 1):
+            try:
+                m = self.mail(self.ns.GetItemFromID(eid), tmp)
+                if m["questions"]:
+                    yield m
+            except Exception:  # noqa: BLE001
+                continue
+            if k % 50 == 0:
+                say(f"  {k} / {len(candidates)}")
 
     def mail(self, item, tmp: Path) -> dict:
         body = item.Body or ""
         qs = questions(body)
         files = []
-        for att in item.Attachments:
+        for att in (item.Attachments if item.Attachments.Count else []):
             n = att.FileName or ""
             if n.lower().endswith((".xlsx", ".xlsm")):
                 target = tmp / n
@@ -727,14 +764,26 @@ def main() -> int:
     except Exception:  # noqa: BLE001
         say("Outlook ne répond pas. Ouvrez Outlook classique (pas le « nouvel Outlook »), puis relancez.")
         return 1
-    say("Lecture d'Outlook en cours : chaque dossier lu s'affiche ci-dessous (quelques minutes sur une grosse boîte)…")
-    members = reader.members()
-    mails, t0 = [], time.time()
-    for m in reader.mails(datetime.now() - timedelta(days=int(months * 30.5))):
-        mails.append(m)
-        if len(mails) % 10 == 0:
-            say(f"  → {len(mails)} mails avec des questions trouvés jusqu'ici")
-    target = write(mails, members, months)
+    say("Lecture d'Outlook en cours…")
+    members = set(reader.members()) | reader.me()
+    user = os.environ.get("USERNAME") or getpass.getuser()
+    previous = None if "--complet" in sys.argv else read_collect(destination() / "Collectes" / f"Collecte_{user}.xlsx")
+    window = datetime.now() - timedelta(days=int(months * 30.5))
+    since = window
+    old: list[dict] = []
+    if previous:  # relance : seuls les mails arrivés depuis la dernière collecte sont lus
+        info, old = previous
+        try:
+            since = max(window, datetime.fromisoformat(str(info.get("date"))[:19]) - timedelta(days=2))
+        except ValueError:
+            pass
+        old = [m for m in old if m.get("date", "") >= window.strftime("%Y-%m-%d")]
+        say(f"Collecte précédente reprise ({len(old)} mails) : lecture depuis le {since:%d/%m/%Y} seulement (--complet pour tout relire).")
+    t0 = time.time()
+    fresh = list(reader.mails(since, members, {m.get("id") for m in old}))
+    ids = {m["id"] for m in fresh}
+    mails = fresh + [m for m in old if m.get("id") not in ids]
+    target = write(mails, sorted(members), months)
     say("Construction du glossaire…")
     master, n_questions, n_sources = build_glossary(target.parent.parent)
     say("")

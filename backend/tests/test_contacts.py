@@ -155,3 +155,57 @@ def test_collector_builds_the_glossary_itself_and_keeps_corrections(tmp_path, mo
     mod.build_glossary(folder)  # nouveau lancement : la correction reste
     ws = load_workbook(master)["Questions"]
     assert next(r for r in ws.iter_rows(min_row=2, values_only=True) if "collaborateurs" in r[0].lower())[1] == "Contrôle interne"
+
+
+def test_fast_reader_opens_only_the_team_requests():
+    """Outlook simulé : le tableau (GetTable/GetArray) suffit à écarter les réponses ; seules les demandes sont ouvertes."""
+    from datetime import datetime
+
+    mod, _ = _collector()
+
+    class Att:
+        Count = 0
+
+        def __iter__(self):
+            return iter([])
+
+    class Item:
+        def __init__(self, eid, sender, body):
+            self.EntryID, self.Body, self.Subject, self.SenderName, self.SenderEmailAddress = eid, body, "DD Mutuelle Fictive", sender, sender
+            self.SentOn, self.Attachments, self.Recipients, self.Sender = datetime(2026, 3, 1), Att(), [], None
+
+    rows = [("E1", ALICE["email"], ALICE["email"]), ("E2", BOB["email"], BOB["email"]), ("E3", ALICE["email"], ALICE["email"])]
+    items = {"E1": Item("E1", ALICE["email"], BODY_BOB), "E2": Item("E2", BOB["email"], "Réponse : 12 ?"), "E3": Item("E3", ALICE["email"], "Merci !")}
+    opened = []
+
+    class Table:
+        def __init__(self):
+            self.done, self.Columns = False, type("C", (), {"RemoveAll": lambda s: None, "Add": lambda s, c: None})()
+
+        @property
+        def EndOfTable(self):
+            return self.done
+
+        def GetArray(self, n):
+            self.done = True
+            return rows
+
+    class Folder:
+        Name, DefaultItemType, Folders = "Boîte de réception", 0, []
+
+        def GetTable(self, f):
+            assert "AmeuRFPteam" in f and "IPM.Note" in f
+            return Table()
+
+    class NS:
+        Stores = [type("S", (), {"GetRootFolder": lambda s: Folder()})()]
+
+        def GetItemFromID(self, eid):
+            opened.append(eid)
+            return items[eid]
+
+    r = mod.Reader.__new__(mod.Reader)
+    r.ns, r.people = NS(), {}
+    got = list(r.mails(datetime(2024, 1, 1), {ALICE["email"]}, known=set()))
+    assert opened == ["E1", "E3"]  # la réponse de Bob n'est jamais ouverte
+    assert [m["questions"] for m in got] == [questions(BODY_BOB)]  # E3 sans question : écarté
