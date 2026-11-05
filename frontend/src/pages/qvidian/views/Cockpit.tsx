@@ -1,16 +1,18 @@
 /** Cockpit : santé, usage, niveaux des réponses (société / stratégie / fonds / part), thèmes, moteur et API. */
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { useReducedMotion } from '../../../motion/useReducedMotion'
 import { Link, useNavigate } from 'react-router-dom'
 import { Cpu, HeartPulse, Search, Sparkles } from 'lucide-react'
 import { Bar, Kpi, LevelBadge } from '../../../components/qvidian/Bits'
-import { Gauge } from '../../../components/pitstop/Gauge'
 import { HistoryPanel } from '../../../components/qvidian/HistoryPanel'
 import { Button } from '../../../components/ui/Button'
 import { texts } from '../../../content/texts'
 import { api } from '../../../lib/api'
-import type { QvidianApiStats, QvidianMemory, QvidianOverview } from '../../../lib/types'
+import type { QvidianApiStats, QvidianOverview } from '../../../lib/types'
 import { healthScore, useQvidian } from '../context'
 
+const Constellation = lazy(() => import('../../../components/qviapi/Constellation'))
+const webgl = () => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')) } catch { return false } }
 const Q = texts.qvidian
 const SCOPE_TONE: Record<string, string> = { societe: 'bg-magic-400', strategie: 'bg-sun-400', fonds: 'bg-mint-400', part: 'bg-bubble-400', generique: 'bg-card-3' }
 
@@ -20,8 +22,8 @@ export function Cockpit() {
   const [ov, setOv] = useState<QvidianOverview | null>(null)
   const [stats, setStats] = useState<QvidianApiStats | null>(null)
   const [q, setQ] = useState('')
-  const [mem, setMem] = useState<QvidianMemory | null>(null)
-  useEffect(() => { api.qvidian.memory().then(setMem).catch(() => undefined) }, [])
+  const reduced = useReducedMotion()
+  const show3d = !reduced && webgl()
   useEffect(() => {
     let alive = true
     const load = (retry: number) => api.qvidian.overview().then((o) => alive && setOv(o))
@@ -50,13 +52,12 @@ export function Cockpit() {
         </form>
       </header>
 
-      <Link to="/qvidian/memoire" data-enter aria-label={texts.pitstop.dials}
-        className="pit-scan grid grid-cols-2 gap-4 rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5 shadow-[5px_5px_0_0_var(--color-fg)] transition-transform hover:-translate-y-0.5 md:grid-cols-4">
-        <Gauge value={score / 100} display={String(score)} label={texts.pitstop.gHealth} hint={texts.pitstop.gHealthHint(audit.with_issues)} />
-        <Gauge value={mem?.bank.rate ?? null} label={texts.pitstop.gCoverage} hint={mem?.bank.distinct ? texts.pitstop.gCoverageHint(mem.bank.covered, mem.bank.distinct) : texts.pitstop.gNoBank} />
-        <Gauge value={mem ? mem.reuse_rate : null} label={texts.pitstop.gReuse} hint={mem ? texts.pitstop.gReuseHint(mem.texts_reused, mem.library) : undefined} />
-        <Gauge value={tel?.calls ? Math.max(0, 1 - tel.p95_ms / 3000) : null} display={tel?.calls ? `${tel.p95_ms} ms` : "—"} label={texts.pitstop.gApi} hint={texts.pitstop.gApiHint} />
-      </Link>
+      {show3d && audit.items.length > 0 && (
+        <section data-enter className="relative overflow-hidden rounded-[var(--radius-card)] border-2 border-fg bg-card" aria-label={texts.qviapi.constellation}>
+          <Suspense fallback={<div className="h-64" />}><Constellation items={audit.items} /></Suspense>
+          <p className="absolute bottom-3 left-4 max-w-md text-xs text-fg-3">{texts.qviapi.constellationLead(audit.items.length)}</p>
+        </section>
+      )}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
         <section data-enter className="flex flex-col gap-4">

@@ -4,17 +4,21 @@
  * Facettes : niveau (société / stratégie / fonds / part), thème, fonds, dossier, langue ; tri par pertinence ou usage.
  * Clavier : ↑ ↓ pour naviguer, Entrée pour ouvrir, Espace pour cocher, C pour copier le texte.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Copy, Languages, Search, Sparkles, Wand2, X } from 'lucide-react'
 import { Highlight, LevelBadge, ScoreRing, ago, copyText } from '../../../components/qvidian/Bits'
 import { Select, Switch } from '../../../components/ui/Field'
 import { useToast } from '../../../components/ui/Toast'
+import { LiquidGauge } from '../../../components/qviapi/LiquidGauge'
+import { useReducedMotion } from '../../../motion/useReducedMotion'
 import { texts } from '../../../content/texts'
 import { api, ApiError } from '../../../lib/api'
 import type { QvidianFacet, QvidianFilters, QvidianHit, QvidianSearchResult } from '../../../lib/types'
 import { useQvidian } from '../context'
 
+const KeyboardScene = lazy(() => import('../../../components/qviapi/KeyboardScene'))
+const webgl = () => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')) } catch { return false } }
 const Q = texts.qvidian
 type FacetKey = 'scope' | 'theme' | 'fund'
 
@@ -128,6 +132,9 @@ export function SearchView() {
   const [sort, setSort] = useState('pertinence')
   const [res, setRes] = useState<QvidianSearchResult | null>(null)
   const [busy, setBusy] = useState(false)
+  const pressed = useRef('')
+  const reduced = useReducedMotion()
+  const show3d = !reduced && webgl()
   const [refining, setRefining] = useState(false)
   const [active, setActive] = useState(0)
   const seq = useRef(0)
@@ -193,6 +200,20 @@ export function SearchView() {
     return () => window.removeEventListener('keydown', onKey)
   })
 
+  // Jauges des moteurs : part des 10 premiers résultats que chaque moteur a fait remonter (dans son top 20)
+  const gauges = useMemo(() => {
+    const top = results.slice(0, 10)
+    const share = (f: (h: QvidianHit) => boolean) => (top.length ? top.filter(f).length / top.length : 0)
+    const rank = (k: string) => (h: QvidianHit) => (h.signals?.ranks?.[k] ?? 99) < 20
+    const E = texts.qviapi.engine
+    return [
+      { key: 'bm25', label: E.bm25, color: '#3b82f6', level: share(rank('bm25')) },
+      { key: 'ngram', label: E.ngram, color: '#60a5fa', level: share(rank('ngram')) },
+      { key: 'dense', label: E.dense, color: '#22d3ee', level: share(rank('dense')), off: !!res && !res.engine.encoder },
+      { key: 'rerank', label: E.rerank, color: '#a78bfa', level: share((h) => (h.signals?.rerank ?? 0) >= 0.5), off: !!res && !res.engine.reranker },
+      { key: 'history', label: E.history, color: '#34d399', level: share(rank('history')) },
+    ]
+  }, [results, res])
   const filterCount = useMemo(() => (filters.scope?.length ?? 0) + (filters.theme?.length ?? 0) + (filters.fund?.length ?? 0)
     + (filters.language ? 1 : 0) + (filters.folder ? 1 : 0) + (filters.min_uses ? 1 : 0) + (filters.only_issues ? 1 : 0) + (filters.include_disabled ? 1 : 0)
     + (filters.include_expired === false ? 1 : 0), [filters])
@@ -203,16 +224,25 @@ export function SearchView() {
         <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{Q.searchTitle}</h1>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-fg-2">{Q.searchLead}</p>
       </header>
-      <form data-enter role="search" onSubmit={(e) => { e.preventDefault(); commit(q) }}
-        className="relative rounded-[var(--radius-card)] border-[3px] border-fg bg-card shadow-[6px_6px_0_0_var(--color-fg)]">
-        <Search size={22} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
-        <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => commit(q)} placeholder={Q.searchPlaceholder} aria-label={Q.searchTitle}
-          className="h-16 w-full rounded-[var(--radius-card)] bg-transparent pl-14 pr-28 font-display text-xl font-semibold placeholder:font-normal placeholder:text-fg-3 focus:outline-none" />
-        <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-xs font-bold text-fg-3" aria-live="polite">
-          {busy ? '…' : refining ? <><Wand2 size={14} className="animate-pulse" aria-hidden="true" />{Q.refining}</> : res?.timings.total_ms ? Q.timings(res.timings.total_ms) : ''}
-          {q && <button type="button" onClick={() => { setQ(''); commit('') }} aria-label="Effacer" className="rounded-full p-1 hover:bg-card-2"><X size={16} /></button>}
-        </span>
-      </form>
+      <section data-enter aria-label={texts.qviapi.engines} className="grid items-end gap-4 md:grid-cols-[auto_minmax(0,1fr)_auto]">
+        <div className="hidden gap-3 md:flex">{gauges.slice(0, 2).map((g) => <LiquidGauge key={g.key} label={g.label} color={g.color} level={g.level} off={g.off} busy={busy || (refining && g.key === 'rerank')} />)}</div>
+        <div className="flex min-w-0 flex-col">
+          {show3d && <Suspense fallback={<div className="h-52 sm:h-64" />}><KeyboardScene pressed={pressed} busy={busy || refining} /></Suspense>}
+          <form role="search" onSubmit={(e) => { e.preventDefault(); commit(q) }}
+            className="relative rounded-[var(--radius-card)] border-[3px] border-fg bg-card shadow-[6px_6px_0_0_var(--color-fg)]">
+            <Search size={22} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
+            <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => commit(q)} placeholder={Q.searchPlaceholder} aria-label={Q.searchTitle}
+              onKeyDown={(e) => { pressed.current = e.key === ' ' ? ' ' : e.key.length === 1 ? e.key.toUpperCase() : '' }}
+              className="h-16 w-full rounded-[var(--radius-card)] bg-transparent pl-14 pr-28 font-display text-xl font-semibold placeholder:font-normal placeholder:text-fg-3 focus:outline-none" />
+            <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-xs font-bold text-fg-3" aria-live="polite">
+              {busy ? '…' : refining ? <><Wand2 size={14} className="animate-pulse" aria-hidden="true" />{Q.refining}</> : res?.timings.total_ms ? Q.timings(res.timings.total_ms) : ''}
+              {q && <button type="button" onClick={() => { setQ(''); commit('') }} aria-label="Effacer" className="rounded-full p-1 hover:bg-card-2"><X size={16} /></button>}
+            </span>
+          </form>
+        </div>
+        <div className="hidden gap-3 md:flex">{gauges.slice(2).map((g) => <LiquidGauge key={g.key} label={g.label} color={g.color} level={g.level} off={g.off} busy={busy || (refining && g.key === 'rerank')} />)}</div>
+        <div className="flex flex-wrap justify-center gap-3 md:hidden">{gauges.map((g) => <LiquidGauge key={g.key} label={g.label} color={g.color} level={g.level} off={g.off} busy={busy} />)}</div>
+      </section>
 
       {res && res.query && (
         <div data-enter className="flex flex-wrap items-center gap-2 text-xs font-bold">

@@ -27,7 +27,7 @@ export const texts = {
     contacts: 'Qui contacter',
     qvidian: 'Qvidian',
     suivi: 'Suivi d\'activité',
-    atelier: 'Atelier Excel',
+    atelier: 'Merlin',
     dashboard: 'Tableau de bord',
     history: 'Historique',
     about: 'À propos',
@@ -829,6 +829,11 @@ export const texts = {
     toAtelier: 'Atelier Excel',
   },
   qviapi: {
+    constellation: 'Constellation de la bibliothèque',
+    constellationLead: (n: number) => `${n} textes : un point par texte, plus il est gros plus il est utilisé, une couleur par thème.`,
+    engines: 'Moteurs de recherche',
+    engine: { bm25: 'Mots', ngram: 'N-grammes', dense: 'Sens (E5)', rerank: 'Relecture', history: 'Anciens RFI' },
+    lead: 'La bibliothèque Qvidian, en salle des machines : recherche sémantique, mémoire des réponses, entretien, modifications protégées.',
     questionsTitle: 'Questions déjà tombées',
     questionsLead: 'Toutes les questions des anciens RFI, les plus posées d\'abord, avec le texte Qvidian qui y a répondu. Sans texte : une réponse rédigée à la main à chaque fois.',
     questionsFilter: 'Filtrer les questions…',
@@ -1180,7 +1185,7 @@ export const texts = {
   },
 
   atelier: {
-    eyebrow: 'Atelier Excel',
+    eyebrow: 'Merlin · Atelier Excel',
     title: 'Faites tomber les chiffres au bon endroit.',
     intro: 'Pour les tableaux par ISIN : déposez un classeur, l\'app repère les en-têtes, la colonne clé et les cellules vides, puis propose les extractions du Lakehouse.',
     dropTitle: 'Déposez un fichier Excel ici',

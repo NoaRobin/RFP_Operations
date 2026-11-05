@@ -4,11 +4,10 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, Tags, X } from 'lucide-react'
+import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, Library, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Sparkles, Tags, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { ErrorState, Loading } from '../../components/ui/States'
 import { useToast } from '../../components/ui/Toast'
-import { Mechanic } from '../../universe/Mascots'
 import { MemoryView } from './views/MemoryView'
 import { DuplicatesView, FreshnessView, QuestionsView } from './views/WorkshopViews'
 import { texts } from '../../content/texts'
@@ -56,14 +55,8 @@ function Sidebar() {
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto" aria-label={Q.section} data-lenis-prevent>
       <div className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-4 shadow-[4px_4px_0_0_var(--color-fg)]">
-        <div className="flex items-center gap-3">
-          <Mechanic className="size-14 shrink-0" />
-          <div>
-            <p className="font-display text-2xl font-bold leading-none">{texts.pitstop.name}</p>
-            <p className="mt-1 text-xs font-bold text-magic-300">{texts.pitstop.sub}</p>
-          </div>
-        </div>
-        <p className="mt-2 text-xs font-semibold text-fg-2">{texts.pitstop.lead}</p>
+        <p className="flex items-center gap-2 font-display text-2xl font-semibold tracking-tight"><Library size={20} className="text-magic-500" aria-hidden="true" />QviAPI</p>
+        <p className="mt-1 text-xs font-semibold text-fg-2">{texts.qviapi.lead}</p>
         {status && (
           <p className={`mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${status.mode === 'demo' ? 'bg-sun-400' : status.connected ? 'bg-mint-400' : 'bg-[#ffd6dc]'}`}>
             <span className={`size-2 rounded-full ${status.connected ? 'bg-fg' : 'bg-fg/40'}`} aria-hidden="true" />
@@ -197,9 +190,14 @@ function Body() {
 }
 
 export default function QvidianSection() {
+  // QviAPI : la salle des machines passe au sombre (styles/qviapi.css) le temps d'y être
+  useEffect(() => {
+    document.documentElement.dataset.section = 'qviapi'
+    return () => { delete document.documentElement.dataset.section }
+  }, [])
   return (
     <QvidianProvider>
-      <div className="mx-auto grid w-[min(100%-2rem,112rem)] gap-6 pb-24 pt-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
+      <div className="qv mx-auto grid w-[min(100%-2rem,112rem)] gap-6 pb-24 pt-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <Sidebar />
         <Body />
       </div>

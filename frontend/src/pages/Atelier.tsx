@@ -459,7 +459,7 @@ export default function Atelier() {
         <h1 className="mt-4 text-[clamp(2.5rem,6vw,4.5rem)] font-bold leading-[0.95]">{texts.atelier.title}</h1>
         {!analysis && <p className="mt-5 text-lg text-fg-2">{texts.atelier.intro}</p>}
         {!analysis && (
-          <p className="mt-4 flex flex-wrap gap-2">
+          <p className="mt-4">
             <Link to="/atelier/fonds" className="inline-flex items-center gap-2 rounded-full border-2 border-fg bg-sun-400 px-4 py-2 text-sm font-bold shadow-[2px_2px_0_0_var(--color-fg)]">{texts.fundSheet.title} : {texts.fundSheet.lead.split(',')[0]}</Link>
           </p>
         )}

@@ -5,12 +5,11 @@
  */
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Gauge } from '../../../components/pitstop/Gauge'
+import { Dial as Gauge } from '../../../components/qviapi/Dial'
 import { ErrorState, Loading } from '../../../components/ui/States'
 import { texts } from '../../../content/texts'
 import { api, ApiError } from '../../../lib/api'
 import type { MemoryCard, QvidianMemory } from '../../../lib/types'
-import { Mechanic } from '../../../universe/Mascots'
 
 const M = texts.pitstop
 
@@ -52,14 +51,13 @@ export function MemoryView() {
   return (
     <div className="flex flex-col gap-5">
       <header data-enter className="flex flex-wrap items-end gap-4">
-        <Mechanic className="size-20 shrink-0" />
         <div className="min-w-0 flex-1">
           <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{M.memoryTitle}</h1>
           <p className="mt-2 max-w-2xl text-sm font-semibold text-fg-2">{M.memoryLead(m.rfis, m.links)}</p>
         </div>
       </header>
 
-      <section data-enter className="pit-scan grid grid-cols-2 gap-4 rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5 shadow-[5px_5px_0_0_var(--color-fg)] md:grid-cols-4" aria-label={M.dials}>
+      <section data-enter className="grid grid-cols-2 gap-4 rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-5 shadow-[5px_5px_0_0_var(--color-fg)] md:grid-cols-4" aria-label={M.dials}>
         <Gauge value={b.rate} label={M.gCoverage} hint={b.distinct ? M.gCoverageHint(b.covered, b.distinct) : M.gNoBank} />
         <Gauge value={m.reuse_rate} label={M.gReuse} hint={M.gReuseHint(m.texts_reused, m.library)} />
         <Gauge value={m.rfis ? Math.min(1, m.rfis / 400) : 0} display={String(m.rfis)} label={M.gRfis} hint={M.gRfisHint} />
