@@ -50,13 +50,20 @@ export default function Contacts() {
         </a>
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border-2 border-fg px-4 py-2 text-sm font-bold">
           <Upload size={15} aria-hidden="true" />{T.importXlsx}
-          <input type="file" accept=".xlsx" className="sr-only" onChange={async (e) => {
-            const f = e.target.files?.[0]; e.target.value = ''
-            if (!f) return
-            try { const r = await api.contacts.importFile(f); setSt(r); toast('success', T.imported(r.corrections)) } catch (err) { fail(err) }
+          <input type="file" accept=".xlsx" multiple className="sr-only" onChange={async (e) => {
+            const files = Array.from(e.target.files ?? []); e.target.value = ''
+            if (!files.length) return
+            try {
+              const r = await api.contacts.importFiles(files)
+              setSt(r)
+              if (r.collected.length) toast('success', T.collected(r.collected.map((c) => c.by), r.collected.reduce((a, c) => a + c.mails, 0)))
+              if (r.corrections) toast('success', T.imported(r.corrections))
+            } catch (err) { fail(err) }
           }} />
         </label>
         {st && !st.outlook && <p className="w-full text-sm font-bold text-warning">{T.noOutlook}</p>}
+        <p className="w-full text-xs font-semibold text-fg-3">{T.collectorHint}</p>
+        {!!s?.sources?.length && <p className="w-full text-xs font-bold">{T.sources} : {s.sources.map((x) => `${x.by} (${x.mails} mails)`).join(' · ')}</p>}
         {st?.state.message && <p className="w-full text-sm font-bold" aria-live="polite">{st.state.message}</p>}
         {st?.state.error && <p role="alert" className="w-full text-sm font-bold text-danger">{st.state.error}</p>}
       </section>

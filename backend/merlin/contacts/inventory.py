@@ -220,13 +220,71 @@ class Inventory:
         self.data.update(groups=groups, templates=templates(asks), stats=stats, built_at=date.today().isoformat())
         self.save()
 
+    # ------------------------------------------------------------------ sources (ma boîte + collectes des collègues)
+    def sources_dir(self) -> Path:
+        return self.path.parent / "sources"
+
+    def save_source(self, name: str, payload: dict[str, Any]) -> None:
+        d = self.sources_dir()
+        d.mkdir(parents=True, exist_ok=True)
+        safe = re.sub(r"[^\w.-]+", "_", name)[:80] or "source"
+        tmp = d / f"{safe}.tmp"
+        tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(d / f"{safe}.json")
+
+    def sources(self) -> list[dict[str, Any]]:
+        out = []
+        for f in sorted(self.sources_dir().glob("*.json")) if self.sources_dir().exists() else []:
+            try:
+                out.append({"file": f.stem, **json.loads(f.read_text(encoding="utf-8"))})
+            except (OSError, ValueError):
+                continue
+        return out
+
+    def rebuild_all(self, token: str) -> dict[str, Any]:
+        """Toutes les boîtes lues (la mienne, celles des collègues) : un mail vu dans deux boîtes ne compte qu'une fois."""
+        asks: list[Ask] = []
+        stats: Counter = Counter()
+        seen: set[str] = set()
+        for src in self.sources():
+            mails = [m for m in src.get("mails", []) if m.get("id") not in seen]
+            seen |= {m.get("id") for m in mails}
+            a, st = asks_from_mails(mails, src.get("team") or token, set(src.get("members") or []))
+            asks += a
+            stats.update({k: v for k, v in st.items() if isinstance(v, int)})
+        stats["sources"] = len(self.sources())
+        self.rebuild(asks, dict(stats))
+        return self.summary()
+
+    def import_collected(self, content: bytes) -> dict[str, Any] | None:
+        """Fichier produit par outils/collecte_qui_contacter (poste d'un collègue). None : ce n'est pas une collecte."""
+        from openpyxl import load_workbook
+
+        wb = load_workbook(io.BytesIO(content), read_only=True)
+        if "Infos" not in wb.sheetnames or "Mails" not in wb.sheetnames:
+            return None
+        info = {str(r[0]): r[1] for r in wb["Infos"].iter_rows(values_only=True) if r and r[0]}
+        if info.get("format") != "collecte-qui-contacter":
+            return None
+        mails = []
+        for r in wb["Mails"].iter_rows(min_row=2, values_only=True):
+            try:
+                mails.append(json.loads(r[1]))
+            except (TypeError, ValueError):
+                continue
+        by = str(info.get("collecte_par") or "collegue")
+        self.save_source(f"collecte_{by}", {"by": by, "date": str(info.get("date") or ""), "team": str(info.get("equipe") or ""),
+                                            "members": json.loads(info.get("membres_equipe") or "[]"), "mails": mails})
+        return {"by": by, "mails": len(mails)}
+
     def summary(self) -> dict[str, Any]:
         groups = self.data.get("groups", [])
         teams = Counter(g["team"] for g in groups)
         dd = Counter(t for g in groups for t in g["dd_types"])
         return {"built_at": self.data.get("built_at"), "stats": self.data.get("stats", {}), "questions": len(groups),
                 "asked": sum(g["times"] for g in groups), "teams": dict(teams.most_common()), "dd_types": dict(dd.most_common()),
-                "to_check": sum(1 for g in groups if g.get("check")), "corrections": len(self.data.get("corrections", {}))}
+                "to_check": sum(1 for g in groups if g.get("check")), "corrections": len(self.data.get("corrections", {})),
+                "sources": [{"by": x.get("by", x["file"]), "date": x.get("date", ""), "mails": len(x.get("mails", []))} for x in self.sources()]}
 
     # ------------------------------------------------------------------ Excel
     def to_excel(self) -> bytes:

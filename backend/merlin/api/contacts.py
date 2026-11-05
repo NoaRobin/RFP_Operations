@@ -62,13 +62,25 @@ def export(s: AppState = Depends(state)) -> Response:
 
 
 @router.post("/import")
-async def import_corrections(file: UploadFile = File(...), s: AppState = Depends(state)) -> dict[str, Any]:
-    content = await file.read()
-    try:
-        n = service(s).inventory.import_corrections(content)
-    except (KeyError, ValueError) as error:
-        raise bad_request("Fichier non reconnu : reprenez le fichier exporté (feuille « Questions »).", str(error)) from error
-    return {"corrections": n, **service(s).status()}
+async def import_file(files: list[UploadFile] = File(...), s: AppState = Depends(state)) -> dict[str, Any]:
+    """Collectes des collègues (fichiers « Qui_contacter_collecte_… ») et / ou fichier corrigé à la main."""
+    from ..contacts.service import TEAM
+
+    inv = service(s).inventory
+    collected, corrections = [], 0
+    for f in files:
+        content = await f.read()
+        try:
+            got = inv.import_collected(content)
+            if got is not None:
+                collected.append(got)
+            else:
+                corrections += inv.import_corrections(content)
+        except (KeyError, ValueError) as error:
+            raise bad_request(f"{f.filename} : fichier non reconnu (collecte ou fichier exporté, feuille « Questions »).", str(error)) from error
+    if collected:
+        inv.rebuild_all(TEAM)
+    return {"collected": collected, "corrections": corrections, **service(s).status()}
 
 
 class AskRequest(BaseModel):

@@ -83,3 +83,40 @@ def test_api_without_outlook(client):
     st = client.get("/api/contacts").json()
     assert st["outlook"] is False and st["team"] == "AmeuRFPteam"
     assert client.post("/api/contacts/ask", json={"questions": ["x ?"]}).json()["unknown"] == ["x ?"]
+
+
+def _collector():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "outils" / "collecte_qui_contacter" / "collecte.py"
+    spec = importlib.util.spec_from_file_location("collecte", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod, path
+
+
+def test_collector_extraction_is_an_exact_copy_of_the_app():
+    from pathlib import Path
+
+    _, path = _collector()
+    app = (Path(__file__).resolve().parents[1] / "merlin" / "contacts" / "extract.py").read_text(encoding="utf-8")
+    copy = path.read_text(encoding="utf-8")
+    block = app[app.index("import re\n"):app.index("def excel_questions(")].rstrip()
+    assert block in copy, "outils/collecte_qui_contacter/collecte.py : recopier la partie extraction de merlin/contacts/extract.py"
+
+
+def test_collected_file_from_a_colleague_is_merged(tmp_path, monkeypatch):
+    mod, _ = _collector()
+    monkeypatch.setattr(mod, "DESTINATION", str(tmp_path / "SharePoint - Glossaire"))
+    monkeypatch.setenv("USERNAME", "collegue.fictive")
+    collected = [{**m, "id": f"c{m['id']}"} for m in mails()]
+    target = mod.write(collected, [ALICE["email"]], 36)
+    assert target.parent.name == "SharePoint - Glossaire" and "collegue.fictive" in target.name
+    inv = Inventory(tmp_path / "contacts" / "inventory.json")
+    got = inv.import_collected(target.read_bytes())
+    assert got == {"by": "collegue.fictive", "mails": 5}
+    inv.save_source("ma_boite", {"by": "moi", "team": "AmeuRFPteam", "members": [ALICE["email"]], "mails": mails()[:2]})
+    summary = inv.rebuild_all("AmeuRFPteam")
+    assert {x["by"] for x in summary["sources"]} == {"moi", "collegue.fictive"} and summary["teams"].get("Conformité")
+    assert inv.import_collected(inv.to_excel()) is None  # un fichier exporté n'est pas une collecte

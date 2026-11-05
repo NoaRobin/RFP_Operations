@@ -119,10 +119,10 @@ export const api = {
     stop: () => request<ContactsStatus>('/contacts/stop', { method: 'POST' }),
     questions: (q = '', team = '', dd = '') => request<ContactGroup[]>(`/contacts/questions?q=${encodeURIComponent(q)}&team=${encodeURIComponent(team)}&dd=${encodeURIComponent(dd)}`),
     exportUrl: '/api/contacts/export.xlsx',
-    importFile: (file: File) => {
+    importFiles: (files: File[]) => {
       const form = new FormData()
-      form.append('file', file)
-      return request<ContactsStatus & { corrections: number }>('/contacts/import', { method: 'POST', body: form })
+      files.forEach((f) => form.append('files', f))
+      return request<ContactsStatus & { corrections: number; collected: { by: string; mails: number }[] }>('/contacts/import', { method: 'POST', body: form })
     },
     ask: (questions: string[], client = '', fund = '', deadline = '') => request<AskPlan>('/contacts/ask', json({ questions, client, fund, deadline })),
   },

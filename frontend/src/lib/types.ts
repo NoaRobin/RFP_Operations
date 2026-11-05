@@ -730,7 +730,7 @@ export interface ContactsStatus {
   state: { running: boolean; message: string; mails: number; folders: number; error: string | null; finished?: string }
   outlook: boolean; team: string
   summary: { built_at: string | null; stats: Record<string, number>; questions: number; asked: number; teams: Record<string, number>
-    dd_types: Record<string, number>; to_check: number; corrections: number }
+    dd_types: Record<string, number>; to_check: number; corrections: number; sources?: { by: string; date: string; mails: number }[] }
 }
 export interface AskPlan {
   teams: { team: string; people: string[]; to: string; questions: string[]; mail: string; matches: { asked_as: string; score: number; times: number }[] }[]

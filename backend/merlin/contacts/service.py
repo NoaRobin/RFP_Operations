@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .inventory import Inventory, asks_from_mails
+from .inventory import Inventory
 from .outlook import OutlookReader, OutlookUnavailable, available, since_months
 
 TEAM = os.environ.get("CONTACTS_TEAM_ADDRESS", "AmeuRFPteam")
@@ -53,8 +53,9 @@ class ContactsService:
             for m in reader.scan(TEAM, since_months(months), progress, self._stop.is_set):
                 mails.append(m)
             self.state["message"] = "Regroupement des questions…"
-            asks, stats = asks_from_mails(mails, TEAM, members)
-            self.inventory.rebuild(asks, {**stats, "months": months})
+            self.inventory.save_source("ma_boite", {"by": os.environ.get("USERNAME", "moi"), "date": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                                                    "team": TEAM, "members": sorted(members), "mails": mails})
+            self.inventory.rebuild_all(TEAM)
             self.state.update(message="Arrêtée (inventaire partiel)." if self._stop.is_set() else "Terminé.")
         except OutlookUnavailable as error:
             self.state.update(error=str(error), message="")
