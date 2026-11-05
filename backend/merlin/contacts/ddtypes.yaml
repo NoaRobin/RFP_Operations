@@ -1,0 +1,20 @@
+# Type de due diligence d'un échange, lu dans l'objet du mail, le nom des pièces jointes et le texte (sans accents,
+# minuscules). Le premier type dont un mot est trouvé l'emporte : l'ordre compte. Modifiable librement.
+types:
+  - id: esg_ops
+    label: ESG / opérationnelle
+    words: [esg, isr, sfdr, pai, taxonomie, durabilite, sustainability, climat, climate, pri, odd, operational due diligence,
+            due diligence operationnelle, operationnelle, operational, cybersecurite, cybersecurity, bcp, continuite]
+  - id: consultant
+    label: Consultant
+    words: [consultant, mercer, aon, willis towers watson, wtw, bfinance, cambridge associates, russell investments,
+            morningstar, fundsquare, selecteur, selector, manager research, gatekeeper, rfp consultant]
+  - id: distributeur
+    label: Distributeur
+    words: [distributeur, distributor, distribution, plateforme, platform, banque privee, private bank, cgp, conseiller en gestion,
+            allfunds, fundsettle, selection de fonds, fund selection, wealth, gestion privee, assurance vie, unite de compte]
+  - id: institutionnel
+    label: Institutionnel
+    words: [institutionnel, institutional, assureur, insurer, mutuelle, caisse, pension, retraite, fonds de pension,
+            pension fund, prevoyance, family office, fondation, endowment, appel d'offres, appel d offres, tender, mandat]
+fallback: {id: autre, label: Non classé}

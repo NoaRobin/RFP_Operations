@@ -14,6 +14,7 @@ import { Button } from '../components/ui/Button'
 import { Field, Select, Switch, TextInput } from '../components/ui/Field'
 import { ErrorState, Loading } from '../components/ui/States'
 import { useToast } from '../components/ui/Toast'
+import { AskPanel } from '../components/rfi/AskPanel'
 import { texts } from '../content/texts'
 import { api, ApiError } from '../lib/api'
 import { formatRelative, todayIso } from '../lib/format'
@@ -375,6 +376,7 @@ export default function Rfi() {
                   onResetAccepted={() => setAccepted(new Set())}
                   onOverride={setOverride} toWrite={toWrite} generating={generating} onGenerate={generate} onCopilot={() => setCopilot(true)} />
               </div>
+              <div className="mt-5"><AskPanel analysis={analysis} client={doc?.filename.replace(/\.(xlsx|xlsm|docx)$/i, '') ?? ''} /></div>
               <p className="mt-4 text-xs font-semibold text-fg-3">{texts.rfi.legal}</p>
             </section>
           )}

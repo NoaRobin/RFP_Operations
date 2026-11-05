@@ -721,3 +721,18 @@ export interface QvidianApiStats {
 export interface QvidianFolder { id: number; parent_id: number; title: string; path: string; contents: number }
 
 export interface QvidianImport { projects: number; total: number; imported: number; documents: { project: string; file?: string; imported?: number; error?: string }[] }
+
+export interface ContactGroup {
+  question: string; variants: string[]; times: number; last: string; dd_types: Record<string, number>; team: string; team_share: number
+  teams: Record<string, number>; people: string[]; corrected: boolean; subjects: string[]; check: boolean
+}
+export interface ContactsStatus {
+  state: { running: boolean; message: string; mails: number; folders: number; error: string | null; finished?: string }
+  outlook: boolean; team: string
+  summary: { built_at: string | null; stats: Record<string, number>; questions: number; asked: number; teams: Record<string, number>
+    dd_types: Record<string, number>; to_check: number; corrections: number }
+}
+export interface AskPlan {
+  teams: { team: string; people: string[]; to: string; questions: string[]; mail: string; matches: { asked_as: string; score: number; times: number }[] }[]
+  unknown: string[]; built_at: string | null
+}

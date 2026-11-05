@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { Activity, CalendarCheck, FileDown, FileQuestion, FileSpreadsheet, History, LayoutDashboard, Library, Paintbrush, Lightbulb, Menu, Plug, Search, Sparkles, Tags, UserRound, X } from 'lucide-react'
+import { Activity, CalendarCheck, FileDown, FileQuestion, FileSpreadsheet, History, LayoutDashboard, Library, Mail, Paintbrush, Lightbulb, Menu, Plug, Search, Sparkles, Tags, UserRound, X } from 'lucide-react'
 import { texts } from '../../content/texts'
 import { useUserName } from '../../lib/storage'
 import { gsap } from '../../motion/gsap'
@@ -19,6 +19,7 @@ const NAV = [
   { to: '/tableau-de-bord', label: texts.nav.dashboard, icon: LayoutDashboard, end: false },
 ]
 const MORE = [
+  { to: '/qui-contacter', label: texts.nav.contacts, icon: Mail, end: false },
   { to: '/atelier', label: texts.nav.atelier, icon: FileSpreadsheet, end: false },
   { to: '/historique', label: texts.nav.history, icon: History, end: false },
   { to: '/rfpascontente', label: texts.nav.rfpascontente, icon: Paintbrush, end: false },

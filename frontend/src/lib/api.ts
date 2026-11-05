@@ -11,7 +11,7 @@ import type {
   QvidianStatus, QvidianSuggest, QvidianApiStats, QvidianEngineStatus, QvidianFilters, QvidianFolder, QvidianOverview, QvidianSearchResult, QvidianHistorySummary,
   Automation, Dashboard, FabricStatus, FundEntry, MergeAnalysis, MergeDecision, MergeReferentiel, MergeResult,
   RfiAnalysis, RfiDocument, RfiFact, RfiGenerated, RfiRequest, PrecedentStats, PrecedentInventory, SharePointStatus,
-  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, MatchResult, MatchStatus, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
+  DueDiligenceList, FinalListing, SharePointImport, SharePointSyncState, ContactGroup, ContactsStatus, AskPlan, MatchResult, MatchStatus, RfiPreview, FundDocuments, Binding, FundShopItem, FundShopOverview, OmniOverview, Extraction, Health, Option, Preview, Recipe, Run, Schedule, WorkbookAnalysis, WorkbookMeta,
 } from './types'
 
 export class ApiError extends Error {
@@ -113,6 +113,19 @@ export const api = {
     disconnect: () => request<FabricStatus>('/fabric/disconnect', { method: 'POST' }),
   },
 
+  contacts: {
+    status: () => request<ContactsStatus>('/contacts'),
+    scan: (months: number) => request<ContactsStatus>('/contacts/scan', json({ months })),
+    stop: () => request<ContactsStatus>('/contacts/stop', { method: 'POST' }),
+    questions: (q = '', team = '', dd = '') => request<ContactGroup[]>(`/contacts/questions?q=${encodeURIComponent(q)}&team=${encodeURIComponent(team)}&dd=${encodeURIComponent(dd)}`),
+    exportUrl: '/api/contacts/export.xlsx',
+    importFile: (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return request<ContactsStatus & { corrections: number }>('/contacts/import', { method: 'POST', body: form })
+    },
+    ask: (questions: string[], client = '', fund = '', deadline = '') => request<AskPlan>('/contacts/ask', json({ questions, client, fund, deadline })),
+  },
   qvidian: {
     status: () => request<QvidianStatus>('/qvidian/status'),
     connect: (user: string, password: string, apiKey: string, remember = true, authUrl = '') =>

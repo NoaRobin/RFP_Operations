@@ -78,6 +78,19 @@ def numbers(text: str) -> frozenset[str]:
     return frozenset(out)
 
 
+@lru_cache(maxsize=100_000)
+def _trigrams(k: str) -> frozenset[str]:
+    t = f"  {k}  "
+    return frozenset(t[i:i + 3] for i in range(len(t) - 2))
+
+
+def chars(a: str, b: str) -> float:
+    """Recouvrement des trigrammes de caractères (Dice) des deux questions normalisées : fautes, pluriels, articles.
+    (aggregate.similarity est fait pour des réponses : il renvoie 0 sur des textes courts.)"""
+    ta, tb = _trigrams(key(a)), _trigrams(key(b))
+    return 2 * len(ta & tb) / (len(ta) + len(tb)) if ta and tb else 0.0
+
+
 def key(question: str) -> str:
     """Clé de fusion : numérotation, ponctuation, accents et casse ignorés."""
     text = NUMBERING.sub("", question or "")
