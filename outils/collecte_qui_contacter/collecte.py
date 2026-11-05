@@ -110,6 +110,8 @@ TEAM = os.environ.get("CONTACTS_TEAM_ADDRESS", "AmeuRFPteam")  # adresse (ou nom
 MONTHS = 36                      # période lue
 GLOSSARY = "glossaire"           # le fichier Excel est déposé dans le dossier SharePoint qui contient ce fichier
 DESTINATION = ""                 # ou un dossier imposé (chemin complet), prioritaire
+# Dossier SharePoint du glossaire, relatif au profil (identique sur tous les postes une fois la bibliothèque synchronisée)
+SHAREPOINT = Path("Rothschild & Co") / "AM-RFP-CONF - Documents" / "7 - Ressources" / "Stagiaire" / "Passation stagiaires" / "poubelle Noa" / "Glossaire .PY"
 PR_SMTP = "http://schemas.microsoft.com/mapi/proptag/0x39FE001E"
 VERSION = 1
 
@@ -262,9 +264,11 @@ def destination() -> Path:
     if DESTINATION:
         return Path(DESTINATION)
     here = Path(__file__).resolve().parent
-    if any(GLOSSARY in p.name.lower() for p in here.iterdir()):
-        return here
+    if GLOSSARY in here.name.lower() or any(GLOSSARY in p.name.lower() for p in here.iterdir()):
+        return here  # le .bat est lancé depuis le dossier du glossaire : le fichier va à côté
     home = Path(os.environ.get("USERPROFILE") or Path.home())
+    if (home / SHAREPOINT).is_dir():
+        return home / SHAREPOINT  # même dossier SharePoint, sur n'importe quel poste
     roots = [Path(v) for k, v in os.environ.items() if k.upper().startswith("ONEDRIVE") and v]
     roots += [p for p in home.iterdir() if p.is_dir() and (" - " in p.name or p.name.lower().startswith("onedrive"))] if home.exists() else []
     for root in dict.fromkeys(roots):
