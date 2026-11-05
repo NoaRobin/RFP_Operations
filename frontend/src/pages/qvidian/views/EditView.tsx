@@ -81,7 +81,7 @@ export function EditView() {
   return (
     <div className="flex flex-col gap-5">
       <header data-enter>
-        <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{Q.editTitle}</h1>
+        <h1 className="text-2xl font-semibold">{Q.editTitle}</h1>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-fg-2">{Q.editLead}</p>
         {!status?.write_enabled && <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-bubble-400/30 px-3 py-1 text-sm font-bold"><Lock size={14} aria-hidden="true" />{Q.writeOff}</p>}
       </header>

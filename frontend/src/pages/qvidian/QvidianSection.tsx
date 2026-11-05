@@ -54,34 +54,34 @@ function Sidebar() {
   const badge: Record<string, number | undefined> = { sante: audit?.with_issues || undefined, modifier: selected.size || undefined, ia: selected.size || undefined }
   return (
     <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto" aria-label={Q.section} data-lenis-prevent>
-      <div className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-card p-4 shadow-[4px_4px_0_0_var(--color-fg)]">
-        <p className="flex items-center gap-2 font-display text-2xl font-semibold tracking-tight"><Library size={20} className="text-magic-500" aria-hidden="true" />QviAPI</p>
+      <div className="px-2 pb-1">
+        <p className="flex items-center gap-2 text-base font-semibold"><Library size={18} className="text-fg-2" aria-hidden="true" />QviAPI</p>
         <p className="mt-1 text-xs font-semibold text-fg-2">{texts.qviapi.lead}</p>
         {status && (
-          <p className={`mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${status.mode === 'demo' ? 'bg-sun-400' : status.connected ? 'bg-mint-400' : 'bg-[#ffd6dc]'}`}>
-            <span className={`size-2 rounded-full ${status.connected ? 'bg-fg' : 'bg-fg/40'}`} aria-hidden="true" />
+          <p className={`mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${status.mode === 'demo' ? 'text-warning' : status.connected ? 'text-success' : 'text-danger'}`}>
+            <span className={`size-2 rounded-full bg-current`} aria-hidden="true" />
             {Q.mode[status.mode]}{status.mode === 'qvidian' ? ` · ${status.connected ? Q.connectedAs(status.user) : Q.notConnected}` : ''}
           </p>
         )}
         <form className="relative mt-3" role="search" onSubmit={(e) => { e.preventDefault(); navigate(`/qvidian/recherche?q=${encodeURIComponent(q)}`) }}>
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
           <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} placeholder={Q.quickSearch} aria-label={Q.quickSearch}
-            className="h-10 w-full rounded-xl border-2 border-fg bg-field pl-9 pr-8 text-sm font-semibold placeholder:font-normal placeholder:text-fg-3 focus:shadow-[3px_3px_0_0_var(--color-magic-500)] focus:outline-none" />
+            className="h-8 w-full rounded-md border border-line bg-field pl-9 pr-8 text-sm placeholder:text-fg-3 focus:outline-none" />
           <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border border-fg/30 px-1 text-[0.65rem] font-bold text-fg-3">{Q.quickSearchKey}</kbd>
         </form>
       </div>
-      <nav className="flex gap-4 overflow-x-auto rounded-[var(--radius-card)] border-2 border-fg bg-card p-3 lg:flex-col lg:overflow-visible" aria-label={Q.tabsLabel}>
+      <nav className="flex gap-4 overflow-x-auto lg:flex-col lg:gap-5 lg:overflow-visible" aria-label={Q.tabsLabel}>
         {NAV.map((g) => (
           <div key={g.group} className="flex shrink-0 gap-1 lg:flex-col">
-            <p className="hidden px-2 pb-1 text-[0.65rem] font-bold uppercase tracking-widest text-fg-3 lg:block">{Q.navGroups[g.group]}</p>
+            <p className="hidden px-3 pb-1 text-xs font-semibold text-fg-3 lg:block">{Q.navGroups[g.group]}</p>
             {g.items.map((it) => {
               const Icon = it.icon
               return (
                 <NavLink key={it.key} to={it.external ? it.to : `/qvidian${it.to ? `/${it.to}` : ''}`} end={it.to === ''}
-                  className={({ isActive }) => `inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold transition-colors ${isActive ? 'bg-fg text-canvas' : 'hover:bg-card-2'}`}>
+                  className={({ isActive }) => `inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors ${isActive ? 'bg-fg text-canvas' : 'hover:bg-card-2'}`}>
                   <Icon size={16} aria-hidden="true" />
                   <span>{Q.nav[it.key]}</span>
-                  {badge[it.key] ? <span className="ml-auto rounded-full bg-sun-400 px-1.5 text-[0.7rem] tabular-nums text-fg">{badge[it.key]}</span> : null}
+                  {badge[it.key] ? <span className="ml-auto rounded-full border border-line bg-card-2 px-1.5 text-[0.7rem] tabular-nums text-fg-2">{badge[it.key]}</span> : null}
                 </NavLink>
               )
             })}
@@ -89,7 +89,7 @@ function Sidebar() {
         ))}
       </nav>
       {selected.size > 0 && (
-        <div className="rounded-[var(--radius-card)] border-[2.5px] border-fg bg-sun-400/40 p-3" role="region" aria-label={Q.selected(selected.size)}>
+        <div className="rounded-[var(--radius-card)] border border-line bg-card p-3" role="region" aria-label={Q.selected(selected.size)}>
           <p className="flex items-center gap-2 font-display font-semibold"><Activity size={15} aria-hidden="true" />{Q.selected(selected.size)}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <Button size="sm" variant="primary" onClick={() => navigate('/qvidian/modifier')} icon={<PenSquare size={14} />}>{Q.trayEdit}</Button>
@@ -118,7 +118,7 @@ function StatusBar() {
   }
   const snap = status.snapshot
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-2xl border-[2.5px] border-fg bg-card px-3 py-2 shadow-[3px_3px_0_0_var(--color-fg)]">
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-card px-3 py-2">
       <span className="inline-flex items-center gap-1 text-xs font-bold text-fg-2"><ShieldCheck size={13} aria-hidden="true" />{status.write_enabled ? Q.writeLocked : Q.readOnly}</span>
       <span className="text-xs font-semibold text-fg-3">
         {snap.synced_at ? Q.lastSync(snap.synced_at.replace('T', ' ').slice(0, 16), snap.count ?? '0') : Q.noSync}

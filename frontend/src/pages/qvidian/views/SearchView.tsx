@@ -215,11 +215,11 @@ export function SearchView() {
     const rank = (k: string) => (h: QvidianHit) => (h.signals?.ranks?.[k] ?? 99) < 20
     const E = texts.qviapi.engine
     return [
-      { key: 'bm25', label: E.bm25, color: '#3b82f6', level: share(rank('bm25')) },
-      { key: 'ngram', label: E.ngram, color: '#60a5fa', level: share(rank('ngram')) },
-      { key: 'dense', label: E.dense, color: '#22d3ee', level: share(rank('dense')), off: !!res && !res.engine.encoder },
-      { key: 'rerank', label: E.rerank, color: '#a78bfa', level: share((h) => (h.signals?.rerank ?? 0) >= 0.5), off: !!res && !res.engine.reranker },
-      { key: 'history', label: E.history, color: '#34d399', level: share(rank('history')) },
+      { key: 'bm25', label: E.bm25, color: '#4493f8', level: share(rank('bm25')) },
+      { key: 'ngram', label: E.ngram, color: '#768390', level: share(rank('ngram')) },
+      { key: 'dense', label: E.dense, color: '#56a3ff', level: share(rank('dense')), off: !!res && !res.engine.encoder },
+      { key: 'rerank', label: E.rerank, color: '#ab7df8', level: share((h) => (h.signals?.rerank ?? 0) >= 0.5), off: !!res && !res.engine.reranker },
+      { key: 'history', label: E.history, color: '#3fb950', level: share(rank('history')) },
     ]
   }, [results, res])
   const filterCount = useMemo(() => (filters.scope?.length ?? 0) + (filters.theme?.length ?? 0) + (filters.fund?.length ?? 0)
@@ -229,19 +229,19 @@ export function SearchView() {
   return (
     <div className="flex flex-col gap-5">
       <header data-enter>
-        <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{Q.searchTitle}</h1>
+        <h1 className="text-2xl font-semibold">{Q.searchTitle}</h1>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-fg-2">{Q.searchLead}</p>
       </header>
       <section data-enter aria-label={texts.qviapi.engines} className="grid items-end gap-4 md:grid-cols-[auto_minmax(0,1fr)_auto]">
         <div className="hidden gap-3 md:flex">{gauges.slice(0, 2).map((g) => <LiquidGauge key={g.key} label={g.label} color={g.color} level={g.level} off={g.off} busy={busy || (refining && g.key === 'rerank')} />)}</div>
         <div className="flex min-w-0 flex-col">
-          {show3d && <Suspense fallback={<div className="h-52 sm:h-64" />}><KeyboardScene pressed={pressed} busy={busy || refining} /></Suspense>}
+          {show3d && <Suspense fallback={<div className="h-36" />}><KeyboardScene pressed={pressed} busy={busy || refining} /></Suspense>}
           <form role="search" onSubmit={(e) => { e.preventDefault(); commit(q) }}
-            className="relative rounded-[var(--radius-card)] border-[3px] border-fg bg-card shadow-[6px_6px_0_0_var(--color-fg)]">
-            <Search size={22} className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
+            className="relative rounded-[var(--radius-card)] border border-line bg-field">
+            <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
             <input ref={input} value={q} onChange={(e) => setQ(e.target.value)} onBlur={() => commit(q)} placeholder={Q.searchPlaceholder} aria-label={Q.searchTitle}
               onKeyDown={(e) => { pressed.current = e.key === ' ' ? ' ' : e.key.length === 1 ? e.key.toUpperCase() : '' }}
-              className="h-16 w-full rounded-[var(--radius-card)] bg-transparent pl-14 pr-28 font-display text-xl font-semibold placeholder:font-normal placeholder:text-fg-3 focus:outline-none" />
+              className="h-12 w-full rounded-[var(--radius-card)] bg-transparent pl-11 pr-28 text-base placeholder:font-normal placeholder:text-fg-3 focus:outline-none" />
             <span className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-xs font-bold text-fg-3" aria-live="polite">
               {busy ? '…' : refining ? <><Wand2 size={14} className="animate-pulse" aria-hidden="true" />{Q.refining}</> : res?.timings.total_ms ? Q.timings(res.timings.total_ms) : ''}
               {q && <button type="button" onClick={() => { setQ(''); commit('') }} aria-label="Effacer" className="rounded-full p-1 hover:bg-card-2"><X size={16} /></button>}

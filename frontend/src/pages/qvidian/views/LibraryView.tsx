@@ -85,7 +85,7 @@ export function LibraryView() {
   return (
     <div className="flex flex-col gap-4">
       <header data-enter>
-        <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{Q.libraryTitle}</h1>
+        <h1 className="text-2xl font-semibold">{Q.libraryTitle}</h1>
         <p className="mt-2 text-sm font-semibold text-fg-2">{Q.libraryLead}</p>
       </header>
       <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">

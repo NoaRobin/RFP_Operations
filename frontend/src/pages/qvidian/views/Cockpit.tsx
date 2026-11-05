@@ -41,7 +41,7 @@ export function Cockpit() {
   return (
     <div className="flex flex-col gap-6">
       <header data-enter>
-        <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{Q.cockpitTitle}</h1>
+        <h1 className="text-2xl font-semibold">{Q.cockpitTitle}</h1>
         <form className="mt-4 flex max-w-3xl gap-2" onSubmit={(e) => { e.preventDefault(); navigate(`/qvidian/recherche?q=${encodeURIComponent(q)}`) }}>
           <div className="relative flex-1">
             <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-fg-3" aria-hidden="true" />
@@ -54,7 +54,7 @@ export function Cockpit() {
 
       {show3d && audit.items.length > 0 && (
         <section data-enter className="relative overflow-hidden rounded-[var(--radius-card)] border-2 border-fg bg-card" aria-label={texts.qviapi.constellation}>
-          <Suspense fallback={<div className="h-64" />}><Constellation items={audit.items} /></Suspense>
+          <Suspense fallback={<div className="h-40" />}><Constellation items={audit.items} /></Suspense>
           <p className="absolute bottom-3 left-4 max-w-md text-xs text-fg-3">{texts.qviapi.constellationLead(audit.items.length)}</p>
         </section>
       )}

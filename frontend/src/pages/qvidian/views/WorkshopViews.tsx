@@ -18,7 +18,7 @@ const W = texts.qviapi
 function Head({ title, lead }: { title: string; lead: string }) {
   return (
     <header data-enter>
-      <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{title}</h1>
+      <h1 className="text-2xl font-semibold">{title}</h1>
       <p className="mt-2 max-w-3xl text-sm font-semibold text-fg-2">{lead}</p>
     </header>
   )

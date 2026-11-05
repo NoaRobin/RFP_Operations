@@ -52,7 +52,7 @@ export function MemoryView() {
     <div className="flex flex-col gap-5">
       <header data-enter className="flex flex-wrap items-end gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{M.memoryTitle}</h1>
+          <h1 className="text-2xl font-semibold">{M.memoryTitle}</h1>
           <p className="mt-2 max-w-2xl text-sm font-semibold text-fg-2">{M.memoryLead(m.rfis, m.links)}</p>
         </div>
       </header>

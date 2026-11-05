@@ -39,7 +39,7 @@ export function ApiView() {
   return (
     <div className="flex flex-col gap-5">
       <header data-enter>
-        <h1 className="text-[clamp(1.8rem,3.6vw,2.8rem)] font-bold leading-none">{Q.apiTitle}</h1>
+        <h1 className="text-2xl font-semibold">{Q.apiTitle}</h1>
         <p className="mt-2 max-w-3xl text-sm font-semibold text-fg-2">{Q.apiLead}</p>
       </header>
 

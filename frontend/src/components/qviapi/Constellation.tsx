@@ -8,7 +8,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { gsap } from '../../motion/gsap'
 
-const PALETTE = ['#3b82f6', '#22d3ee', '#a78bfa', '#34d399', '#60a5fa', '#f472b6', '#fbbf24', '#38bdf8']
+const PALETTE = ['#4493f8', '#768390', '#9198a1', '#3fb950', '#ab7df8', '#56a3ff']
 
 function hash(s: string): number {
   let h = 0
@@ -33,16 +33,16 @@ function Stars({ items }: { items: { group: string; times_used: number }[] }) {
       pos.set([Math.cos(t) * r * R, y * R, Math.sin(t) * r * R], i * 3)
       const c = new THREE.Color(PALETTE[hash(it.group) % PALETTE.length])
       col.set([c.r, c.g, c.b], i * 3)
-      size[i] = 6 + 22 * Math.log1p(it.times_used) / Math.log1p(max)
+      size[i] = 3 + 10 * Math.log1p(it.times_used) / Math.log1p(max)
     })
     const g = new THREE.BufferGeometry()
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
     g.setAttribute('color', new THREE.BufferAttribute(col, 3))
     g.setAttribute('size', new THREE.BufferAttribute(size, 1))
     const m = new THREE.ShaderMaterial({
-      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true,
+      transparent: true, depthWrite: false, vertexColors: true,
       vertexShader: 'attribute float size; varying vec3 vColor; void main(){ vColor = color; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = size * (3.0 / -mv.z); gl_Position = projectionMatrix * mv; }',
-      fragmentShader: 'varying vec3 vColor; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vColor, a); }',
+      fragmentShader: 'varying vec3 vColor; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vColor, a * 0.75); }',
     })
     return { geometry: g, material: m }
   }, [items])
@@ -54,21 +54,17 @@ function Stars({ items }: { items: { group: string; times_used: number }[] }) {
   }, [])
   useFrame((state, dt) => {
     if (!points.current) return
-    points.current.rotation.y += dt * 0.12
-    points.current.rotation.x = THREE.MathUtils.lerp(points.current.rotation.x, state.pointer.y * 0.25, 0.04)
+    points.current.rotation.y += dt * 0.05
+    points.current.rotation.x = THREE.MathUtils.lerp(points.current.rotation.x, state.pointer.y * 0.08, 0.04)
   })
   return <points ref={points} geometry={geometry} material={material} />
 }
 
 export default function Constellation({ items }: { items: { group: string; times_used: number }[] }) {
   return (
-    <div className="pointer-events-none h-64 w-full" aria-hidden="true">
+    <div className="pointer-events-none h-40 w-full" aria-hidden="true">
       <Canvas dpr={[1, 1.6]} camera={{ position: [0, 0, 6], fov: 45 }} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}>
         <Stars items={items} />
-        <mesh>
-          <sphereGeometry args={[1.05, 32, 32]} />
-          <meshBasicMaterial color="#1d4ed8" transparent opacity={0.12} wireframe />
-        </mesh>
       </Canvas>
     </div>
   )

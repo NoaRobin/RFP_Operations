@@ -16,13 +16,13 @@ function capTexture(letter: string): THREE.CanvasTexture {
   const c = document.createElement('canvas')
   c.width = c.height = 128
   const g = c.getContext('2d')!
-  g.fillStyle = '#0d1838'
+  g.fillStyle = '#1c232c'
   g.fillRect(0, 0, 128, 128)
-  g.strokeStyle = 'rgba(96,165,250,0.55)'
-  g.lineWidth = 4
+  g.strokeStyle = 'rgba(61,68,77,0.9)'
+  g.lineWidth = 3
   g.strokeRect(6, 6, 116, 116)
-  g.fillStyle = '#dbe7ff'
-  g.font = '600 64px "Space Grotesk Variable", system-ui, sans-serif'
+  g.fillStyle = '#9198a1'
+  g.font = '600 56px -apple-system, "Segoe UI", system-ui, sans-serif'
   g.textAlign = 'center'
   g.textBaseline = 'middle'
   g.fillText(letter, 64, 70)
@@ -50,9 +50,9 @@ function Keys({ pressed, busy }: { pressed: React.MutableRefObject<string>; busy
   const glow = useRef<number[]>(caps.map(() => 0))
   const geometries = useMemo(() => caps.map((c) => new THREE.BoxGeometry(c.w, 0.42, KEY)), [caps])
   const materials = useMemo(() => caps.map((c) => {
-    const top = new THREE.MeshStandardMaterial({ map: c.letter.trim() ? capTexture(c.letter) : null, color: c.letter.trim() ? '#ffffff' : '#0d1838',
-      emissive: new THREE.Color('#3b82f6'), emissiveIntensity: 0, metalness: 0.35, roughness: 0.45 })
-    const side = new THREE.MeshStandardMaterial({ color: '#0a1430', emissive: new THREE.Color('#1d4ed8'), emissiveIntensity: 0.15, metalness: 0.5, roughness: 0.5 })
+    const top = new THREE.MeshStandardMaterial({ map: c.letter.trim() ? capTexture(c.letter) : null, color: c.letter.trim() ? '#ffffff' : '#1c232c',
+      emissive: new THREE.Color('#4493f8'), emissiveIntensity: 0, metalness: 0.1, roughness: 0.8 })
+    const side = new THREE.MeshStandardMaterial({ color: '#151b23', metalness: 0.1, roughness: 0.85 })
     return [side, side, top, side, side, side]
   }), [caps])
   useEffect(() => () => {
@@ -70,11 +70,11 @@ function Keys({ pressed, busy }: { pressed: React.MutableRefObject<string>; busy
     caps.forEach((c, i) => {
       const m = meshes.current[i]
       if (!m) return
-      const wave = busy ? Math.max(0, Math.sin(t * 6 - c.x * 0.9 - c.z * 0.6)) * 0.6 : 0
+      const wave = busy ? Math.max(0, Math.sin(t * 6 - c.x * 0.9 - c.z * 0.6)) * 0.35 : 0
       glow.current[i] = Math.max(0, glow.current[i] - 0.035)
       const g = Math.max(glow.current[i], wave)
-      ;(materials[i][2] as THREE.MeshStandardMaterial).emissiveIntensity = g * 1.6
-      m.position.y = -g * 0.16
+      ;(materials[i][2] as THREE.MeshStandardMaterial).emissiveIntensity = g * 0.9
+      m.position.y = -g * 0.1
     })
   })
   return (
@@ -92,31 +92,26 @@ function Rig({ children }: { children: React.ReactNode }) {
     if (!group.current) return
     group.current.position.set(0, -5, 2)
     const tl = gsap.timeline()
-    tl.fromTo(group.current.position, { y: -5, z: 2 }, { y: 0, z: 0, duration: 1.3, ease: 'expo.out' })
-    tl.fromTo(group.current.rotation, { x: 0.25 }, { x: -0.05, duration: 1.6, ease: 'power3.out' }, 0)
+    tl.fromTo(group.current.position, { y: -5, z: 2 }, { y: 0, z: 0, duration: 0.6, ease: 'power3.out' })
+    tl.fromTo(group.current.rotation, { x: 0.25 }, { x: -0.05, duration: 0.6, ease: 'power3.out' }, 0)
     return () => { tl.kill() }
   }, [])
   useFrame((state) => {
     if (!group.current) return
-    group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, state.pointer.x * 0.18, 0.05)
+    group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, state.pointer.x * 0.06, 0.05)
   })
   return <group ref={group}>{children}</group>  // pas de position en prop : React la réappliquerait à chaque rendu
 }
 
 export default function KeyboardScene({ pressed, busy }: { pressed: React.MutableRefObject<string>; busy: boolean }) {
   return (
-    <div className="pointer-events-none h-52 w-full sm:h-64" aria-hidden="true">
+    <div className="pointer-events-none h-36 w-full" aria-hidden="true">
       <Canvas dpr={[1, 1.6]} camera={{ position: [0, 6.2, 6.4], fov: 38 }} gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ camera }) => camera.lookAt(0, 0, 1.6)}>
-        <ambientLight intensity={0.35} />
-        <pointLight position={[-6, 5, 2]} intensity={34} color="#3b82f6" />
-        <pointLight position={[6, 4, 5]} intensity={24} color="#22d3ee" />
+        <ambientLight intensity={0.9} />
+        <directionalLight position={[2, 8, 6]} intensity={1.1} color="#ffffff" />
         <Rig>
           <Keys pressed={pressed} busy={busy} />
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0.3, -0.24, 1.7]}>
-            <planeGeometry args={[12.4, 5.6]} />
-            <meshStandardMaterial color="#060d24" emissive="#1e3a8a" emissiveIntensity={0.08} transparent opacity={0.55} metalness={0.6} roughness={0.4} />
-          </mesh>
         </Rig>
       </Canvas>
     </div>

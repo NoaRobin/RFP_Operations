@@ -1,65 +1,100 @@
 /*
- * QviAPI (section Qvidian) — « salle des machines » : bleu nuit, lignes fines, lueurs bleues, typographie tech
- * (Space Grotesk / DM Sans). Activé par html[data-section="qviapi"] (posé par QvidianSection). Mêmes variables que le
- * reste de l'app, autres valeurs : les composants existants passent au sombre sans réécriture. Le reste de l'app ne
- * change pas. Contrastes vérifiés : texte #e7eeff sur #0c1530 = 15:1 ; #a8b7d9 = 8:1 ; blanc sur #1d4ed8 = 6.7:1.
+ * QviAPI (section Qvidian) — sobre, façon GitHub Dark (Primer « dark default ») et la refonte « calmer » de Linear :
+ * couleurs fonctionnelles, bordures fines, aucune ombre ni lueur, police système, rayon 6 px, navigation atténuée.
+ * Activé par html[data-section="qviapi"] (posé par QvidianSection). Mêmes variables que le reste de l'app, autres
+ * valeurs : seul /qvidian/* change. Contrastes : #f0f6fc sur #0d1117 = 17:1 ; #9198a1 = 6.9:1 ; blanc sur #1f6feb = 4.6:1.
  */
 html[data-section="qviapi"] {
   color-scheme: dark;
-  /* bleu ardoise lumineux (plus clair que le quasi-noir), surfaces qui se détachent nettement */
-  --color-canvas: #0e1830;
-  --color-field: #16223f;
-  --color-card: #142040;
-  --color-card-2: #1b2a50;
-  --color-card-3: #22345f;
-  --color-line: rgb(148 178 255 / 0.18);
-  --color-line-strong: #34497d;
-  --color-fg: #eef3ff;
-  --color-fg-2: #b4c2e2;
-  --color-fg-3: #8a9bc2;
+  /* Surfaces (canvas.default / subtle / inset) */
+  --color-canvas: #0d1117;
+  --color-field: #0d1117;
+  --color-card: #151b23;
+  --color-card-2: #1c232c;
+  --color-card-3: #212830;
+  --color-line: #3d444d;
+  --color-line-strong: #3d444d;
+  /* Texte (fg.default / muted / subtle) */
+  --color-fg: #f0f6fc;
+  --color-fg-2: #9198a1;
+  --color-fg-3: #768390;
   --color-on-accent: #ffffff;
-  /* aplats sombres saturés : le texte clair reste lisible dessus */
-  --color-sun-200: #bfdbfe; --color-sun-300: #93c5fd; --color-sun-400: #1d4ed8; --color-sun-600: #2563eb;
-  --color-magic-300: #a5b4fc; --color-magic-400: #4f46e5; --color-magic-500: #3b82f6; --color-magic-700: #1e3a8a;
-  --color-mint-300: #67e8f9; --color-mint-400: #0e7490; --color-mint-500: #06b6d4;
-  --color-bubble-300: #fda4af; --color-bubble-400: #be123c;
-  --color-success: #34d399; --color-danger: #fb7185; --color-warning: #fbbf24; --color-info: #93c5fd;
-  --font-display: "Space Grotesk Variable", "Space Grotesk", system-ui, sans-serif;
-  --font-sans: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
-  --radius-card: 0.9rem;
+  /* Couleurs fonctionnelles : *-400 = « emphasis » (texte blanc lisible dessus), *-300 = texte coloré */
+  --color-sun-200: #4493f8; --color-sun-300: #4493f8; --color-sun-400: #1f6feb; --color-sun-600: #388bfd;
+  --color-magic-300: #ab7df8; --color-magic-400: #8957e5; --color-magic-500: #4493f8; --color-magic-700: #1f6feb;
+  --color-mint-300: #3fb950; --color-mint-400: #238636; --color-mint-500: #2ea043;
+  --color-bubble-300: #f85149; --color-bubble-400: #da3633;
+  --color-success: #3fb950; --color-danger: #f85149; --color-warning: #d29922; --color-info: #4493f8;
+  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+  --radius-card: 6px;
 }
-html[data-section="qviapi"] body {
-  background: radial-gradient(1200px 600px at 75% -15%, rgb(59 130 246 / 0.16), transparent 65%), #0e1830 fixed;
-}
-/* De la BD à la salle des machines : contours fins et lueurs au lieu de l'encre épaisse et des ombres pleines */
-html[data-section="qviapi"] .qv :is([class*="border-fg"], [class*="border-[2"], [class*="border-[3"], .border-2) {
+html[data-section="qviapi"] body { background: #0d1117; }
+
+/* ---------------------------------------------------------------- dé-cartoonisation : bordures fines, pas d'ombre */
+html[data-section="qviapi"] .qv :is([class*="border-fg"], [class*="border-[2"], [class*="border-[3"], .border-2, .border) {
   border-width: 1px !important;
   border-color: var(--color-line) !important;
 }
-html[data-section="qviapi"] .qv [class*="shadow-["] {
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 28px -20px rgb(0 0 0 / 0.55) !important;
-}
-html[data-section="qviapi"] .qv [class*="hover:-translate-y"]:hover { transform: none; }
-html[data-section="qviapi"] .qv :is(h1, h2, h3) { letter-spacing: -0.02em; }
-html[data-section="qviapi"] .qv h1 { font-weight: 600; }
-html[data-section="qviapi"] .qv .bg-card { background-color: var(--color-card); }
-html[data-section="qviapi"] .glass { background: rgb(8 14 34 / 0.72) !important; border-color: var(--color-line) !important; box-shadow: none !important; }
-html[data-section="qviapi"] :focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
-/* Cartouche « instrument » : titre de panneau en petites capitales espacées, réservé aux mesures */
-.qv-meter { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-@keyframes qv-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) { .qv-wave { animation: none !important; } }
+html[data-section="qviapi"] .qv :is([class*="shadow-["], [class*="shadow-"]) { box-shadow: none !important; }
+html[data-section="qviapi"] .qv [class*="rounded-"]:not(.rounded-full) { border-radius: 6px !important; }
+html[data-section="qviapi"] .qv [class*="translate-"]:hover,
+html[data-section="qviapi"] .qv [class*="translate-"]:active { transform: none !important; }
+html[data-section="qviapi"] .glass { background: #010409 !important; border-color: var(--color-line) !important; box-shadow: none !important; backdrop-filter: none !important; }
 
-/* Champs : jamais de jaune (remplissage automatique du navigateur), focus net */
+/* ---------------------------------------------------------------- typographie : titres mesurés, pas de capitales espacées */
+html[data-section="qviapi"] .qv h1 { font-size: 24px !important; line-height: 1.25 !important; font-weight: 600 !important; letter-spacing: 0; }
+html[data-section="qviapi"] .qv h2 { font-size: 16px !important; font-weight: 600 !important; }
+html[data-section="qviapi"] .qv h3 { font-size: 14px !important; font-weight: 600 !important; }
+html[data-section="qviapi"] .qv :is(.font-bold, .font-semibold) { font-weight: 600; }
+html[data-section="qviapi"] .qv .uppercase { text-transform: none; letter-spacing: 0 !important; font-size: 12px !important; font-weight: 600; color: var(--color-fg-2); }
+html[data-section="qviapi"] .qv header[data-enter] { padding-bottom: 12px; border-bottom: 1px solid var(--color-line); }
+
+/* ---------------------------------------------------------------- boutons GitHub (défaut / primaire / invisible) */
+html[data-section="qviapi"] .qv :is(button, a)[class*="radius-pill"] {
+  border-radius: 6px !important;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  transition: background-color 80ms ease, border-color 80ms ease;
+}
+html[data-section="qviapi"] .qv :is(button, a)[class*="radius-pill"][class*="bg-card"] { background: #212830; border: 1px solid #3d444d !important; color: var(--color-fg); }
+html[data-section="qviapi"] .qv :is(button, a)[class*="radius-pill"][class*="bg-card"]:hover { background: #262c36; border-color: #656c76 !important; }
+html[data-section="qviapi"] .qv :is(button, a)[class*="radius-pill"][class*="bg-sun-400"] { background: #1f6feb; border: 1px solid rgb(240 246 252 / 0.1) !important; color: #fff; }
+html[data-section="qviapi"] .qv :is(button, a)[class*="radius-pill"][class*="bg-sun-400"]:hover { background: #388bfd; }
+html[data-section="qviapi"] .qv .h-9[class*="radius-pill"] { height: 32px; padding-inline: 12px; font-size: 14px; }
+
+/* ---------------------------------------------------------------- navigation latérale (GitHub SideNav, inactifs atténués) */
+html[data-section="qviapi"] .qv aside nav a { color: var(--color-fg-2); font-weight: 500; padding-block: 6px; }
+html[data-section="qviapi"] .qv aside nav a:hover { background: #1c232c; color: var(--color-fg); }
+html[data-section="qviapi"] .qv aside nav a[class~="bg-fg"] { background: #1c232c !important; color: var(--color-fg) !important; box-shadow: inset 2px 0 0 #4493f8 !important; }
+html[data-section="qviapi"] .qv aside nav svg { width: 16px; height: 16px; color: var(--color-fg-3); }
+html[data-section="qviapi"] .qv aside nav a[class~="bg-fg"] svg { color: var(--color-fg); }
+
+/* ---------------------------------------------------------------- champs : fond uni, focus net, jamais de jaune */
 html[data-section="qviapi"] :is(input, textarea, select) { background-color: var(--color-field); color: var(--color-fg); }
+html[data-section="qviapi"] .qv :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) { border: 1px solid #3d444d !important; }
 html[data-section="qviapi"] :is(input, textarea, select):-webkit-autofill,
 html[data-section="qviapi"] :is(input, textarea, select):autofill {
   -webkit-box-shadow: 0 0 0 100px var(--color-field) inset !important;
   -webkit-text-fill-color: var(--color-fg) !important;
   caret-color: var(--color-fg);
 }
-html[data-section="qviapi"] .qv :is(input, textarea, select):focus { border-color: #60a5fa !important; box-shadow: 0 0 0 3px rgb(96 165 250 / 0.25) !important; }
+html[data-section="qviapi"] .qv :is(input, textarea, select):focus { border-color: #4493f8 !important; box-shadow: 0 0 0 1px #4493f8 inset !important; outline: none; }
+html[data-section="qviapi"] .qv form[role="search"] { background: #010409; }
 html[data-section="qviapi"] ::placeholder { color: var(--color-fg-3); }
-/* Épure : moins de gras, plus d'air dans les panneaux */
+html[data-section="qviapi"] :focus-visible { outline: 2px solid #4493f8; outline-offset: 2px; }
+
+/* ---------------------------------------------------------------- pastilles « Label » GitHub : contour, fond léger */
+html[data-section="qviapi"] .qv span.rounded-full[class*="bg-"]:not([class*="size-"]):not([class*="h-"]) {
+  border: 1px solid var(--color-line);
+}
+
+/* Mesures : chiffres tabulaires ; vague des jauges lente (figée en mouvement réduit) */
+.qv-meter { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+@keyframes qv-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .qv-wave { animation: none !important; } }
+
+/* Lignes d'aide et méta : graisse normale (la hiérarchie vient de la couleur, pas du gras) */
+html[data-section="qviapi"] .qv :is(p, li, span).font-semibold:is(.text-fg-2, .text-fg-3) { font-weight: 400; }
 html[data-section="qviapi"] .qv :is(.font-bold) { font-weight: 600; }
-html[data-section="qviapi"] .qv .text-xs { letter-spacing: 0.005em; }
