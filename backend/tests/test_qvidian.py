@@ -464,3 +464,34 @@ def test_ai_export_json_and_excel_return(client):
 
     saved = service(get_state()).ai.load()
     assert saved["1010"]["findings"][0]["kind"] == "orthographe" and saved["1006"]["findings"][0]["severity"] == "haute"
+
+
+def test_texts_cut_at_1000_by_qvidian_are_read_in_full(tmp_path):
+    """Listes Qvidian = extrait de 1000 caractères : la synchro lit le texte entier (aperçu), l'export JSON aussi ;
+    sans aperçu ni détails, l'extrait part signalé « texte_complet » faux."""
+    from merlin.qvidian.ai import json_pack
+    from merlin.qvidian.snapshot import full_text
+
+    demo = DemoQvidian()
+    long_text = " ".join(f"Phrase fictive numéro {i} du fonds imaginaire QZ0000000001." for i in range(60))
+    assert len(long_text) > 2500
+    demo.contents[1006]["ContentText"] = long_text
+    snap = Snapshot(tmp_path / "s.sqlite")
+    sync(demo, snap, "demo")
+    stored = snap.many([1006])[0]
+    assert stored["text"] == long_text
+    assert json_pack([stored])[0]["textes"][0]["texte"] == long_text and json_pack([stored])[0]["textes"][0]["texte_complet"]
+
+    class Refusing(DemoQvidian):
+        def preview_html(self, content_id, revision):
+            raise RuntimeError("droit d'aperçu absent")
+
+        def content(self, content_id):
+            raise RuntimeError("refusé")
+
+    blocked = Refusing()
+    blocked.contents[1006]["ContentText"] = long_text
+    excerpt = blocked.folder_contents(int(blocked.contents[1006]["LibraryFolderID"]))
+    c = next(x for x in excerpt if x["id"] == 1006)
+    assert len(c["text"]) <= 1000 and not full_text(blocked, c)
+    assert json_pack([c])[0]["textes"][0]["texte_complet"] is False

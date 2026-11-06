@@ -14,6 +14,8 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
+from .client import is_excerpt
+
 BATCH_CHARS = 9000
 KINDS = {"code": "code informatique", "depasse": "dépassé", "incoherent": "incohérent", "forme": "forme", "orthographe": "orthographe", "erreur": "erreur"}
 SEVERITIES = {"haute": "haute", "high": "haute", "moyenne": "moyenne", "medium": "moyenne", "basse": "basse", "low": "basse"}
@@ -37,9 +39,7 @@ ROW = re.compile(r"^\s*\|?\s*\**\s*C\s*(\d+)\s*\**\s*\|(.*)$", re.I)
 
 
 def _block(c: dict[str, Any]) -> str:
-    text = (c.get("text") or "").strip()
-    if len(text) > 1500:
-        text = text[:1500] + " […]"
+    text = (c.get("text") or "").strip()  # texte entier : les lots sont déjà découpés par taille
     return (f"C{c['id']} — Question : {c.get('title') or '—'}\nDossier : {c.get('folder_path') or '—'} · dernière modification : "
             f"{c.get('modified') or '—'}\nTexte :\n{text or '(vide)'}\n")
 
@@ -131,7 +131,7 @@ Relis CHAQUE texte et signale uniquement de vrais problèmes, en citant l'extrai
 5. Code et mise en forme : code informatique, balises, variables {{{{…}}}}, erreurs Excel (#N/A, #REF!), mise en forme collée.
 6. Forme et ton : langues mélangées, ton non professionnel, répétitions, phrase trop longue ou ambiguë.
 
-Règles : n'invente rien ; si tu n'es pas sûr, ne signale pas ; un texte sans problème n'apparaît nulle part.
+Règles : n'invente rien ; si « texte_complet » vaut false, Qvidian n'a donné qu'un extrait : ne signale pas la fin coupée ; si tu n'es pas sûr, ne signale pas ; un texte sans problème n'apparaît nulle part.
 Propose une correction concrète (le texte corrigé quand c'est possible).
 
 Réponds par un FICHIER EXCEL (.xlsx) à télécharger, avec exactement ces onglets :
@@ -146,7 +146,8 @@ problèmes par onglet et les 10 textes les plus urgents. Si un onglet n'a aucun 
 def _entry(c: dict[str, Any]) -> dict[str, Any]:
     return {"id": c["id"], "titre": c.get("title") or "", "question_type": c.get("question") or "", "texte": c.get("text") or "",
             "dossier": c.get("folder_path") or "", "langue": c.get("language") or "", "modifie_le": (c.get("modified") or "")[:10],
-            "expire_le": (c.get("expires") or "")[:10], "utilisations": c.get("times_used") or 0, "derniere_utilisation": (c.get("last_used") or "")[:10]}
+            "expire_le": (c.get("expires") or "")[:10], "utilisations": c.get("times_used") or 0, "derniere_utilisation": (c.get("last_used") or "")[:10],
+            "texte_complet": not is_excerpt(c)}
 
 
 def json_pack(contents: list[dict[str, Any]], today: str | None = None) -> list[dict[str, Any]]:

@@ -118,6 +118,15 @@ def looks_like_html(text: str) -> bool:
     return bool(re.search(r"</(p|div|span|li|td|b|i|strong|em)>|<br\s*/?>", text or "", re.I))
 
 
+EXCERPT_CHARS = 1000  # ContentText des listes et de la recherche : extrait limité à ~1000 caractères par Qvidian
+
+
+def is_excerpt(c: dict[str, Any]) -> bool:
+    """Texte probablement coupé par Qvidian (extrait des listes) : le texte entier se lit par l'aperçu ou les détails."""
+    raw = c.get("raw_text") or c.get("text") or ""
+    return len(raw) >= EXCERPT_CHARS - 10 and len(c.get("text") or "") <= EXCERPT_CHARS
+
+
 def normalize_content(c: dict[str, Any]) -> dict[str, Any]:
     """Objet Content du WSDL → dictionnaire simple (types Python, dates ISO)."""
     raw_text = c.get("ContentText") or ""

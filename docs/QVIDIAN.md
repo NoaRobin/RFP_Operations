@@ -155,7 +155,7 @@ Champs modifiables par `ContentUpdates` :
      - le journal d'audit.
    - Les numéros d'événement de l'audit (`EventID`) ne sont pas documentés : seuls 301, 308, 309 et 310 (connexions) apparaissent dans un exemple.
 4. Le contenu de `ContentText` pour un contenu Q&A : texte de la réponse, HTML, ou vide pour un contenu « fichier ». La mise à jour de `ContentText` pour un contenu fichier n'est pas documentée.
-   - L'app lit `ContentText`, puis l'aperçu HTML s'il est vide.
+   - L'app lit `ContentText`, puis l'aperçu HTML s'il est vide **ou coupé** : les listes et la recherche ne renvoient qu'un extrait d'environ 1000 caractères ; le texte entier vient de l'aperçu (sinon de `libraryContentDetailsGet`), à la synchronisation et avant l'export JSON de l'Analyse IA (champ `texte_complet`).
    - En écriture, elle avertit pour les contenus non éditables en ligne.
 5. Les colonnes acceptées dans `searchFields` au-delà de celles des exemples :
    - colonnes des exemples : `ContentID`, `Revision`, `ContentTypeName`, `Title`, `ContentFileExt`, `LCIDLanguage`, `Enabled`, `ContentText` ;

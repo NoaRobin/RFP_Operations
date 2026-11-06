@@ -368,6 +368,30 @@ def ai_reply(body: AiReplyRequest, s: AppState = Depends(state)) -> dict[str, An
     return out
 
 
+def _complete_texts(s: AppState, snap, contents: list[dict[str, Any]]) -> None:
+    """Textes encore coupés par Qvidian (extrait ~1000 caractères) : texte entier lu avant l'export, puis gardé dans
+    l'instantané. Hors connexion, l'export part avec l'extrait et « texte_complet » à faux."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from ..qvidian.client import is_excerpt
+    from ..qvidian.snapshot import full_text
+
+    todo = [c for c in contents if is_excerpt(c)]
+    if not todo:
+        return
+    svc = service(s)
+    try:
+        client = svc.client()
+    except Exception:  # noqa: BLE001 - pas de connexion : export avec les extraits, signalés
+        return
+    if client is None:
+        return
+    with ThreadPoolExecutor(max_workers=max(1, min(8, svc.settings.concurrency)), thread_name_prefix="qvidian-full") as pool:
+        done = [c for c, ok in zip(todo, pool.map(lambda c: full_text(client, c), todo)) if ok]
+    if done:
+        snap.upsert(done)
+
+
 @router.post("/ai/export")
 def ai_export(body: IdsRequest, s: AppState = Depends(state)):
     """Textes en JSON + prompt pour un chat (rendu attendu : Excel à onglets). Sans sélection : toute la bibliothèque
@@ -384,6 +408,7 @@ def ai_export(body: IdsRequest, s: AppState = Depends(state)):
     contents = snap.many(body.ids) if body.ids else [c for c in snap.all() if c.get("enabled", True)]
     if not contents:
         raise bad_request("Aucun texte à exporter.")
+    _complete_texts(s, snap, contents)
     parts = json_pack(contents)
     stamp = date.today().isoformat()
     if len(parts) == 1:

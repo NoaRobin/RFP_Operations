@@ -97,6 +97,13 @@ PROJECT_ANSWERS = {
 }
 
 
+def _excerpt(c: dict[str, Any]) -> dict[str, Any]:
+    """Comme le vrai Qvidian : listes et recherche ne donnent que les 1000 premiers caractères de ContentText."""
+    c = copy.deepcopy(c)
+    c["ContentText"] = (c.get("ContentText") or "")[:1000]
+    return c
+
+
 def _content(row) -> dict[str, Any]:
     cid, folder, question, text, rev, uses, last_used, modified, created, extra = row
     path = _path(folder)
@@ -144,7 +151,7 @@ class DemoQvidian:
 
     def changed_since(self, day: str, size: int = 200, limit: int = 50000) -> list[dict[str, Any]]:
         self._seen("librarySearch")
-        return [normalize_content(copy.deepcopy(c)) for c in self.contents.values() if (c.get("DateLastModified") or "")[:10] >= day]
+        return [normalize_content(_excerpt(c)) for c in self.contents.values() if (c.get("DateLastModified") or "")[:10] >= day]
 
     def existing_ids(self, ids: list[int], batch: int = 200) -> set[int]:
         self._seen("librarySearch", len(ids))
@@ -179,7 +186,7 @@ class DemoQvidian:
 
     def folder_contents(self, folder_id: int) -> list[dict[str, Any]]:
         self._seen("libraryFolderContentGetList", 5)
-        return [normalize_content(copy.deepcopy(c)) for c in self.contents.values() if int(c["LibraryFolderID"]) == folder_id]
+        return [normalize_content(_excerpt(c)) for c in self.contents.values() if int(c["LibraryFolderID"]) == folder_id]
 
     def content(self, content_id: int) -> dict[str, Any]:
         self._seen("libraryContentDetailsGet", 1)
@@ -191,7 +198,7 @@ class DemoQvidian:
     def search(self, terms: str = "", page: int = 0, size: int = 50, **_: Any) -> tuple[int, list[dict[str, Any]]]:
         words = [w for w in terms.lower().split() if len(w) > 2]
         hits = [c for c in self.contents.values() if not words or any(w in (c["Title"] + " " + c["ContentText"]).lower() for w in words)]
-        return len(hits), [normalize_content(copy.deepcopy(c)) for c in hits[page * size:(page + 1) * size]]
+        return len(hits), [normalize_content(_excerpt(c)) for c in hits[page * size:(page + 1) * size]]
 
     def projects(self, mode: str = "AllProjects", page: int = 1, size: int = 50) -> tuple[int, list[dict[str, Any]]]:
         rows = [{"id": int(p["ProjectID"]), "name": p["ProjectName"], "type": p["DocTypeName"], "created": p["DateCreated"][:10],

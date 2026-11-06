@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
-from .client import html_to_text
+from .client import html_to_text, is_excerpt
 
 FOLDER_LIST_MAX = 500  # libraryFolderContentGetList : 500 éléments au plus (guide)
 COLUMNS = ["id", "revision", "guid", "folder_id", "folder", "folder_path", "title", "text", "raw_text", "type", "language", "lcid",
@@ -180,15 +180,32 @@ def _folder_items(client, folder: dict[str, Any], here: str, problems: list[str]
     return items
 
 
-def _previews(client, contents: list[dict[str, Any]], limit: int, workers: int) -> int:
-    """Texte vide → aperçu HTML (libraryContentPreviewHTMLGet), en parallèle ; droit absent : le texte reste vide."""
-    todo = [c for c in contents if not c.get("text") and (c.get("type") or "").lower() not in {"slide", "file"}][:limit]
-
-    def one(c: dict[str, Any]) -> None:
+def full_text(client, c: dict[str, Any]) -> bool:
+    """Texte entier d'un contenu dont on n'a que l'extrait : aperçu HTML (libraryContentPreviewHTMLGet), sinon détails
+    (libraryContentDetailsGet) ; garde le plus long. Vrai si le texte a été complété."""
+    best = c.get("text") or ""
+    try:
+        best = max(best, html_to_text(client.preview_html(c["id"], c.get("revision", -1)) or ""), key=len)
+    except Exception:  # noqa: BLE001 - droit d'aperçu absent : on essaie les détails
+        pass
+    if is_excerpt({**c, "text": best}):
         try:
-            c["text"] = html_to_text(client.preview_html(c["id"], c["revision"]))
+            best = max(best, client.content(c["id"]).get("text") or "", key=len)
         except Exception:  # noqa: BLE001
             pass
+    if len(best) > len(c.get("text") or ""):
+        c["text"] = best
+        return True
+    return False
+
+
+def _previews(client, contents: list[dict[str, Any]], limit: int, workers: int) -> int:
+    """Texte vide → aperçu HTML ; extrait coupé à ~1000 caractères → texte entier (tous, sans limite). En parallèle."""
+    empty = [c for c in contents if not c.get("text") and (c.get("type") or "").lower() not in {"slide", "file"}][:limit]
+    todo = empty + [c for c in contents if c.get("text") and is_excerpt(c)]
+
+    def one(c: dict[str, Any]) -> None:
+        full_text(client, c)
 
     if workers > 1 and len(todo) > 1:
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="qvidian-preview") as pool:
