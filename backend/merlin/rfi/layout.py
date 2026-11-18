@@ -280,6 +280,39 @@ def _section_isins(layout: "Layout") -> None:
             slot.entity = {}
 
 
+SHORT_HEADER_WORDS = {"ans", "mois", "ytd", "mtd", "qtd", "year", "years", "month", "months", "jan", "dec", "annee", "annees",
+                      "glissant", "glissants", "rolling", "annualise", "annualisee", "cumul", "cumule", "cumulee", "depuis", "since"}
+
+
+def _group_row(grid: list[list[Any]], header_r: int, merged_tl: dict[str, str], ws) -> dict[int, str]:
+    """Groupes d'en-têtes de la ligne au-dessus des en-têtes (cellules fusionnées sur plusieurs colonnes) : {colonne: groupe}."""
+    if header_r == 0:
+        return {}
+    r = header_r - 1
+    spans = [rng for rng in ws.merged_cells.ranges if rng.min_row == r + 1 and rng.max_row == r + 1 and rng.max_col > rng.min_col]
+    if not spans:
+        return {}
+    out: dict[int, str] = {}
+    for rng in spans:
+        v = grid[r][rng.min_col - 1]
+        if isinstance(v, str) and v.strip() and not ISIN_RE.fullmatch(v.strip()):
+            for c in range(rng.min_col - 1, rng.max_col):
+                out[c] = v.strip()
+    for c, v in enumerate(grid[r]):  # groupe d'une seule colonne, non fusionné
+        if c not in out and isinstance(v, str) and v.strip() and f"{get_column_letter(c + 1)}{r + 1}" not in merged_tl:
+            out[c] = v.strip()
+    return out
+
+
+def _with_group(header: str, group: str) -> str:
+    """« Performances » + « 1 an » → « Performances 1 an » ; un en-tête qui se suffit (le groupe y est déjà) reste tel quel."""
+    h = header.strip()
+    if not group or norm(group) in norm(h) or norm(h) in norm(group):
+        return h
+    words = [w for w in re.findall(r"[^\W\d_]+", norm(h)) if len(w) >= 3 and w not in SHORT_HEADER_WORDS]
+    return h if words else f"{group} {h}"  # « 1 an », « YTD », « 2023 » : le groupe donne le sens ; sinon l'en-tête suffit
+
+
 def _isin_cells(values: list[Any]) -> list[int]:
     return [i for i, v in enumerate(values) if isinstance(v, str) and ISIN_RE.fullmatch(v.strip())]
 
@@ -377,6 +410,13 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
             isin_col = next((c for c in range(max_col) if sum(1 for row in below if isinstance(row[c], str) and ISIN_RE.fullmatch(str(row[c]).strip())) >= 2), None)
             if isin_col is None:
                 continue
+        # En-têtes sur deux lignes (groupe fusionné au-dessus : « Performances » / « 1 an », « 3 ans ») : la ligne lue est
+        # celle juste au-dessus du premier ISIN, et le groupe complète chaque question.
+        first_isin = next(r for r in range(r_idx + 1, len(grid)) if isinstance(grid[r][isin_col], str) and ISIN_RE.fullmatch(grid[r][isin_col].strip()))
+        if first_isin - 1 > r_idx and sum(1 for v in grid[first_isin - 1] if isinstance(v, str) and v.strip()) >= 3:
+            r_idx = first_isin - 1
+            headers = [(c, v) for c, v in enumerate(grid[r_idx]) if isinstance(v, str) and v.strip() and not ISIN_RE.fullmatch(v.strip())]
+        groups = _group_row(grid, r_idx, merged_tl, ws)
         for r in range(r_idx + 1, len(grid)):
             cell = grid[r][isin_col]
             if not (isinstance(cell, str) and ISIN_RE.fullmatch(cell.strip())):
@@ -387,7 +427,9 @@ def _detect_sheet(ws, dvs: dict, layout: Layout, sample: list[str]) -> None:
                 ref = f"{get_column_letter(c + 1)}{r + 1}"
                 if ref in merged_tl:
                     continue
-                layout.slots.append(_make_slot(layout, ws, ref, str(header), ws.title, dvs, "row-grid", {"isin": cell.strip()}))
+                group = groups.get(c, "")
+                question = _with_group(str(header), group)
+                layout.slots.append(_make_slot(layout, ws, ref, question, group or ws.title, dvs, "row-grid", {"isin": cell.strip()}))
         layout.notes.append(f"{ws.title} : grille par part (une ligne par ISIN)")
         return
 

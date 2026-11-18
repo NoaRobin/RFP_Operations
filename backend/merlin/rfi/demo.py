@@ -9,6 +9,7 @@ import io
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from ..data.access import DataAccess
@@ -186,3 +187,65 @@ def demo_docx(data: DataAccess) -> tuple[str, bytes]:
     buffer = io.BytesIO()
     d.save(buffer)
     return f"RFI_demo_{isin}.docx", buffer.getvalue()
+
+
+# Grille « une ligne par part » comme celles des plateformes et consultants : titre, groupes d'en-têtes fusionnés
+# au-dessus des questions, ISIN de plusieurs fonds, une liste déroulante, un ISIN inconnu de Fabric (rien n'est deviné).
+GRID_GROUPS: list[tuple[str, list[tuple[str, str | None, str | None]]]] = [
+    ("Identification", [("ISIN", None, None), ("Nom du fonds", None, None), ("Nom de la part", None, None),
+                        ("Devise de la part", None, None), ("Date de lancement de la part", None, None)]),
+    ("Caractéristiques", [("Forme juridique", None, None), ("Classification SFDR", None, '"Article 6,Article 8,Article 9"'),
+                          ("Label ISR", None, '"Oui,Non"'), ("SRI (1 à 7)", None, None), ("Affectation des résultats", None, None)]),
+    ("Frais", [("Frais courants", "0.00%", None), ("Frais de gestion maximum", "0.00%", None), ("Droits d'entrée maximum", "0.00%", None)]),
+    ("Encours et performances", [("Encours du fonds (M€)", "#,##0.0", None), ("Performance 1 an (%)", "0.00%", None),
+                                 ("Volatilité 1 an (%)", "0.00%", None)]),
+    ("Gestion", [("Gérant principal", None, None), ("Dépositaire", None, None)]),
+]
+
+
+def demo_grid(data: DataAccess) -> tuple[str, bytes]:
+    shares: list[str] = []
+    for item in fund_directory(data):
+        shares.extend(s["isin"] for s in item["shares"][:2])
+        if len(shares) >= 8:
+            break
+    shares = shares[:8] + ["QZ9999999990"]  # ISIN fictif inconnu de Product Info
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Grille parts"
+    columns = [q for _, qs in GRID_GROUPS for q in qs]
+    ws.cell(1, 1, "Mise à jour de la base fonds — Plateforme Fictive (démonstration, données fictives)").font = Font(bold=True, size=14)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(columns))
+    col = 1
+    for group, qs in GRID_GROUPS:
+        ws.cell(2, col, group)
+        if len(qs) > 1:
+            ws.merge_cells(start_row=2, start_column=col, end_row=2, end_column=col + len(qs) - 1)
+        col += len(qs)
+    for c, (header, _, _) in enumerate(columns, 1):
+        ws.cell(3, c, header)
+    for r in (2, 3):
+        for c in range(1, len(columns) + 1):
+            ws.cell(r, c).font = Font(bold=True, color="FFFFFF")
+            ws.cell(r, c).fill = PatternFill("solid", fgColor=INK)
+            ws.cell(r, c).alignment = Alignment(wrap_text=True, horizontal="center")
+    for i, isin in enumerate(shares):
+        r = 4 + i
+        ws.cell(r, 1, isin)
+        for c, (_, number_format, _) in enumerate(columns, 1):
+            if number_format and c > 1:
+                ws.cell(r, c).number_format = number_format
+            if c > 1:
+                ws.cell(r, c).fill = PatternFill("solid", fgColor=FILL)
+    for c, (_, _, dropdown) in enumerate(columns, 1):
+        if dropdown:
+            dv = DataValidation(type="list", formula1=dropdown, allow_blank=True)
+            ws.add_data_validation(dv)
+            letter = get_column_letter(c)
+            dv.add(f"{letter}4:{letter}{3 + len(shares)}")
+    for c in range(1, len(columns) + 1):
+        ws.column_dimensions[get_column_letter(c)].width = 20
+    ws.freeze_panes = "B4"
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    return "Grille_parts_demo.xlsx", buffer.getvalue()

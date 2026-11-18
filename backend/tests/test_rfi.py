@@ -315,3 +315,71 @@ def test_single_isin_in_a_list_keeps_the_chosen_share(tmp_path):
     wb.save(tmp_path / "one.xlsx")
     layout = detect(tmp_path / "one.xlsx")
     assert all(not s.entity for s in layout.slots)  # une seule part citée : la part choisie à l'écran s'applique
+
+
+def test_atelier_grid_isins_on_the_side_questions_on_top(client):
+    """Atelier Excel (Merlin) : grille d'ISIN de plusieurs fonds, groupes d'en-têtes fusionnés au-dessus des questions.
+    Chaque ligne lit SA part ; l'ISIN inconnu reste vide ; le fichier rendu ne change que les cases réponse."""
+    import io
+
+    from openpyxl import load_workbook
+
+    from merlin.rfi.service import fund_directory
+    from merlin.state import get_state
+
+    doc = client.post("/api/rfi/demo/grid").json()
+    assert any(not s["known"] for s in doc["shares"]) and sum(s["known"] for s in doc["shares"]) >= 4
+    analysis = client.post(f"/api/rfi/documents/{doc['id']}/answers", json={"fresh": True}).json()
+    rows = [q for q in analysis["questions"] if q["layout"] == "row-grid"]
+    assert rows and {q["question"] for q in rows} >= {"Nom du fonds", "Frais courants", "Performance 1 an (%)"}  # sans préfixe de groupe
+    fund_of = {s["isin"]: item["name"] for item in fund_directory(get_state().data) for s in item["shares"]}
+    for q in rows:
+        if q["question"] == "Nom du fonds" and q["entity"]["isin"] in fund_of:
+            assert q["status"] == "auto" and q["answer"] == fund_of[q["entity"]["isin"]]
+    unknown = [q for q in rows if q["entity"]["isin"] == "QZ9999999990"]
+    assert unknown and all(q["status"] != "auto" for q in unknown)
+    known = [q for q in rows if q["entity"]["isin"] != "QZ9999999990"]
+    # sûres, ou à vérifier quand un ancien RFI dit autre chose que Fabric (incohérence signalée, jamais tranchée seule)
+    assert sum(q["status"] == "auto" for q in known) / len(known) >= 0.9
+    assert all(q["status"] in {"auto", "review"} and q["answer"] for q in known)
+
+    generated = client.post(f"/api/rfi/documents/{doc['id']}/generate", json={}).json()
+    assert generated["written"] == sum(q["status"] == "auto" for q in analysis["questions"])
+    new = load_workbook(io.BytesIO(client.get(generated["download"]).content))["Grille parts"]
+    old = load_workbook(io.BytesIO(client.get(f"/api/rfi/documents/{doc['id']}/original").content))["Grille parts"]
+    written = {q["location"].split("!")[1] for q in analysis["questions"] if q["status"] == "auto"}
+    for row in old.iter_rows():
+        for cell in row:
+            if cell.coordinate not in written:
+                assert new[cell.coordinate].value == cell.value, cell.coordinate
+    ocf = next(q for q in known if q["question"] == "Frais courants")["location"].split("!")[1]
+    assert isinstance(new[ocf].value, float) and 0 < new[ocf].value < 0.1 and "%" in new[ocf].number_format
+    assert new.merged_cells.ranges and new.freeze_panes == "B4"
+
+
+def test_grid_period_headers_take_their_group(client):
+    """« 1 an » / « 3 ans » sous un groupe fusionné « Performances annualisées » : le groupe donne le sens."""
+    import io
+
+    from openpyxl import Workbook
+
+    from merlin.rfi.service import fund_directory
+    from merlin.state import get_state
+
+    isins = [s["isin"] for item in fund_directory(get_state().data) for s in item["shares"][:1]][:3]
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["", "", "Performances annualisées", None, "Volatilité", None])
+    ws.merge_cells("C1:D1")
+    ws.merge_cells("E1:F1")
+    ws.append(["ISIN", "Devise de la part", "1 an", "3 ans", "1 an", "3 ans"])
+    for isin in isins:
+        ws.append([isin])
+    buf = io.BytesIO()
+    wb.save(buf)
+    doc = client.post("/api/rfi/documents", files={"file": ("g.xlsx", buf.getvalue(), "application/octet-stream")}).json()
+    qs = client.post(f"/api/rfi/documents/{doc['id']}/answers", json={"fresh": True}).json()["questions"]
+    first = {q["location"].split("!")[1][0]: q for q in qs if q["entity"].get("isin") == isins[0]}
+    assert first["B"]["question"] == "Devise de la part" and first["B"]["concept"] == "part.devise"
+    assert first["C"]["question"] == "Performances annualisées 1 an" and first["C"]["concept"] == "perf.part"
+    assert first["F"]["question"] == "Volatilité 3 ans" and first["F"]["concept"] == "perf.volatilite"

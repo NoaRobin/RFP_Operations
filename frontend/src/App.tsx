@@ -25,6 +25,7 @@ const Suivi = lazy(() => import('./pages/Suivi'))
 const AutomationPage = lazy(() => import('./pages/AutomationPage'))
 const RunPage = lazy(() => import('./pages/Run'))
 const Atelier = lazy(() => import('./pages/Atelier'))
+const AtelierRecettes = lazy(() => import('./pages/AtelierRecettes'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const HistoryPage = lazy(() => import('./pages/History'))
 const About = lazy(() => import('./pages/About'))
@@ -51,6 +52,7 @@ function Shell() {
               <Route path="/automatisations/:id" element={<AutomationPage />} />
               <Route path="/executions/:runId" element={<RunPage />} />
               <Route path="/atelier" element={<Atelier />} />
+              <Route path="/atelier/recettes" element={<AtelierRecettes />} />
               <Route path="/atelier/fonds" element={<FundSheetPage />} />
               <Route path="/atelier/fonds/:isin" element={<FundSheetPage />} />
               <Route path="/tableau-de-bord" element={<Dashboard />} />

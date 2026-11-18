@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from ..data.access import DataError
 from ..db import now_iso
-from ..rfi.demo import demo_docx, demo_xlsx
+from ..rfi.demo import demo_docx, demo_grid, demo_xlsx
 from ..rfi.ontology import load_ontology
 from ..rfi.precedents import get_bindings, get_index
 from .documents import service_for
@@ -144,7 +144,7 @@ async def upload(file: UploadFile = File(...), s: AppState = Depends(state), use
 
 @router.post("/demo/{kind}")
 def demo(kind: str, s: AppState = Depends(state), user: str = Depends(current_user)):
-    maker = {"xlsx": demo_xlsx, "docx": demo_docx}.get(kind)
+    maker = {"xlsx": demo_xlsx, "docx": demo_docx, "grid": demo_grid}.get(kind)
     if maker is None:
         raise not_found("Démo inconnue.")
     name, content = maker(s.data)

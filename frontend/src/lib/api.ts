@@ -198,7 +198,7 @@ export const api = {
       form.append('file', file)
       return request<RfiDocument>('/rfi/documents', { method: 'POST', body: form })
     },
-    demo: (kind: 'xlsx' | 'docx') => request<RfiDocument>(`/rfi/demo/${kind}`, { method: 'POST' }),
+    demo: (kind: 'xlsx' | 'docx' | 'grid') => request<RfiDocument>(`/rfi/demo/${kind}`, { method: 'POST' }),
     copilotPack: async (id: string, body: RfiRequest, includeAuto = false): Promise<Blob> => {
       let response: Response
       try {

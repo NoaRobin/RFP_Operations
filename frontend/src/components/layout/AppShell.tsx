@@ -11,6 +11,7 @@ import { isMac, useApp } from './AppContext'
 
 const NAV = [
   { to: '/rfi', label: texts.nav.rfi, icon: FileQuestion, end: false },
+  { to: '/atelier', label: texts.nav.atelier, icon: FileSpreadsheet, end: false },
   { to: '/documents', label: texts.nav.fundshop, icon: FileDown, end: false },
   { to: '/omni', label: texts.nav.omni, icon: CalendarCheck, end: false },
   { to: '/qvidian', label: texts.nav.qvidian, icon: Library, end: false },
@@ -20,7 +21,6 @@ const NAV = [
 ]
 const MORE = [
   { to: '/qui-contacter', label: texts.nav.contacts, icon: Mail, end: false },
-  { to: '/atelier', label: texts.nav.atelier, icon: FileSpreadsheet, end: false },
   { to: '/historique', label: texts.nav.history, icon: History, end: false },
   { to: '/rfpascontente', label: texts.nav.rfpascontente, icon: Paintbrush, end: false },
   { to: '/a-propos', label: texts.nav.about, icon: Sparkles, end: false },
