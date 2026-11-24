@@ -26,14 +26,14 @@ import { SearchView } from './views/SearchView'
 
 const Q = texts.qvidian
 const NAV: { group: string; items: { to: string; key: string; icon: typeof Gauge; external?: boolean }[] }[] = [
-  { group: 'pilot', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'memoire', key: 'memoire', icon: BrainCircuit }] },
-  { group: 'find', items: [{ to: 'recherche', key: 'recherche', icon: Search }, { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree },
-    { to: 'questions', key: 'questions', icon: MessagesSquare }] },
+  { group: 'find', items: [{ to: '', key: 'accueil', icon: Gauge }, { to: 'recherche', key: 'recherche', icon: Search },
+    { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree }, { to: 'questions', key: 'questions', icon: MessagesSquare },
+    { to: 'memoire', key: 'memoire', icon: BrainCircuit }] },
   { group: 'care', items: [{ to: 'sante', key: 'sante', icon: HeartPulse }, { to: 'fraicheur', key: 'fraicheur', icon: CalendarClock },
-    { to: 'doublons', key: 'doublons', icon: Copy }, { to: 'ia', key: 'ia', icon: Bot }, { to: 'agent', key: 'agent', icon: Share2 }] },
-  { group: 'act', items: [{ to: 'modifier', key: 'modifier', icon: PenSquare }, { to: 'journal', key: 'journal', icon: History },
+    { to: 'doublons', key: 'doublons', icon: Copy }, { to: 'ia', key: 'ia', icon: Bot }, { to: 'modifier', key: 'modifier', icon: PenSquare },
+    { to: 'journal', key: 'journal', icon: History }] },
+  { group: 'system', items: [{ to: 'agent', key: 'agent', icon: Share2 }, { to: 'connexion', key: 'connexion', icon: Plug }, { to: 'api', key: 'api', icon: Cpu },
     { to: '/merge-codes', key: 'mergecodes', icon: Tags, external: true }] },
-  { group: 'system', items: [{ to: 'api', key: 'api', icon: Cpu }, { to: 'connexion', key: 'connexion', icon: Plug }] },
 ]
 const LEGACY: Record<string, string> = { apercu: '', carte: 'sante', bibliotheque: 'bibliotheque', reponses: 'recherche', ia: 'ia', modifier: 'modifier', connexion: 'connexion' }
 
@@ -57,7 +57,6 @@ function Sidebar() {
     <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto" aria-label={Q.section} data-lenis-prevent>
       <div className="px-2 pb-1">
         <p className="flex items-center gap-2 text-base font-semibold"><Library size={18} className="text-fg-2" aria-hidden="true" />QviAPI</p>
-        <p className="mt-1 text-xs font-semibold text-fg-2">{texts.qviapi.lead}</p>
         {status && (
           <p className={`mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-fg px-2.5 py-0.5 text-xs font-bold ${status.mode === 'demo' ? 'text-warning' : status.connected ? 'text-success' : 'text-danger'}`}>
             <span className={`size-2 rounded-full bg-current`} aria-hidden="true" />

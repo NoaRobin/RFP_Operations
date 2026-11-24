@@ -16,12 +16,12 @@ function capTexture(letter: string): THREE.CanvasTexture {
   const c = document.createElement('canvas')
   c.width = c.height = 128
   const g = c.getContext('2d')!
-  g.fillStyle = '#1c232c'
+  g.fillStyle = '#f6f8fa'
   g.fillRect(0, 0, 128, 128)
-  g.strokeStyle = 'rgba(61,68,77,0.9)'
+  g.strokeStyle = 'rgba(175,184,193,0.9)'
   g.lineWidth = 3
   g.strokeRect(6, 6, 116, 116)
-  g.fillStyle = '#9198a1'
+  g.fillStyle = '#59636e'
   g.font = '600 56px -apple-system, "Segoe UI", system-ui, sans-serif'
   g.textAlign = 'center'
   g.textBaseline = 'middle'
@@ -50,9 +50,9 @@ function Keys({ pressed, busy }: { pressed: React.MutableRefObject<string>; busy
   const glow = useRef<number[]>(caps.map(() => 0))
   const geometries = useMemo(() => caps.map((c) => new THREE.BoxGeometry(c.w, 0.42, KEY)), [caps])
   const materials = useMemo(() => caps.map((c) => {
-    const top = new THREE.MeshStandardMaterial({ map: c.letter.trim() ? capTexture(c.letter) : null, color: c.letter.trim() ? '#ffffff' : '#1c232c',
-      emissive: new THREE.Color('#4493f8'), emissiveIntensity: 0, metalness: 0.1, roughness: 0.8 })
-    const side = new THREE.MeshStandardMaterial({ color: '#151b23', metalness: 0.1, roughness: 0.85 })
+    const top = new THREE.MeshStandardMaterial({ map: c.letter.trim() ? capTexture(c.letter) : null, color: c.letter.trim() ? '#ffffff' : '#f6f8fa',
+      emissive: new THREE.Color('#0969da'), emissiveIntensity: 0, metalness: 0.1, roughness: 0.8 })
+    const side = new THREE.MeshStandardMaterial({ color: '#d1d9e0', metalness: 0.1, roughness: 0.85 })
     return [side, side, top, side, side, side]
   }), [caps])
   useEffect(() => () => {

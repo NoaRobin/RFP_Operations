@@ -30,14 +30,14 @@ export function LiquidGauge({ label, level, color, busy, detail, off }: { label:
             <stop offset="1" stopColor={color} stopOpacity="0.25" />
           </linearGradient>
         </defs>
-        <rect x="8" y="4" width="44" height={H} rx="22" fill="#0d1117" stroke="#3d444d" />
+        <rect x="8" y="4" width="44" height={H} rx="22" fill="#f6f8fa" stroke="#d1d9e0" />
         <g clipPath={`url(#tube-${id})`}>
           <g ref={liquid} transform={`translate(0 ${H})`}>
             <path d={wave(0)} fill={`url(#fill-${id})`} className="qv-wave" style={{ animation: 'qv-wave 6s linear infinite' }} />
             <path d={wave(15)} fill={color} opacity="0.18" className="qv-wave" style={{ animation: 'qv-wave 9s linear infinite reverse' }} />
           </g>
         </g>
-        {[0.25, 0.5, 0.75].map((t) => <line key={t} x1="44" x2="52" y1={4 + H * t} y2={4 + H * t} stroke="#3d444d" />)}
+        {[0.25, 0.5, 0.75].map((t) => <line key={t} x1="44" x2="52" y1={4 + H * t} y2={4 + H * t} stroke="#d1d9e0" />)}
         <rect x="8" y="4" width="44" height={H} rx="22" fill="none" stroke={color} strokeOpacity="0" />
       </svg>
       <figcaption className="text-center">

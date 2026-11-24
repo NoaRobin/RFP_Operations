@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { gsap } from '../../motion/gsap'
 import { useReducedMotion } from '../../motion/useReducedMotion'
 
-export function Dial({ value, label, hint, display, color = '#4493f8' }: { value: number | null; label: string; hint?: string; display?: string; color?: string }) {
+export function Dial({ value, label, hint, display, color = '#0969da' }: { value: number | null; label: string; hint?: string; display?: string; color?: string }) {
   const arc = useRef<SVGCircleElement>(null)
   const reduced = useReducedMotion()
   const v = value == null ? 0 : Math.max(0, Math.min(1, value))
@@ -20,7 +20,7 @@ export function Dial({ value, label, hint, display, color = '#4493f8' }: { value
     <figure className="flex flex-col items-center text-center">
       <svg viewBox="0 0 100 100" className="w-full max-w-[7.5rem]" role="img" aria-label={`${label} : ${text}`}>
         <g transform="rotate(135 50 50)">
-          <circle cx="50" cy="50" r={R} fill="none" stroke="#2a313a" strokeWidth="4" strokeDasharray={`${C} 999`} strokeLinecap="round" />
+          <circle cx="50" cy="50" r={R} fill="none" stroke="#d8dee4" strokeWidth="4" strokeDasharray={`${C} 999`} strokeLinecap="round" />
           {value != null && (
             <circle ref={arc} cx="50" cy="50" r={R} fill="none" stroke={color} strokeWidth="4" strokeDasharray={`${C} 999`} strokeDashoffset={C}
               strokeLinecap="round" />

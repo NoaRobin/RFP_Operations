@@ -8,7 +8,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { gsap } from '../../motion/gsap'
 
-const PALETTE = ['#4493f8', '#768390', '#9198a1', '#3fb950', '#ab7df8', '#56a3ff']
+const PALETTE = ['#0969da', '#6e7781', '#8c959f', '#1a7f37', '#8250df', '#54aeff']
 
 function hash(s: string): number {
   let h = 0

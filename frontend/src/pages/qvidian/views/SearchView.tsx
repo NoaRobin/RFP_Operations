@@ -215,11 +215,11 @@ export function SearchView() {
     const rank = (k: string) => (h: QvidianHit) => (h.signals?.ranks?.[k] ?? 99) < 20
     const E = texts.qviapi.engine
     return [
-      { key: 'bm25', label: E.bm25, color: '#4493f8', level: share(rank('bm25')) },
-      { key: 'ngram', label: E.ngram, color: '#768390', level: share(rank('ngram')) },
-      { key: 'dense', label: E.dense, color: '#56a3ff', level: share(rank('dense')), off: !!res && !res.engine.encoder },
-      { key: 'rerank', label: E.rerank, color: '#ab7df8', level: share((h) => (h.signals?.rerank ?? 0) >= 0.5), off: !!res && !res.engine.reranker },
-      { key: 'history', label: E.history, color: '#3fb950', level: share(rank('history')) },
+      { key: 'bm25', label: E.bm25, color: '#0969da', level: share(rank('bm25')) },
+      { key: 'ngram', label: E.ngram, color: '#6e7781', level: share(rank('ngram')) },
+      { key: 'dense', label: E.dense, color: '#54aeff', level: share(rank('dense')), off: !!res && !res.engine.encoder },
+      { key: 'rerank', label: E.rerank, color: '#8250df', level: share((h) => (h.signals?.rerank ?? 0) >= 0.5), off: !!res && !res.engine.reranker },
+      { key: 'history', label: E.history, color: '#1a7f37', level: share(rank('history')) },
     ]
   }, [results, res])
   const filterCount = useMemo(() => (filters.scope?.length ?? 0) + (filters.theme?.length ?? 0) + (filters.fund?.length ?? 0)

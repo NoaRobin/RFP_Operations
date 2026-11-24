@@ -425,10 +425,10 @@ export const texts = {
     section: 'Qvidian',
     sectionLead: 'Bibliothèque de réponses : recherche par le sens, santé, réponses types, modifications protégées.',
     nav: {
-      accueil: 'Cockpit', memoire: 'Mémoire des réponses', questions: 'Questions tombées', fraicheur: 'Fraîcheur', doublons: 'Doublons', mergecodes: 'Merge codes', recherche: 'Recherche', bibliotheque: 'Bibliothèque', sante: 'Santé', reponses: 'Réponses types', ia: 'Analyse IA',
-      modifier: 'Modifier', journal: 'Journal', api: 'API & moteur', connexion: 'Connexion', agent: 'Agent Copilot',
+      accueil: 'Vue d\'ensemble', memoire: 'Mémoire des réponses', questions: 'Questions tombées', fraicheur: 'Fraîcheur', doublons: 'Doublons', mergecodes: 'Merge codes', recherche: 'Recherche', bibliotheque: 'Bibliothèque', sante: 'Santé', reponses: 'Réponses types', ia: 'Analyse IA',
+      modifier: 'Modifier', journal: 'Journal', api: 'Moteur de recherche', connexion: 'Connexion Qvidian', agent: 'Agent Copilot',
     } as Record<string, string>,
-    navGroups: { pilot: 'Piloter', find: 'Trouver', care: 'Entretenir', act: 'Modifier', system: 'Garage' } as Record<string, string>,
+    navGroups: { find: 'Trouver une réponse', care: 'Entretenir la bibliothèque', system: 'Réglages' } as Record<string, string>,
     quickSearch: 'Rechercher…',
     quickSearchKey: '/',
     // ------------------------------------------------------------ cockpit
