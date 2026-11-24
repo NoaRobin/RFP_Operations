@@ -422,6 +422,42 @@ def ai_export(body: IdsRequest, s: AppState = Depends(state)):
                     headers={"Content-Disposition": f'attachment; filename="Qvidian_relecture_{stamp}_{len(parts)}_parties.zip"'})
 
 
+class AgentExportBody(BaseModel):
+    path: str = Field("", max_length=600)
+    mode: str = Field("texts", pattern="^(texts|bundles)$")
+    include_expired: bool = True
+    auto: bool = True
+    run: bool = True
+
+
+def _agent_export_state(s: AppState) -> dict[str, Any]:
+    from ..qvidian.agent_export import INSTRUCTIONS, MAX_BUNDLES
+
+    svc = service(s)
+    return {**svc.agent_export.load(), "instructions": INSTRUCTIONS, "max_bundles": MAX_BUNDLES, "source": svc.mode}
+
+
+@router.get("/agent-export")
+def agent_export_get(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Réglages et dernier bilan de l'export vers le dossier de l'agent (Copilot), avec les consignes à lui donner."""
+    return _agent_export_state(s)
+
+
+@router.post("/agent-export")
+def agent_export_post(body: AgentExportBody, s: AppState = Depends(state)) -> dict[str, Any]:
+    """Enregistre les réglages puis met à jour le dossier (un Word par texte, ou 20 fichiers par thème)."""
+    from pathlib import Path as _Path
+
+    path = body.path.strip().strip('"')
+    if path and not _Path(path).is_dir():
+        raise bad_request("Ce dossier n'existe pas sur ce poste.", "Collez le chemin du dossier SharePoint synchronisé (clic droit dans l'Explorateur, « Copier en tant que chemin »).")
+    svc = service(s)
+    svc.agent_export.save({"path": path, "mode": body.mode, "include_expired": body.include_expired, "auto": body.auto})
+    if body.run and path:
+        svc.export_for_agent()
+    return _agent_export_state(s)
+
+
 @router.post("/ai/import-xlsx")
 async def ai_import_xlsx(files: list[UploadFile] = File(...), s: AppState = Depends(state)) -> dict[str, Any]:
     """Excel(s) rendu(s) par le chat : constats rangés sur chaque texte (carte des erreurs, Analyse IA)."""

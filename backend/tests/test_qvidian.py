@@ -495,3 +495,55 @@ def test_texts_cut_at_1000_by_qvidian_are_read_in_full(tmp_path):
     c = next(x for x in excerpt if x["id"] == 1006)
     assert len(c["text"]) <= 1000 and not full_text(blocked, c)
     assert json_pack([c])[0]["textes"][0]["texte_complet"] is False
+
+
+def test_agent_export_one_word_file_per_text_incremental(tmp_path, demo_snapshot):
+    """Dossier de l'agent Copilot : un Word par texte avec sa fiche, mise à jour incrémentale, retraits propres,
+    rien d'autre touché dans le dossier ; mode de repli à 20 fichiers au plus."""
+    from docx import Document
+
+    from merlin.qvidian.agent_export import MANIFEST, MAX_BUNDLES, export
+
+    contents = demo_snapshot.all()
+    folder = tmp_path / "agent"
+    folder.mkdir()
+    (folder / "note de l'équipe.docx").write_bytes(b"pas a nous")
+    history = {1010: {"questions": ["Describe your ESG policy."], "files": 2, "last": "2026-04-15"}}
+    first = export(contents, folder, "demo", history=history, today="2026-11-24")
+    active = [c for c in contents if c.get("enabled", True)]
+    assert first["written"] == first["files"] == len(active) and first["removed"] == 0
+    path = next(folder.rglob("C1010 - *.docx"))
+    text = "\n".join(p.text for p in Document(str(path)).paragraphs)
+    assert "Identifiant Qvidian : C1010" in text and "Statut : actif" in text and "Describe your ESG policy." in text
+    assert next(c for c in contents if c["id"] == 1010)["text"][:60] in text
+
+    again = export(contents, folder, "demo", history=history, today="2026-11-24")
+    assert again["written"] == 0 and again["unchanged"] == first["files"]  # rien n'a changé : rien n'est réécrit
+
+    changed = [dict(c) for c in contents if c["id"] != 1006]
+    next(c for c in changed if c["id"] == 1010)["text"] = "Nouvelle politique ESG fictive."
+    third = export(changed, folder, "demo", history=history, today="2026-11-24")
+    assert third["written"] == 1 and third["removed"] == 1 and not list(folder.rglob("C1006 - *.docx"))
+    assert (folder / "note de l'équipe.docx").read_bytes() == b"pas a nous" and (folder / MANIFEST).exists()
+
+    expired = [dict(c, expires="2020-01-01") if c["id"] == 1010 else c for c in changed]
+    with_expired = export(expired, folder, "demo", today="2026-11-24")
+    assert with_expired["expired"] >= 1 and "Statut : expiré" in "\n".join(p.text for p in Document(str(next(folder.rglob("C1010 - *.docx")))).paragraphs)
+    without = export(expired, folder, "demo", include_expired=False, today="2026-11-24")
+    assert without["texts"] == with_expired["texts"] - with_expired["expired"] and not list(folder.rglob("C1010 - *.docx"))
+
+    bundles = tmp_path / "bundles"
+    bundles.mkdir()
+    b = export(contents, bundles, "demo", mode="bundles", today="2026-11-24")
+    assert 1 <= b["files"] <= MAX_BUNDLES and b["texts"] == len(active) and len(list(bundles.glob("*.docx"))) == b["files"]
+
+
+def test_agent_export_api_remembers_folder_and_runs_after_sync(client, tmp_path):
+    folder = tmp_path / "sp"
+    folder.mkdir()
+    assert client.post("/api/qvidian/agent-export", json={"path": str(tmp_path / "absent")}).status_code == 400
+    out = client.post("/api/qvidian/agent-export", json={"path": str(folder), "mode": "texts"}).json()
+    assert out["error"] is None, out["error"]
+    assert out["last"]["written"] > 0 and "Identifiant Qvidian" in out["instructions"]
+    assert client.get("/api/qvidian/agent-export").json()["path"] == str(folder)
+    client.post("/api/qvidian/agent-export", json={"path": "", "run": False})  # ne laisse pas d'export automatique aux autres tests

@@ -17,6 +17,7 @@ from typing import Any
 
 from ..config import QvidianSettings
 from .ai import FindingStore
+from .agent_export import AgentExportConfig, export as agent_export
 from .audit import audit
 from .bulk import Journal, Plan, WriteGuard, apply, make_plan, undo_plan
 from .client import QvidianClient, QvidianError
@@ -40,6 +41,7 @@ class QvidianService:
         self._stored = self.credentials.load()  # clé d'API saisie une fois dans l'app, chiffrée sur le poste (DPAPI)
         self.journal = Journal(self.root / "journal.jsonl")
         self.ai = FindingStore(self.root / "ai_findings.json")
+        self.agent_export = AgentExportConfig(self.root / "agent_export.json")
         self.demo = DemoQvidian()
         self.search = SearchManager(data_dir / "models", settings.search_encoder, settings.search_reranker, settings.half_life_days)
         self.search.downloads.on_done = lambda _mid: (self.rebuild_index(), self.build_matcher())
@@ -264,6 +266,9 @@ class QvidianService:
                 wanted = "delta" if kind == "auto" and snap.meta().get("synced_at") and not snap.empty else ("full" if kind == "auto" else kind)
                 result = sync(client, snap, mode, progress, workers=self.settings.concurrency, mode=wanted)
                 self.rebuild_history(snap, background=True)  # liens anciens RFI ↔ textes, puis index de recherche
+                if self.agent_export.load().get("auto") and self.agent_export.load().get("path"):
+                    self.sync_state.update(message="Mise à jour du dossier de l'agent")
+                    result["agent_export"] = self.export_for_agent(snap=snap, mode_name=mode)
                 self.sync_state.update(running=False, result=result, message="Synchronisation terminée")
             except QvidianError as error:
                 self.sync_state.update(running=False, error={"code": error.code, "message": error.message, "hint": error.hint})
@@ -272,6 +277,25 @@ class QvidianService:
 
         threading.Thread(target=run, name="qvidian-sync", daemon=True).start()
         return self.sync_state
+
+    # ------------------------------------------------------------------ dossier lu par l'agent (Copilot)
+    def export_for_agent(self, snap: Snapshot | None = None, mode_name: str | None = None) -> dict[str, Any]:
+        """Met à jour le dossier de l'agent depuis l'instantané courant ; l'erreur éventuelle est gardée, jamais levée."""
+        cfg = self.agent_export.load()
+        mode_name = mode_name or self.mode
+        snap = snap or self.snapshot(mode_name)
+        try:
+            if not cfg["path"]:
+                raise ValueError("Aucun dossier choisi.")
+            history = History(self._history_path(snap)).by_content() if self._history_path(snap).exists() else {}
+            last = agent_export(snap.all(), Path(cfg["path"]), "demo" if mode_name != "qvidian" else "qvidian", cfg["mode"],
+                                bool(cfg["include_expired"]), history)
+            self.agent_export.save({"last": last, "error": None})
+            return last
+        except Exception as error:  # noqa: BLE001 - dossier absent, fichier ouvert… : dit à l'écran, ne bloque pas la synchro
+            message = str(error)[:300] or type(error).__name__
+            self.agent_export.save({"error": message})
+            return {"error": message}
 
     # ------------------------------------------------------------------ historique : anciens RFI ↔ textes Qvidian
     def _history_path(self, snap: Snapshot) -> Path:

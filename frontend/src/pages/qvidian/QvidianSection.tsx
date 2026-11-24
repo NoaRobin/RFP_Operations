@@ -4,12 +4,13 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, Library, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, ShieldCheck, Tags, X } from 'lucide-react'
+import { Activity, Bot, BrainCircuit, CalendarClock, Copy, Cpu, Download, FolderTree, Gauge, HeartPulse, History, Library, LogIn, MessagesSquare, PenSquare, Plug, RefreshCw, Search, Share2, ShieldCheck, Tags, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { ErrorState, Loading } from '../../components/ui/States'
 import { useToast } from '../../components/ui/Toast'
 import { MemoryView } from './views/MemoryView'
 import { DuplicatesView, FreshnessView, QuestionsView } from './views/WorkshopViews'
+import { AgentView } from './views/AgentView'
 import { texts } from '../../content/texts'
 import { api } from '../../lib/api'
 import { gsap, useGSAP } from '../../motion/gsap'
@@ -29,7 +30,7 @@ const NAV: { group: string; items: { to: string; key: string; icon: typeof Gauge
   { group: 'find', items: [{ to: 'recherche', key: 'recherche', icon: Search }, { to: 'bibliotheque', key: 'bibliotheque', icon: FolderTree },
     { to: 'questions', key: 'questions', icon: MessagesSquare }] },
   { group: 'care', items: [{ to: 'sante', key: 'sante', icon: HeartPulse }, { to: 'fraicheur', key: 'fraicheur', icon: CalendarClock },
-    { to: 'doublons', key: 'doublons', icon: Copy }, { to: 'ia', key: 'ia', icon: Bot }] },
+    { to: 'doublons', key: 'doublons', icon: Copy }, { to: 'ia', key: 'ia', icon: Bot }, { to: 'agent', key: 'agent', icon: Share2 }] },
   { group: 'act', items: [{ to: 'modifier', key: 'modifier', icon: PenSquare }, { to: 'journal', key: 'journal', icon: History },
     { to: '/merge-codes', key: 'mergecodes', icon: Tags, external: true }] },
   { group: 'system', items: [{ to: 'api', key: 'api', icon: Cpu }, { to: 'connexion', key: 'connexion', icon: Plug }] },
@@ -178,6 +179,7 @@ function Body() {
           <Route path="reponses" element={<Navigate to="/qvidian/recherche" replace />} />
           <Route path="sante" element={<HealthView />} />
           <Route path="ia" element={<AiView />} />
+          <Route path="agent" element={<AgentView />} />
           <Route path="modifier" element={<EditView />} />
           <Route path="journal" element={<JournalView />} />
           <Route path="api" element={<ApiView />} />

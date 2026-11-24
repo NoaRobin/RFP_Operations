@@ -371,3 +371,23 @@ code ; l'écran « Modifier » le demande au moment d'écrire (5 erreurs ⇒ ver
   l'état de connexion sans attendre la carte des erreurs. Mesures sur 6 000 contenus : recherche 1,8 s → 0,38 s,
   ouverture de l'index 28 s → ~1,4 s ; page sans requête : regroupement des versions limité aux premiers résultats
   (n'est plus quadratique ; à re-mesurer sur la vraie bibliothèque).
+
+## Agent Copilot : des connaissances tenues à jour
+
+Un agent Copilot M365 nourri par un zip répond avec des textes figés. L'app écrit donc la bibliothèque dans un dossier
+SharePoint synchronisé sur le poste (QviAPI, « Agent Copilot »), que l'agent lit comme source de connaissances.
+
+- **Un fichier Word par texte** (mode recommandé), rangé par dossier Qvidian de premier niveau. Un dossier SharePoint
+  compte pour une seule source de l'agent. Repli : 20 fichiers au plus, un par thème.
+- **En tête de chaque texte** : identifiant Qvidian, statut (actif / expiré), dossier, langue, niveau, fonds, ISIN,
+  thèmes, dates, utilisations, puis les questions de RFI auxquelles ce texte a déjà répondu (ce qui le fait retrouver à
+  partir d'une question de client), puis la réponse entière.
+- **Incrémental** : `_merlin_export.json` garde l'empreinte de chaque fichier ; seuls les fichiers dont le contenu a
+  changé sont réécrits (écriture atomique). Un texte retiré ou désactivé dans Qvidian voit son fichier retiré. Seuls des
+  fichiers écrits par l'export sont modifiés ou supprimés.
+- **Automatique** : relancé après chaque synchronisation Qvidian (option). Démo et réel ne se mélangent pas : changer
+  de source réécrit tout le dossier.
+- **Délai** : SharePoint puis Copilot réindexent les fichiers ; l'agent voit un changement après quelques minutes à
+  quelques heures. À CONFIRMER sur votre locataire : qu'un dossier compte bien pour une seule source de l'agent.
+- L'écran donne aussi les consignes à coller dans les instructions de l'agent (citer l'identifiant, préférer le plus
+  récent, respecter le niveau fonds / part, ne rien inventer).

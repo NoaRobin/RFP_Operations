@@ -758,3 +758,10 @@ export interface QvidianFamily { keep: number; size: number; uses: number
   members: { id: number; title: string; folder_path: string; times_used: number; modified: string; enabled: boolean; keep: boolean; text: string }[] }
 export interface QvidianBankItem { question: string; rfis: number; last: string; funds: string[]; contents: { id: number; title: string }[]; covered: boolean; variants: number }
 export interface QvidianBank { ready: boolean; total: number; items: QvidianBankItem[]; state?: { running: boolean; message: string } }
+
+/** Export de la bibliothèque Qvidian vers le dossier lu par l'agent Copilot. */
+export interface AgentExportResult { at: string; mode: string; source: string; texts: number; files: number; written: number; unchanged: number; removed: number; expired: number }
+export interface AgentExportState {
+  path: string; mode: 'texts' | 'bundles'; include_expired: boolean; auto: boolean
+  last: AgentExportResult | null; error: string | null; instructions: string; max_bundles: number; source: string
+}

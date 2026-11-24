@@ -71,7 +71,7 @@ export function Switch({ checked, onChange, label, hint, id }: { checked: boolea
       >
         <span
           aria-hidden="true"
-          className={`absolute top-[1px] size-[1.1rem] rounded-full transition-[transform,background] duration-[var(--duration-base)] ease-[var(--ease-spring)] ${
+          className={`absolute left-0 top-[1px] size-[1.1rem] rounded-full transition-[transform,background] duration-[var(--duration-base)] ease-[var(--ease-spring)] ${
             checked ? 'translate-x-[1.2rem] bg-card border-2 border-fg' : 'translate-x-0.5 bg-fg-3'
           }`}
         />

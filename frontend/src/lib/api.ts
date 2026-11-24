@@ -1,6 +1,6 @@
 import { getUserName } from './storage'
 import { texts } from '../content/texts'
-import type {
+import type { AgentExportState,
   CopilotAnswers,
   CopilotPrompt,
   FundShopAvailable,
@@ -150,6 +150,9 @@ export const api = {
     },
     scanModels: (folder = '') => request<{ installed: { model: string; file: string }[]; ignored: string[]; ready: string[]; folder: string; looked_at: number; engine: QvidianEngineStatus }>('/qvidian/engine/models/scan', json({ folder })),
     memory: () => request<QvidianMemory>('/qvidian/memory'),
+    agentExport: () => request<AgentExportState>('/qvidian/agent-export'),
+    agentExportRun: (body: { path: string; mode: string; include_expired: boolean; auto: boolean; run?: boolean }) =>
+      request<AgentExportState>('/qvidian/agent-export', json(body)),
     freshness: () => request<QvidianFreshness>('/qvidian/freshness'),
     families: () => request<QvidianFamily[]>('/qvidian/families'),
     questionBank: (q = '', only = '') => request<QvidianBank>(`/qvidian/questions?q=${encodeURIComponent(q)}&only=${only}`),
