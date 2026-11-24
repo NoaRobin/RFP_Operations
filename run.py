@@ -50,16 +50,40 @@ def fail(msg: str, hint: str = "") -> None:
     sys.exit(1)
 
 
-def venv_dir() -> Path:
+def venv_candidates() -> list[Path]:
+    """Emplacements possibles de l'environnement, hors du projet. Le Python du Microsoft Store redirige en cachette ce
+    qu'il écrit dans AppData : l'environnement créé là est alors introuvable (« failed to locate pyvenv.cfg »). Le
+    dossier personnel, lui, n'est jamais redirigé : il sert de repli."""
     custom = os.environ.get("RFP_VENV") or os.environ.get("GRIMOIRE_VENV")
     if custom:
-        return Path(custom)
-    base = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") if WIN else Path.home() / ".cache"
-    return base / ("RFPpasenvie" if WIN else "rfppasenvie") / f"venv-py{sys.version_info.major}{sys.version_info.minor}"
+        return [Path(custom)]
+    name = f"venv-py{sys.version_info.major}{sys.version_info.minor}"
+    if not WIN:
+        return [Path.home() / ".cache" / "rfppasenvie" / name]
+    local = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local") / "RFPpasenvie" / name
+    home = Path.home() / ".rfppasenvie" / name
+    return [home, local] if "WindowsApps" in sys.executable else [local, home]
 
 
 def venv_python(folder: Path) -> Path:
     return folder / ("Scripts/python.exe" if WIN else "bin/python")
+
+
+def healthy(folder: Path) -> bool:
+    """L'environnement existe ET son Python démarre (pyvenv.cfg présent, pip disponible)."""
+    py = venv_python(folder)
+    if not py.exists() or not (folder / "pyvenv.cfg").exists():
+        return False
+    try:
+        return subprocess.run([str(py), "-c", "import pip"], capture_output=True, timeout=60).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def venv_dir() -> Path:
+    """L'environnement en état de marche s'il y en a un, sinon le premier emplacement à essayer."""
+    candidates = venv_candidates()
+    return next((c for c in candidates if healthy(c)), candidates[0])
 
 
 def has_modules(py: Path, modules: list[str]) -> bool:
@@ -67,26 +91,43 @@ def has_modules(py: Path, modules: list[str]) -> bool:
     return subprocess.run([str(py), "-c", code], capture_output=True).returncode == 0
 
 
+def create_environment() -> Path:
+    """Crée l'environnement au premier emplacement où il fonctionne vraiment ; un environnement cassé est refait."""
+    problems = []
+    for folder in venv_candidates():
+        if healthy(folder):
+            return folder
+        if folder.exists():
+            say("Environnement Python incomplet : il est refait…")
+            shutil.rmtree(folder, ignore_errors=True)
+        say(f"Création de l'environnement Python ({folder})…")
+        try:
+            folder.parent.mkdir(parents=True, exist_ok=True)
+            venv.create(folder, with_pip=True)
+        except Exception as error:  # noqa: BLE001
+            problems.append(f"{folder} : {error}")
+            continue
+        if healthy(folder):
+            return folder
+        problems.append(f"{folder} : créé mais inutilisable")
+        shutil.rmtree(folder, ignore_errors=True)
+    fail("Création de l'environnement Python impossible. " + " | ".join(problems),
+         "Installez Python depuis python.org (pas depuis le Microsoft Store), en cochant « Add Python to PATH », puis relancez run.bat.")
+    return venv_candidates()[0]
+
+
 def ensure_environment() -> Path:
     if sys.version_info < (3, 10):
         fail("Python 3.10 ou plus récent est requis.", "Installez Python depuis python.org (cocher « Add Python to PATH »).")
-    folder = venv_dir()
-    py = venv_python(folder)
-    if not py.exists():
-        say(f"Premier lancement : création de l'environnement Python ({folder})…")
-        folder.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            venv.create(folder, with_pip=True)
-        except Exception as error:  # noqa: BLE001
-            fail(f"Création de l'environnement impossible : {error}",
-                 "Sous Windows, réinstallez Python depuis python.org ; ou définissez RFP_VENV vers un dossier accessible.")
+    py = venv_python(create_environment())
     modules = REQUIRED + (["mssql_python"] if WIN else [])
     if not has_modules(py, modules):
         say("Installation des dépendances (quelques minutes la première fois)…")
         cmd = [str(py), "-m", "pip", "install", "--disable-pip-version-check", "-q", "-r", str(BACKEND / "requirements.txt")]
         if subprocess.run(cmd).returncode != 0:
             fail("L'installation des dépendances a échoué.",
-                 "Proxy d'entreprise ? `set HTTPS_PROXY=http://proxy:port` puis relancez. Sinon : python run.py --doctor")
+                 "Vérifiez la connexion internet (ou le VPN), puis relancez run.bat. Proxy d'entreprise : "
+                 "`set HTTPS_PROXY=http://proxy:port` avant. Diagnostic : run.bat --doctor")
     return py
 
 
@@ -199,7 +240,9 @@ def doctor() -> None:
     if len(str(ROOT)) > 180 or "onedrive" in str(ROOT).lower():
         print("  ⚠ Projet dans OneDrive ou chemin très long : préférez un dossier court et local (ex. C:\\dev\\RFPpasenvie).")
     folder = venv_dir()
-    print(f"  Environnement : {folder} ({'présent' if venv_python(folder).exists() else 'absent'})")
+    print(f"  Environnement : {folder} ({'en état de marche' if healthy(folder) else 'absent ou cassé : il sera refait au prochain lancement'})")
+    if "WindowsApps" in sys.executable:
+        print("  ⚠ Python du Microsoft Store : l'environnement est placé dans le dossier personnel (.rfppasenvie).")
     print(f"  Interface     : {'compilée' if DIST.exists() else 'ABSENTE — git pull, ou python run.py --rebuild'}")
     print(f"  Proxy         : {os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy') or 'aucun'}")
     print(f"  Fabric        : {'adresse connue (connexion automatique)' if (ROOT / 'equipe.json').exists() or (ROOT / 'data' / 'fabric.json').exists() else 'adresse inconnue : bouton « Fabric » dans l app, une fois'}")
