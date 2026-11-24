@@ -5,10 +5,14 @@ Ce qu'il fait, sans rien demander :
 2. installe les dépendances manquantes (quelques minutes la première fois) ;
 3. démarre le serveur et ouvre le navigateur.
 
-La connexion à Fabric se fait ensuite dans l'application : bouton « Se connecter à Fabric », adresse du serveur,
-votre identifiant, une fenêtre Microsoft s'ouvre. C'est tout.
+La connexion à Fabric est automatique dès que l'adresse du serveur est connue (fichier d'équipe `equipe.json`, écrit
+au premier branchement réussi) : au plus, une fenêtre Microsoft à valider. Le premier poste se branche une fois par le
+bouton « Fabric » de l'application.
 
-Options : --port 8080 · --no-browser · --demo (force les données fictives) · --doctor (diagnostic) · --rebuild (front, Node requis)
+Donner l'app à une collègue : double-clic sur partager.bat (ou `python run.py --partager`). Un zip propre est posé sur
+le Bureau (sans vos données, sans secret) ; elle le décompresse et double-clique sur run.bat. Rien d'autre.
+
+Options : --port 8080 · --no-browser · --demo (force les données fictives) · --doctor (diagnostic) · --partager · --rebuild (front, Node requis)
 """
 from __future__ import annotations
 
@@ -125,6 +129,69 @@ def rebuild_front() -> None:
     subprocess.run([npm, "run", "build"], cwd=FRONT, check=True, shell=WIN)
 
 
+SHARE_DIRS = ["backend", "automations", "catalog", "docs", "outils", "frontend/dist"]
+SHARE_FILES = ["run.bat", "run.py", "run.sh", "README.md", "equipe.json", ".env.example", "JUMP_OMNI.py", "OMNI_MENSUEL.py"]
+SHARE_SKIP_DIRS = {"__pycache__", ".pytest_cache", "tests", "node_modules", ".git"}
+
+
+def desktop() -> Path:
+    for folder in (Path.home() / "Desktop", Path.home() / "Bureau", Path.home() / "OneDrive" / "Desktop", Path.home() / "OneDrive" / "Bureau"):
+        if folder.is_dir():
+            return folder
+    return ROOT.parent
+
+
+def share() -> None:
+    """Zip à donner à une collègue : le programme et les réglages d'équipe, jamais data/ ni .env (clés, mots de passe)."""
+    import zipfile
+
+    if not DIST.exists():
+        fail("L'interface compilée est absente (frontend/dist).", "Faites un `git pull` avant de partager.")
+    if not (ROOT / "equipe.json").exists():
+        print("  ⚠ Pas encore de réglages d'équipe : lancez l'app et connectez-vous une fois à Fabric (bouton « Fabric »),\n"
+              "    puis relancez partager.bat. Sans cela, votre collègue devra saisir l'adresse du serveur elle-même.\n")
+    target = desktop() / "RFP pas envie de travailler.zip"
+    tmp = target.with_suffix(".tmp")
+    count = 0
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as z:
+        for name in SHARE_FILES:
+            if (ROOT / name).is_file():
+                z.write(ROOT / name, f"RFPpasenvie/{name}")
+                count += 1
+        for folder in SHARE_DIRS:
+            for path in sorted((ROOT / folder).rglob("*")):
+                rel = path.relative_to(ROOT)
+                if not path.is_file() or SHARE_SKIP_DIRS & set(rel.parts) or path.suffix in {".pyc", ".log"} or path.name == ".env":
+                    continue
+                z.write(path, f"RFPpasenvie/{rel.as_posix()}")
+                count += 1
+    os.replace(tmp, target)
+    say(f"Paquet prêt ({count} fichiers, {target.stat().st_size // 1_000_000} Mo) : {target}")
+    print("\n    À dire à votre collègue :\n"
+          "      1. Clic droit sur le zip › « Extraire tout », dans un dossier simple (ex. Documents).\n"
+          "      2. Double-clic sur run.bat. La première fois, l'installation prend quelques minutes.\n"
+          "      3. Si une fenêtre Microsoft s'ouvre, choisir son compte. C'est tout.\n")
+
+
+def shortcut() -> None:
+    """Premier lancement sous Windows : raccourci sur le Bureau (une seule fois ; l'échec est sans conséquence)."""
+    marker = venv_dir().parent / "raccourci.txt"
+    if not WIN or marker.exists():
+        return
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(str(ROOT), encoding="utf-8")
+        link = desktop() / "RFP pas envie de travailler.lnk"
+        script = ("$s=(New-Object -ComObject WScript.Shell).CreateShortcut($env:RFP_LNK);"
+                  "$s.TargetPath=$env:RFP_BAT;$s.WorkingDirectory=$env:RFP_DIR;$s.Save()")
+        env = dict(os.environ, RFP_LNK=str(link), RFP_BAT=str(ROOT / "run.bat"), RFP_DIR=str(ROOT))
+        subprocess.run(["powershell", "-NoProfile", "-Command", script], env=env, capture_output=True, timeout=20)
+        if link.exists():
+            say("Raccourci créé sur le Bureau : « RFP pas envie de travailler ».")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def doctor() -> None:
     print(f"\n  Python        : {sys.version.split()[0]} ({sys.executable})")
     print(f"  Système       : {platform.platform()}")
@@ -135,6 +202,7 @@ def doctor() -> None:
     print(f"  Environnement : {folder} ({'présent' if venv_python(folder).exists() else 'absent'})")
     print(f"  Interface     : {'compilée' if DIST.exists() else 'ABSENTE — git pull, ou python run.py --rebuild'}")
     print(f"  Proxy         : {os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy') or 'aucun'}")
+    print(f"  Fabric        : {'adresse connue (connexion automatique)' if (ROOT / 'equipe.json').exists() or (ROOT / 'data' / 'fabric.json').exists() else 'adresse inconnue : bouton « Fabric » dans l app, une fois'}")
     print(f"  Port 8000     : {'libre' if port_free(8000) else 'occupé (un autre port sera choisi)'}\n")
 
 
@@ -145,17 +213,22 @@ def main() -> None:
     ap.add_argument("--demo", action="store_true", help="données fictives uniquement")
     ap.add_argument("--doctor", action="store_true")
     ap.add_argument("--rebuild", action="store_true")
+    ap.add_argument("--partager", action="store_true", help="prépare le zip à donner à une collègue")
     args = ap.parse_args()
 
     print("\n  ✦ RFP PAS ENVIE DE TRAVAILLER — #RFPasenviedetravailler\n  « My RFP will go on… »\n")
     if args.doctor:
         doctor()
         return
+    if args.partager:
+        share()
+        return
     if args.rebuild:
         rebuild_front()
     if not DIST.exists():
         fail("L'interface compilée est absente (frontend/dist).", "Faites un `git pull` ou lancez `python run.py --rebuild` (Node.js requis).")
     py = ensure_environment()
+    shortcut()
     port = pick_port(args.port)
     env = dict(os.environ)
     env.setdefault("MERLIN_DATA_MODE", "mock" if args.demo else "auto")

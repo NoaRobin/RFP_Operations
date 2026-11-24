@@ -228,7 +228,11 @@ export interface Preview { sheet: string; as_of: string; rows: number; changes: 
 
 /* ---------------------------------------------------------------- Fabric */
 export interface FabricStatus {
-  state: 'connected' | 'disconnected' | 'error'
+  state: 'connected' | 'disconnected' | 'error' | 'connecting'
+  /** adresse du serveur connue (poste, fichier d'équipe ou .env) : connexion possible sans rien saisir */
+  known?: boolean
+  auto?: boolean
+  hint?: string | null
   mode: 'mock' | 'fabric'
   server: string
   database: string

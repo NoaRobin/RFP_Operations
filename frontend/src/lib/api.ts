@@ -111,6 +111,7 @@ export const api = {
     status: () => request<FabricStatus>('/fabric'),
     connect: (body: { server: string; database: string; user: string }) => request<FabricStatus>('/fabric/connect', json(body)),
     disconnect: () => request<FabricStatus>('/fabric/disconnect', { method: 'POST' }),
+    retry: () => request<FabricStatus>('/fabric/retry', { method: 'POST' }),
   },
 
   contacts: {

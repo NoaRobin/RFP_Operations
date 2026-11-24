@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { api } from '../../lib/api'
 import type { FabricStatus, Health } from '../../lib/types'
 import { CommandPalette } from '../CommandPalette'
@@ -10,12 +10,13 @@ interface AppContextValue {
   health: Health | null
   fabric: FabricStatus | null
   openFabric: () => void
+  retryFabric: () => void
   openSuggest: () => void
   openUser: () => void
   openPalette: () => void
 }
 
-const Ctx = createContext<AppContextValue>({ health: null, fabric: null, openFabric: () => {}, openSuggest: () => {}, openUser: () => {}, openPalette: () => {} })
+const Ctx = createContext<AppContextValue>({ health: null, fabric: null, openFabric: () => {}, retryFabric: () => {}, openSuggest: () => {}, openUser: () => {}, openPalette: () => {} })
 export const useApp = () => useContext(Ctx)
 
 export const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -42,6 +43,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Connexion automatique à Fabric au lancement : suivi rapproché, puis la page est rechargée sur les vraies données.
+  const wasConnecting = useRef(false)
+  useEffect(() => {
+    if (fabric?.state === 'connecting') {
+      wasConnecting.current = true
+      const id = window.setInterval(() => { api.fabric.status().then(setFabric).catch(() => undefined) }, 2500)
+      return () => window.clearInterval(id)
+    }
+    if (wasConnecting.current && fabric?.state === 'connected' && fabric.auto) window.location.reload()
+    if (fabric) wasConnecting.current = false
+    return undefined
+  }, [fabric])
+
   // ⌘K / Ctrl+K partout, même dans un champ de saisie.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -59,13 +73,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const openPalette = useCallback(() => setPalette(true), [])
   const closePalette = useCallback(() => setPalette(false), [])
   const openFabric = useCallback(() => setFabricOpen(true), [])
+  const retryFabric = useCallback(() => { api.fabric.retry().then(setFabric).catch(() => undefined) }, [])
   const onFabricChange = useCallback((next: FabricStatus) => {
     setFabric(next)
     api.health().then(setHealth).catch(() => undefined)
   }, [])
 
   return (
-    <Ctx.Provider value={{ health, fabric, openFabric, openSuggest, openUser, openPalette }}>
+    <Ctx.Provider value={{ health, fabric, openFabric, retryFabric, openSuggest, openUser, openPalette }}>
       {children}
       <SuggestionDialog open={suggest} onClose={() => setSuggest(false)} />
       <UserDialog open={user} onClose={() => setUser(false)} />

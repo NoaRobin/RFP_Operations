@@ -39,7 +39,10 @@ def create_state() -> AppState:
     scheduler = MerlinScheduler(db, settings.timezone, lambda sch: state_holder["s"].launch_schedule(sch))
     state = AppState(settings, data.catalog, data, registry, db, jobs, scheduler, AtelierStore(settings.atelier_dir), now_iso())
     state_holder["s"] = state
-    if mode == "mock" and settings.seed_demo_history:
+    from .data import fabric_link
+
+    will_connect = settings.data_mode == "auto" and fabric_link.auto_target(state) is not None
+    if mode == "mock" and settings.seed_demo_history and not will_connect:  # pas d'historique fictif sur un poste relié à Fabric
         seeded = seed_demo_history(db, [(p.id, p.manifest.name, p.manifest.estimated_minutes_saved) for p in registry.all()])
         if seeded:
             log.info("Historique de démonstration : %d exécutions fictives ajoutées.", seeded)
@@ -61,11 +64,23 @@ def _warm_qvidian(state) -> None:
         log.warning("Préparation Qvidian ignorée : %s", error)
 
 
+def _auto_fabric(state) -> None:
+    """Fabric branché tout seul au lancement quand l'adresse est connue (jamais en démo forcée ni en test)."""
+    import os
+
+    if state.settings.data_mode != "auto" or os.environ.get("MERLIN_WARMUP", "1") == "0" or os.environ.get("PYTEST_CURRENT_TEST"):
+        return
+    from .data import fabric_link
+
+    fabric_link.auto_connect(state)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     state = create_state()
     set_state(state)
     state.scheduler.start()
+    _auto_fabric(state)
     _warm_qvidian(state)
     log.info("RFP pas envie de travailler : prêt — mode données : %s — %d automatisation(s)", state.data.mode, len(state.registry.plugins))
     yield

@@ -19,3 +19,5 @@ Thumbs.db
 .idea/
 *.log
 *.tsbuildinfo
+# Réglages d'équipe (adresse du serveur Fabric) : écrits par l'app, emportés par partager.bat
+/equipe.json

@@ -53,6 +53,30 @@ function PaletteButton() {
   )
 }
 
+/** Bandeau de connexion automatique : en cours, ou échouée (les données affichées sont alors fictives : dit clairement). */
+function FabricBanner() {
+  const { health, fabric, openFabric, retryFabric } = useApp()
+  if (!health || !fabric || health.data_mode === 'fabric') return null
+  if (fabric.state === 'connecting') {
+    return (
+      <p role="status" className="mx-auto mt-3 flex w-[min(100%-2rem,82rem)] items-center gap-3 rounded-2xl border-2 border-fg bg-sun-400 px-4 py-3 text-sm font-bold text-[#1c1830]">
+        <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-[#1c1830]" aria-hidden="true" />{texts.fabric.autoConnecting}
+      </p>
+    )
+  }
+  if (!fabric.known) return null
+  return (
+    <div role="alert" className="mx-auto mt-3 flex w-[min(100%-2rem,82rem)] flex-wrap items-center gap-3 rounded-2xl border-2 border-fg bg-[#ffd6dc] px-4 py-3 text-sm font-bold text-[#1c1830]">
+      <span className="min-w-0 flex-1">
+        {texts.fabric.autoFailed}
+        {fabric.error && <span className="mt-0.5 block text-xs font-semibold">{fabric.error}{fabric.hint ? ` ${fabric.hint}` : ''}</span>}
+      </span>
+      <button onClick={retryFabric} className="rounded-full border-2 border-[#1c1830] bg-white px-4 py-1.5">{texts.fabric.autoRetry}</button>
+      <button onClick={openFabric} className="rounded-full border-2 border-[#1c1830]/40 px-4 py-1.5">{texts.fabric.autoManual}</button>
+    </div>
+  )
+}
+
 function FabricPill() {
   const { health, fabric, openFabric } = useApp()
   if (!health) return null
@@ -137,6 +161,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
       </header>
+      <FabricBanner />
       <main id="contenu" tabIndex={-1} className="relative flex-1 outline-none">
         {children}
       </main>

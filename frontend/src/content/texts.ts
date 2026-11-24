@@ -54,6 +54,10 @@ export const texts = {
     waiting: 'Regardez votre barre des tâches : la fenêtre Microsoft vous attend…',
     success: 'Connecté au Lakehouse. Les vraies données arrivent.',
     failed: 'La connexion n\'a pas abouti.',
+    autoConnecting: 'Connexion à Fabric en cours… Si une fenêtre Microsoft s\'ouvre (regardez la barre des tâches), choisissez votre compte.',
+    autoFailed: 'Pas connecté à Fabric : tout ce qui est affiché est fictif. Ne l\'utilisez pas pour un client.',
+    autoRetry: 'Réessayer',
+    autoManual: 'Saisir l\'adresse',
   },
 
   home: {

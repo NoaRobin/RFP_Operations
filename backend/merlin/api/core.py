@@ -56,6 +56,15 @@ def fabric_connect(body: FabricConnectRequest, s: AppState = Depends(state)) -> 
         raise bad_request(str(error), error.hint) from error
 
 
+@router.post("/fabric/retry")
+def fabric_retry(s: AppState = Depends(state)) -> dict[str, Any]:
+    """Nouvelle tentative de connexion automatique (adresse connue : poste, fichier d'équipe ou .env)."""
+    from ..data import fabric_link
+
+    fabric_link.auto_connect(s)
+    return fabric_link.status(s)
+
+
 @router.post("/fabric/disconnect")
 def fabric_disconnect(s: AppState = Depends(state)) -> dict[str, Any]:
     from ..data import fabric_link
